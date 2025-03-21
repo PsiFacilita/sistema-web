@@ -1,0 +1,49 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - frontend-node-modules:/app/node_modules
+      - ./frontend:/app
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      - db
+    volumes:
+      - backend-node-modules:/app/node_modules
+      - ./backend:/app
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER} 
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
+
+volumes:
+  frontend-node-modules:
+  backend-node-modules:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge
