@@ -32,6 +32,8 @@ docker-compose down -v
 docker-compose up -d --build
 ```
 
+---
+
 Caso tenha alguma dúvida, as documentações oficiais podem ser consultadas tanto para o Docker, quanto para o docker-compose.
 
 - [Docker 4.39.0](https://docs.docker.com/desktop/)
