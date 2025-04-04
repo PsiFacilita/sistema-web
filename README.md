@@ -58,7 +58,7 @@ DATABASE_URL=mysql://myuser:mypassword@db:3306/mydatabase
 docker-compose up -d
 ```
 
-Caso tenha dúvidas sobre os comandos mais utilizados para o Docker, consulte [Docker.md]() para mais informações.
+Caso tenha dúvidas sobre os comandos mais utilizados para o Docker, consulte [Docker.md](https://github.com/PsiFacilita/sistema-web/blob/main/Docker.md) para mais informações.
 
 Isso iniciará três serviços:
 
