@@ -1,5 +1,5 @@
 # Usar a imagem base do Node.js
-FROM node:18 AS build
+FROM node:23-slim AS build
 
 # Defina o diretório de trabalho no contêiner
 WORKDIR /app
