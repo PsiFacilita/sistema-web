@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS template (
     conteudo        LONGTEXT NOT NULL,                   -- Criptografado
     criado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (tipo_documento_id) REFERENCES tipo_documento(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS agenda (
