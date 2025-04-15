@@ -132,6 +132,11 @@
   animation: slideOut 0.3s ease-out;
 }
 
+.closing,
+.closingContent {
+  animation-fill-mode: forwards;
+}
+
 @keyframes fadeOut {
   from {
     opacity: 1;

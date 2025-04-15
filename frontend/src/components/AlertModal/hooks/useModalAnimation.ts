@@ -13,19 +13,13 @@ export const useModalAnimation = ({
     if (isOpen) {
       setShouldRender(true);
       setIsClosing(false);
-    } else if (shouldRender) {
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setShouldRender(false);
-      }, animationDuration);
-      
-      return () => clearTimeout(timer);
     }
-  }, [isOpen, animationDuration, shouldRender]);
+  }, [isOpen]);
 
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => {
+      setShouldRender(false);
       onClose();
     }, animationDuration);
   };
