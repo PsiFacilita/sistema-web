@@ -17,7 +17,7 @@ const TestPage: React.FC = () => {
   // Função para lidar com a mudança de seleção
   const handleChange = (value: string | number | (string | number)[]) => {
     setSelectedOption(value as string | number);
-    console.log('Opção selecionada:', value);
+    alert('Opção selecionada: ' + value);
   };
 
   return (
