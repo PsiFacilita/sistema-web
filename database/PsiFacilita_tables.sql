@@ -103,13 +103,17 @@ CREATE TABLE IF NOT EXISTS agenda (
 CREATE TABLE IF NOT EXISTS configuracao (
    id INT AUTO_INCREMENT PRIMARY KEY,
    usuario_id INT NOT NULL,
-   horario_inicio TIME NOT NULL,
-   horario_fim TIME NOT NULL,
-   pausa_horario_inicio TIME NOT NULL,
-   pausa_horario_fim TIME NOT NULL,
    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
    FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS configuracao_turnos (
+   id INT AUTO_INCREMENT PRIMARY KEY,
+   configuracao_id INT NOT NULL,
+   turno_inicio TIME NOT NULL,
+   turno_fim TIME NOT NULL,
+   FOREIGN KEY (configuracao_id) REFERENCES configuracao(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS configuracao_dias (
