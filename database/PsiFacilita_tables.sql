@@ -123,3 +123,14 @@ CREATE TABLE IF NOT EXISTS configuracao_dias (
    FOREIGN KEY (configuracao_id) REFERENCES configuracao(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS configuracao_dia_especificos (
+   id INT AUTO_INCREMENT PRIMARY KEY,
+   configuracao_id INT NOT NULL,
+   data DATE NOT NULL,
+   horario_inicio TIME,
+   horario_fim TIME,
+   motivo VARCHAR(255),
+   tipo ENUM('fechado', 'alterado') DEFAULT 'fechado',
+   FOREIGN KEY (configuracao_id) REFERENCES configuracao(id) ON DELETE CASCADE,
+   UNIQUE (configuracao_id, data)
+);
