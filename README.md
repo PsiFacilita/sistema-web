@@ -7,14 +7,14 @@ As instruções a seguir permitirão que você obtenha uma cópia do projeto em 
 
 ## Pré-requisitos
 
-- [Node.js 18](https://nodejs.org/pt/download)
+- [Node.js 23](https://nodejs.org/pt/download)
 - [Docker 4.39.0](https://docs.docker.com/desktop/)
 - [docker-compose 2.33.1](https://docs.docker.com/compose/)
 
 ## Construído com
 
 - [React 19.0.0](https://react.dev/learn)
-- [Node.js 18](https://nodejs.org/pt/download)
+- [Node.js 23](https://nodejs.org/pt/download)
 - [TypeScript 5.7.2](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-7.html)
 
 - [Docker 4.39.0](https://docs.docker.com/desktop/)
