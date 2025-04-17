@@ -32,12 +32,15 @@ const Anchor: React.FC<AnchorProps> = ({
     }
   };
 
+  const computedRel =
+    target === "_blank" ? [rel, "noopener noreferrer"].filter(Boolean).join(" ") : rel;
+
   return (
     <a
       href={disabled ? "#" : href}
       onClick={handleClick}
       target={target}
-      rel={rel}
+      rel={computedRel}
       className={`${className} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
       style={style}
       aria-disabled={disabled}
