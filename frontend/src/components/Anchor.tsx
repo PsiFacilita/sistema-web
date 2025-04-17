@@ -44,6 +44,7 @@ const Anchor: React.FC<AnchorProps> = ({
       className={`${className} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
       style={style}
       aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
     >
       {children}
     </a>
