@@ -1,0 +1,23 @@
+{
+  "name": "sistema-web",
+  "version": "1.0.0",
+  "description": "Esse repositório faz parte de uma das entregas para a parceira do grupo PsiFacilita, onde contém todo o código do sistema web, que será utilizado apenas pela parceira, sem a possibilidade de interações de outros atores.",
+  "homepage": "https://github.com/PsiFacilita/sistema-web#readme",
+  "bugs": {
+    "url": "https://github.com/PsiFacilita/sistema-web/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PsiFacilita/sistema-web.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "vite": "^6.3.2"
+  }
+}
