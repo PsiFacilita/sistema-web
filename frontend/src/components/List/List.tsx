@@ -10,7 +10,7 @@ import { ListProps } from './List.types';
  */
 function List<T>({
   items = [],
-  renderItem = (item: any) => <span>{String(item)}</span>,
+  renderItem = (item: T) => <span>{String(item)}</span>,
   keyExtractor = (_, index) => index.toString(),
   onItemClick = () => {},
   className = "",
