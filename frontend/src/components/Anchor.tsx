@@ -10,6 +10,7 @@ const Anchor: React.FC<AnchorProps> = ({
   className = "",
   style = {},
   children,
+  title,
 }) => {
   const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (disabled) {
@@ -34,6 +35,7 @@ const Anchor: React.FC<AnchorProps> = ({
       style={style}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
+      title={title}
     >
       {children}
     </a>

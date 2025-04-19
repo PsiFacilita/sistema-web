@@ -9,4 +9,5 @@ export type AnchorProps = {
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
+  title?: string;
 };
