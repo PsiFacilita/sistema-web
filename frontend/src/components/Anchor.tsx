@@ -1,5 +1,6 @@
-//importação do react
 import React from "react";
+import { AnchorProps } from "./Anchor.types";
+
 
 type AnchorProps = {
   href: string; //define o destino do link
