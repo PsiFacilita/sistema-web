@@ -1,5 +1,5 @@
 import React from "react";
-import Anchor from "../components/Anchor";
+import Anchor from "../components/Anchor/Anchor";
 
 const AnchorPage: React.FC = () => {
   const handleCustomClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
