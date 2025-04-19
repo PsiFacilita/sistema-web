@@ -25,13 +25,17 @@ const Anchor: React.FC<AnchorProps> = ({
   const computedRel =
     target === "_blank" ? [rel, "noopener noreferrer"].filter(Boolean).join(" ") : rel;
 
+  const baseStyles = disabled 
+    ? "cursor-not-allowed opacity-50 pointer-events-none" 
+    : "hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500";
+
   return (
     <a
       href={disabled ? "#" : href}
       onClick={handleClick}
       target={target}
       rel={computedRel}
-      className={`${className} ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+      className={`${baseStyles} ${className}`}
       style={style}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : 0}
