@@ -1,4 +1,4 @@
-﻿import React, { JSX } from 'react';
+import React, { JSX } from 'react';
 import './List.css';
 
 import { ListProps } from './List.types';
