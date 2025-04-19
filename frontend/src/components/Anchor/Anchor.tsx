@@ -1,5 +1,5 @@
 import React from "react";
-import { AnchorProps } from "../Anchor.types";
+import { AnchorProps } from "./Anchor.types";
 
 const Anchor: React.FC<AnchorProps> = ({
   href,
