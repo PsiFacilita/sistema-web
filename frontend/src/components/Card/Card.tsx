@@ -35,6 +35,7 @@ const Card: React.FC<CardProps> = ({
       className={cardClasses}
       style={style}
       onClick={isClickable ? handleCardClick : undefined}
+      onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCardClick(); } : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
     >
