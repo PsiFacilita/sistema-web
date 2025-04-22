@@ -1,32 +1,6 @@
 import React from 'react';
 import * as FiIcons from 'react-icons/fi';
-
-export type IconType = 
-  | 'dashboard' 
-  | 'calendar' 
-  | 'users' 
-  | 'folder' 
-  | 'settings' 
-  | 'logout'
-  | 'plus'
-  | 'search'
-  | 'edit'
-  | 'trash'
-  | 'chevron-down'
-  | 'chevron-up'
-  | 'check'
-  | 'x'
-  | 'info'
-  | 'alert-circle';
-
-interface IconProps extends React.SVGAttributes<SVGElement> {
-  type: IconType;
-  size?: number | string;
-  color?: string;
-  className?: string;
-  style?: React.CSSProperties;
-  onClick?: () => void;
-}
+import { IconProps } from './Icon.types';
 
 const Icon: React.FC<IconProps> = ({
   type,
