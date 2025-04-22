@@ -1,13 +1,8 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
+import { MainLayoutProps } from './MainLayout.types';
 import { Bars3Icon } from '@heroicons/react/24/outline';
-
-interface MainLayoutProps {
-  children?: React.ReactNode;
-  sidebarOpen: boolean;  // 
-  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>; // Função para alterar o estado
-}
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
