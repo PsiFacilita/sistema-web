@@ -1,11 +1,8 @@
 import React from 'react';
 import SidebarItem from './SidebarItem';
+import { SidebarProps } from './Sidebar.types';
 import { IconType } from '../../ui/Icon/Icon';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-
-interface SidebarProps {
-  onClose?: () => void;
-}
 
 const sidebarItems = [
   { name: 'Dashboard', icon: 'dashboard' as IconType, path: '/dashboard' },
