@@ -1,20 +1,6 @@
 import React, { ReactNode, MouseEvent, KeyboardEvent } from 'react';
 
-type CardVariant = 'default' | 'outlined' | 'elevated';
-type CardSize = 'compact' | 'medium' | 'large';
-
-interface CardProps {
-  title?: string;
-  subtitle?: string;
-  children?: ReactNode;
-  variant?: CardVariant;
-  size?: CardSize;
-  onClick?: () => void;
-  headerActions?: ReactNode;
-  footerActions?: ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}
+import { CardProps } from './Card.types';
 
 const Card: React.FC<CardProps> = ({
   title,
