@@ -1,5 +1,5 @@
 import React, { ButtonHTMLAttributes, ReactNode } from 'react';
-import Spinner  from '../Spinner/Spinner'; // Componente de loading (você precisará criar)
+import Spinner  from '../Spinner/Spinner';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'success';
 type ButtonSize = 'sm' | 'md' | 'lg';
