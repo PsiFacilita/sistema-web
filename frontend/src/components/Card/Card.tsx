@@ -1,5 +1,4 @@
-import React, { ReactNode, MouseEvent, KeyboardEvent } from 'react';
-
+import React, { MouseEvent, KeyboardEvent } from 'react';
 import { CardProps } from './Card.types';
 
 const Card: React.FC<CardProps> = ({
