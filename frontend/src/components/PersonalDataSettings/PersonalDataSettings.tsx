@@ -1,5 +1,5 @@
 import React from 'react';
-import Title from '../Title';
+import Title from '../Title/Title';
 import Input from '../Form/Input';
 import Label from '../Form/Label';
 import Button from '../Button';

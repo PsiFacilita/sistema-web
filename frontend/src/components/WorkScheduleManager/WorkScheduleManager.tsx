@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Title from '../Title';
+import Title from '../Title/Title';
 import Button from '../Button';
 import Input from '../Form/Input';
 import Label from '../Form/Label';
