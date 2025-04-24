@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Title from '../Title/Title';
+import Title from '../Title';
 import Button from '../Button';
 import Input from '../Form/Input';
 import Label from '../Form/Label';
@@ -372,14 +372,14 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
         <Title level={3}>Horários de Atendimento</Title>
         <div className="flex gap-2">
           <Button 
-            variant="secondary" 
+            variant="primary" 
             size="sm" 
             onClick={toggleSaturday}
           >
             {includeSaturday ? 'Ocultar Sábado' : 'Incluir Sábado'}
           </Button>
           <Button 
-            variant="secondary" 
+            variant="primary" 
             size="sm" 
             onClick={toggleSunday}
           >
@@ -442,6 +442,7 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
         }}
         title={`Configurar Horários: ${selectedDate ? formatDateWithWeekday(selectedDate) : ''}`}
         size="large"
+        confirmButtonText=''
       >
         <div className="mb-4">
           <Label htmlFor="date">Data</Label>
@@ -460,28 +461,28 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
               <h4 className="font-medium">Horários do dia</h4>
               <div className="flex flex-wrap gap-2">
                 <Button 
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
                   onClick={() => handleSelectAllSlots(true)}
                 >
                   Ativar Todos
                 </Button>
                 <Button 
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
                   onClick={() => handleSelectAllSlots(false)}
                 >
                   Desativar Todos
                 </Button>
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
                   onClick={handleResetToDefault}
                 >
                   Redefinir para Padrão
                 </Button>
                 <Button 
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
                   onClick={handleAddTimeSlot}
                 >
@@ -564,7 +565,7 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
 
         <div className="mt-6 flex justify-end space-x-2">
           <Button 
-            variant="secondary"
+            variant="danger"
             onClick={() => {
               // Apenas fechar o modal ao cancelar, sem salvar
               setIsModalOpen(false);
