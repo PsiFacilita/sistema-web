@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 
-import Anchor from '../components/ui/Anchor/Anchor';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card/Card';
-import Chart from '../components/ui/Chart/Chart';
-import Dropdown from '../components/ui/Dropdown';
-import Icon, { IconType } from '../components/ui/Icon';
-import Input from '../components/ui/Form/Input';
-import Title from '../components/ui/Title/Title';
+import Anchor from '../components/Anchor/Anchor';
+import Button from '../components/Button';
+import Card from '../components/Card/Card';
+import Chart from '../components/Chart/Chart';
+import Dropdown from '../components/Dropdown/Dropdown';
+import Icon from '../components/Icon/Icon';
+import { IconType } from '../components/Icon/Icon.types';
+import Input from '../components/Form/Input';
+import Title from '../components/Title/Title';
 import { AlertModal } from '../components/AlertModal/AlertModal';
-import Spinner from '../components/ui/Spinner/Spinner';
-import Modal from '../components/ui/Modal/Modal';
+import Spinner from '../components/Spinner/Spinner';
+import Modal from '../components/Modal/Modal';
 import { AlertType } from '../components/AlertModal/AlertModal.types';
 
 type ModalType = 'success' | 'error' | 'warning' | 'info' | 'question';
