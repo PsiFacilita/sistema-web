@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
-import Playground from './pages/Playground';
 import LoginPage from './pages/LoginPage';
 import AnchorPage from './pages/AnchorPage';
 import ListPage from './pages/ListPage';
@@ -17,7 +16,6 @@ const App: React.FC = () => {
         <Route path="/list" element={<ListPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/playground" element={<Playground />} />
       </Routes>
     </Router>
   );
