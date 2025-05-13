@@ -1,6 +1,7 @@
 import Title from '../components/Title/Title';
 import Card from '../components/Card/Card';
 import Chart from '../components/Chart/Chart';
+import MainLayout from '../components/layout/MainLayout/MainLayout';
 
 const Dashboard: React.FC = () => {
   const dashboardCards = [
@@ -38,7 +39,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <>
+    <MainLayout>
       <Title level={1} className="text-xl md:text-3xl">Dashboard</Title>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
@@ -60,7 +61,7 @@ const Dashboard: React.FC = () => {
         </Title>
         <Chart data={chartData} />
       </div>
-    </>
+    </MainLayout>
   );
 };
 

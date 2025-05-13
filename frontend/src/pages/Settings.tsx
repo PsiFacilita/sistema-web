@@ -3,6 +3,7 @@ import Title from '../components/Title/Title';
 import PersonalDataSettings from '../components/PersonalDataSettings';
 import CollaboratorManager from '../components/CollaboratorManager';
 import WorkScheduleManager from '../components/WorkScheduleManager/WorkScheduleManager';
+import MainLayout from '../components/layout/MainLayout/MainLayout';
 
 // Interface para a estrutura de dados de TimeSlot
 interface TimeSlot {
@@ -47,7 +48,8 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="pb-10">
+    <MainLayout>
+      <div className="pb-10">
       <Title level={1}>Configurações</Title>
       
       <PersonalDataSettings 
@@ -64,6 +66,7 @@ const Settings: React.FC = () => {
         onSave={handleScheduleSave}
       />
     </div>
+    </MainLayout>
   );
 };
 
