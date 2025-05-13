@@ -7,14 +7,14 @@ As instruções a seguir permitirão que você obtenha uma cópia do projeto em 
 
 ## Pré-requisitos
 
-- [Node.js 18](https://nodejs.org/pt/download)
+- [Node.js 23](https://nodejs.org/pt/download)
 - [Docker 4.39.0](https://docs.docker.com/desktop/)
 - [docker-compose 2.33.1](https://docs.docker.com/compose/)
 
 ## Construído com
 
 - [React 19.0.0](https://react.dev/learn)
-- [Node.js 18](https://nodejs.org/pt/download)
+- [Node.js 23](https://nodejs.org/pt/download)
 - [TypeScript 5.7.2](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-7.html)
 
 - [Docker 4.39.0](https://docs.docker.com/desktop/)
@@ -58,7 +58,7 @@ DATABASE_URL=mysql://myuser:mypassword@db:3306/mydatabase
 docker-compose up -d
 ```
 
-Caso tenha dúvidas sobre os comandos mais utilizados para o Docker, consulte [Docker.md]() para mais informações.
+Caso tenha dúvidas sobre os comandos mais utilizados para o Docker, consulte [Docker.md](https://github.com/PsiFacilita/sistema-web/blob/main/Docker.md) para mais informações.
 
 Isso iniciará três serviços:
 
