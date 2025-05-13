@@ -4,7 +4,7 @@ import Button from '../Button';
 import Input from '../Form/Input';
 import Label from '../Form/Label';
 import Select from '../Form/Select';
-import Modal from '../Modal';
+import Modal from '../Modal/Modal';
 
 interface TimeSlot {
   id: string;

@@ -1,7 +1,7 @@
 import React from 'react';
 import SidebarItem from './SidebarItem/SidebarItem';
 import { SidebarProps } from './Sidebar.types';
-import { IconType } from '../../ui/Icon/Icon';
+import { IconType } from '../../Icon/Icon.types';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const sidebarItems = [

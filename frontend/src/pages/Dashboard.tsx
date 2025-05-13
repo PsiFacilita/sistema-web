@@ -1,6 +1,6 @@
 import Title from '../components/Title/Title';
 import Card from '../components/Card/Card';
-import Chart from '../components/Chart';
+import Chart from '../components/Chart/Chart';
 
 const Dashboard: React.FC = () => {
   const dashboardCards = [
