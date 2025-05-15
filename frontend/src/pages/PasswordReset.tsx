@@ -16,18 +16,31 @@ const PasswordReset: React.FC = () => {
                     Redefinir Senha
                 </h1>
                 <form onSubmit={handlePasswordReset} className="space-y-4">
-                    <Input
-                        type="password"
-                        placeholder="Digite sua nova senha"
-                        required
-                        className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <Input
-                        type="password"
-                        placeholder="Confirme sua nova senha"
-                        required
-                        className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div className="flex flex-col gap-1">
+                        <label
+                            className="text-gray-700 mb-1 pl-3" 
+                            htmlFor="new-password"
+                        >
+                            Nova Senha
+                        </label>
+                        <Input
+                            id="new-password"
+                            type="password"
+                            required
+                            className="w-full p-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-gray-700 mb-1 pl-3" htmlFor="confirm-password">
+                            Confirmar Nova Senha
+                        </label>
+                        <Input
+                            id="confirm-password"
+                            type="password"
+                            required
+                            className="w-full p-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
                     <Button
                         type="submit"
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
