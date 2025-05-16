@@ -1,18 +1,22 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './hooks/useAuth';
 
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
-import LoginPage from './pages/LoginPage';
+import Login from './pages/Login';
 
 const App: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/settings" element={<Settings />} />
-      </Routes>
+
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </AuthProvider>
     </Router>
   );
 };
