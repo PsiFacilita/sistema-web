@@ -116,7 +116,7 @@ const Login: React.FC = () => {
           <div className="mt-3 text-center">
                 <Anchor 
                   href="#" 
-                  className="text-sm text-600"
+                  className="text-sm text-600 underline"
                   onClick={(e) => {
                     e.preventDefault();
                     openRecoveryModal();
