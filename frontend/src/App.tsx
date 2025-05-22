@@ -4,6 +4,7 @@ import { AuthProvider } from './hooks/useAuth';
 
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
+import PatientRecord from './pages/PatientRecord';
 import Login from './pages/Login';
 
 const App: React.FC = () => {
@@ -15,6 +16,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/records" element={<PatientRecord />} />
           </Routes>
         </AuthProvider>
     </Router>
