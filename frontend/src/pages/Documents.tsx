@@ -167,7 +167,7 @@ const Documents: React.FC = () => {
 
         <div className="flex gap-2">
           <Button
-            variant="secondary"
+            variant="primary"
             icon={<Icon type="plus" size={16} />}
             onClick={() => console.log("Criar novo documento")}
           >
