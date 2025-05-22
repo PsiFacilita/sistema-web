@@ -18,7 +18,7 @@
 Antes de começar a desenvolver, siga os passos abaixo para configurar seu ambiente:
 
 > [!IMPORTANT]
-> Recomenda-se que em SO Windows o ambiente de desenvolvimento seja executado em WSL (Windows Subsystem Linux). Caso precise de ajudar para entender ou instalar o WSL veja o conteúdo oficial da Microsoft [aqui](https://learn.microsoft.com/pt-br/windows/wsl/install) ou também o video-tutorial no [youtube](https://www.youtube.com/watch?v=oEdIf6mB_p4). 
+> Recomenda-se que em SO Windows o ambiente de desenvolvimento seja executado em WSL (Windows Subsystem Linux). Caso precise de ajudar para entender ou instalar o WSL veja o conteúdo oficial da Microsoft [aqui](https://learn.microsoft.com/pt-br/windows/wsl/install) ou também o videotutorial no [youtube](https://www.youtube.com/watch?v=oEdIf6mB_p4). 
 
 1. Clone o repositório:
 ```bash
