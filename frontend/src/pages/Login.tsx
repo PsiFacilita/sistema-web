@@ -98,18 +98,6 @@ const Login: React.FC = () => {
                 placeholder="••••••••"
                 disabled={isLoading}
               />
-              <div className="mt-2 text-right">
-                <Anchor 
-                  href="#" 
-                  className="text-sm text-red-600"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    openRecoveryModal();
-                  }}
-                >
-                  Esqueci minha senha
-                </Anchor>
-              </div>
             </div>
 
             <div>
@@ -124,6 +112,19 @@ const Login: React.FC = () => {
               </Button>
             </div>
           </form>
+
+          <div className="mt-3 text-center">
+                <Anchor 
+                  href="#" 
+                  className="text-sm text-600"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openRecoveryModal();
+                  }}
+                >
+                  Esqueci minha senha
+                </Anchor>
+              </div>
         </div>
       </div>
 
