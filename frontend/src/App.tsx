@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Appointments from './pages/Appointments';
 import Settings from './pages/Settings';
+import PatientRecord from './pages/PatientRecord';
 import Login from './pages/Login';
 import Patients from './pages/Patients';
 
@@ -20,6 +21,7 @@ const App: React.FC = () => {
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/records" element={<PatientRecord />} />
             <Route path="/patients" element={<Patients />} />
           </Routes>
         </AuthProvider>
