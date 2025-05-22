@@ -186,7 +186,7 @@ const Appointments: React.FC = () => {
           </h2>
 
           <Button
-          variant="secondary"
+          variant="primary"
           icon={<Icon type="plus" size={16} />}
           onClick={() => console.log("Adicionar novo agendamento")}
         >
