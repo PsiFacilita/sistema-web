@@ -177,15 +177,6 @@ const Modal: React.FC<ModalProps> = ({
                     {cancelButtonText}
                   </Button>
                 )}
-                <Button
-                  variant={type === 'error' ? 'danger' : 'primary'}
-                  onClick={() => {
-                    onConfirm?.();
-                    onClose();
-                  }}
-                >
-                  {confirmButtonText}
-                </Button>
               </div>
             )}
           </div>
