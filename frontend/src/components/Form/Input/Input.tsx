@@ -89,7 +89,7 @@ const Input: React.FC<InputProps> = ({
     }
   };
 
-  const baseClasses = `block w-full rounded-md border shadow-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 ${
+  const baseClasses = `block w-full p-2 rounded-md border shadow-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 ${
     disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
   }`;
 
