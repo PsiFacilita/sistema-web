@@ -6,9 +6,9 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const sidebarItems = [
   { name: 'Dashboard', icon: 'dashboard' as IconType, path: '/dashboard' },
-  { name: 'Agendamentos', icon: 'calendar' as IconType, path: '/appointments' },
   { name: 'Pacientes', icon: 'users' as IconType, path: '/patients' },
   { name: 'Documentos', icon: 'folder' as IconType, path: '/documents' },
+  { name: 'Agendamentos', icon: 'calendar' as IconType, path: '/appointments' },
   { name: 'Configurações', icon: 'settings' as IconType, path: '/settings' },
   { name: 'Sair', icon: 'logout' as IconType, path: '/logout' },
 ];
