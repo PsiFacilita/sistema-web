@@ -8,6 +8,7 @@ import Table from "../components/Table/Table";
 import DocumentCategoryDropdown from "../components/DocumentCategoryDropdown";
 import Icon from "../components/Icon/Icon";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import Swal from "sweetalert2";
 
 interface Document {
   id: string;
@@ -17,6 +18,25 @@ interface Document {
   createdAt: string;
   status: "draft" | "final" | "archived" | "pending_review";
 }
+
+const handleDeleteDocument = (id: string) => {
+  Swal.fire({
+    title: 'Tem certeza?',
+    text: 'Essa ação não poderá ser desfeita!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#aaa',
+    confirmButtonText: 'Sim, deletar',
+    cancelButtonText: 'Cancelar',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      console.log("Documento deletado:", id);
+      // Aqui você pode fazer a lógica real de exclusão (API, estado, etc.)
+      Swal.fire('Deletado!', 'O documento foi deletado.', 'success');
+    }
+  });
+};
 
 const formatStatus = (status: Document["status"]) => {
   const statusMap = {
