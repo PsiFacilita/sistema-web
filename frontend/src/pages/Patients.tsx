@@ -43,20 +43,23 @@ const StatusCell: React.FC<{ value: Patient["status"] }> = ({ value }) => {
 const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
   return (
     <div className="flex space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        icon={<FiEye size={16} />}
-        aria-label="Visualizar"
-        onClick={() => console.log("View patient", value)}
-      />
-      <Button
-        variant="outline"
-        size="sm"
-        icon={<Icon type="edit" size={16} />}
-        aria-label="Editar"
-        onClick={() => console.log("Edit patient", value)}
-      />
+      {/* Botão visualizar */}
+     <button
+  onClick={() => console.log("Visualizar documento", value)}
+  className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+>
+  <FiEye size={16} />
+  Visualizar
+</button>
+
+      {/* Botão Editar */}
+      <button
+        onClick={() => console.log("Edit document", value)}
+        className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        <Icon type="edit" size={16} />
+        Editar
+      </button>
     </div>
   );
 };
