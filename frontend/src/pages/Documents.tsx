@@ -68,30 +68,29 @@ const StatusCell: React.FC<{ value: Document["status"] }> = ({ value }) => {
 const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
   return (
     <div className="flex space-x-2">
+      {/* Botão Editar */}
       <Button
-        variant="outline"
-        size="sm"
-        icon={<Icon type="edit" size={16} />}
-        aria-label="Editar"
         onClick={() => console.log("Edit document", value)}
-      />
-      <Button
-        variant="outline"
-        size="sm"
-        icon={<Icon type="folder" size={16} />}
-        aria-label="Visualizar"
-        onClick={() => console.log("View document", value)}
-      />
+        className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        <Icon type="edit" size={16} />
+        Editar
+      </Button>
+
+      {/* Botão Deletar */}
       <Button
         variant="danger"
-        size="sm"
-        icon={<Icon type="trash" size={16} />}
-        aria-label="Excluir"
-         onClick={() => handleDeleteDocument(value)}
-      />
+        onClick={() => handleDeleteDocument(value)}
+        className="flex items-center gap-1 rounded-md border border-red-300 px-3 py-1 text-sm text-red-600 hover:bg-red-50"
+      >
+        <Icon type="trash" size={16} />
+        Deletar
+      </Button>
     </div>
   );
 };
+
+
 
 const Documents: React.FC = () => {
   const [documents] = useState<Document[]>(
