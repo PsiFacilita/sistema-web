@@ -87,7 +87,7 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
         size="sm"
         icon={<Icon type="trash" size={16} />}
         aria-label="Excluir"
-        onClick={() => console.log("Delete document", value)}
+         onClick={() => handleDeleteDocument(value)}
       />
     </div>
   );
