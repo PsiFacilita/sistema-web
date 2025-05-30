@@ -26,6 +26,9 @@ const Appointments: React.FC = () => {
   const [daySchedules, setDaySchedules] = useState<DaySchedule[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = useState<CalendarEvent[]>([]);
+  
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
   // Função para gerar os dias do mês atual
   const getDaysInMonth = (year: number, month: number) => {
@@ -124,6 +127,16 @@ const Appointments: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleAppointmentClick = (event: CalendarEvent, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering parent click handlers
+    setSelectedEvent(event);
+    setIsAppointmentModalOpen(true);
+  };
+  
+  const handleBackToDayView = () => {
+    setIsAppointmentModalOpen(false);
+  };
+
   // Função para determinar a classe CSS baseada no tipo de evento
   const getEventTypeClass = (type: CalendarEvent['type']) => {
     switch (type) {
@@ -186,12 +199,12 @@ const Appointments: React.FC = () => {
           </h2>
 
           <Button
-          variant="primary"
-          icon={<Icon type="plus" size={16} />}
-          onClick={() => console.log("Adicionar novo agendamento")}
-        >
-          Novo Agendamento
-        </Button>
+            variant="primary"
+            icon={<Icon type="plus" size={16} />}
+            onClick={() => console.log("Adicionar novo agendamento")}
+          >
+            Novo Agendamento
+          </Button>
         </div>
 
         <Card>
@@ -227,7 +240,8 @@ const Appointments: React.FC = () => {
                         {events.slice(0, 3).map((event, idx) => (
                           <div 
                             key={idx} 
-                            className={`text-xs px-1 py-0.5 rounded truncate border ${getEventTypeClass(event.type)}`}
+                            className={`text-xs px-1 py-0.5 rounded truncate border ${getEventTypeClass(event.type)} cursor-pointer hover:bg-opacity-80`}
+                            onClick={(e) => handleAppointmentClick(event, e)}
                           >
                             {event.time} - {event.title}
                           </div>
@@ -260,7 +274,8 @@ const Appointments: React.FC = () => {
             {selectedDayEvents.map((event, index) => (
               <div 
                 key={index} 
-                className={`p-3 rounded border ${getEventTypeClass(event.type)}`}
+                className={`p-3 rounded border ${getEventTypeClass(event.type)} cursor-pointer hover:shadow-md transition-shadow`}
+                onClick={(e) => handleAppointmentClick(event, e)}
               >
                 <div className="flex justify-between items-start">
                   <div>
@@ -282,7 +297,7 @@ const Appointments: React.FC = () => {
         
         <div className="mt-6 flex justify-end space-x-2">
           <Button 
-            variant="secondary"
+            variant="danger"
             onClick={() => setIsModalOpen(false)}
           >
             Fechar
@@ -296,6 +311,74 @@ const Appointments: React.FC = () => {
             Adicionar Evento
           </Button>
         </div>
+      </Modal>
+
+      {/* Modal para detalhes do agendamento */}
+      <Modal
+        isOpen={isAppointmentModalOpen}
+        onClose={() => setIsAppointmentModalOpen(false)}
+        title="Detalhes do Agendamento"
+        size="small"
+      >
+        {selectedEvent && (
+          <div className="space-y-4">
+            <div className={`p-4 rounded-lg ${getEventTypeClass(selectedEvent.type)}`}>
+              <h3 className="text-xl font-semibold mb-2">{selectedEvent.title}</h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <Icon type="clock" size={18} className="mr-2 opacity-70" />
+                  <span className="font-medium">{selectedEvent.time}</span>
+                </div>
+                
+                {selectedEvent.type === 'appointment' && selectedEvent.patientName && (
+                  <div className="flex items-center">
+                    <Icon type="user" size={18} className="mr-2 opacity-70" />
+                    <span>{selectedEvent.patientName}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center">
+                  <Icon type="tag" size={18} className="mr-2 opacity-70" />
+                  <span className="capitalize">{selectedEvent.type === 'appointment' ? 'Consulta' : 
+                    selectedEvent.type === 'break' ? 'Intervalo' : 'Indisponível'}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Detalhes adicionais */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium mb-2">Observações</h4>
+              <p className="text-gray-600 italic">
+                {selectedEvent.type === 'appointment' 
+                  ? 'Consulta regular agendada.'  
+                  : selectedEvent.type === 'break' 
+                    ? 'Período de intervalo programado.'
+                    : 'Horário marcado como indisponível.'}
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button
+                variant="danger"
+                onClick={handleBackToDayView}
+              >
+                Voltar
+              </Button>
+              {selectedEvent.type === 'appointment' && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => console.log('Edit appointment:', selectedEvent.id)}
+                  >
+                    <Icon type="edit" size={16} className="mr-1" />
+                    Editar
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
     </MainLayout>
   );
