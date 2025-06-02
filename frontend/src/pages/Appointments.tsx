@@ -322,7 +322,7 @@ const Appointments: React.FC = () => {
       >
         {selectedEvent && (
           <div className="space-y-4">
-            <div className={`p-4 rounded-lg ${getEventTypeClass(selectedEvent.type)}`}>
+            <div className={`p-4 rounded-lg`}>
               <h3 className="text-xl font-semibold mb-2">{selectedEvent.title}</h3>
               
               <div className="space-y-3">
