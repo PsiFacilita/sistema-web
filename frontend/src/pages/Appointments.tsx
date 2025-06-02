@@ -337,12 +337,6 @@ const Appointments: React.FC = () => {
                     <span>{selectedEvent.patientName}</span>
                   </div>
                 )}
-                
-                <div className="flex items-center">
-                  <Icon type="tag" size={18} className="mr-2 opacity-70" />
-                  <span className="capitalize">{selectedEvent.type === 'appointment' ? 'Consulta' : 
-                    selectedEvent.type === 'break' ? 'Intervalo' : 'Indisponível'}</span>
-                </div>
               </div>
             </div>
             
