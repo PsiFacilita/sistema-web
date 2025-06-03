@@ -69,23 +69,23 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
   return (
     <div className="flex space-x-2">
       {/* Botão Editar */}
-      <Button
+      <button
         onClick={() => console.log("Edit document", value)}
-        className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+        className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-green-700 hover:bg-green-700  hover:text-white transition"
       >
         <Icon type="edit" size={16} />
         Editar
-      </Button>
+      </button>
 
       {/* Botão Deletar */}
-      <Button
-        variant="danger"
+      <button
         onClick={() => handleDeleteDocument(value)}
-        className="flex items-center gap-1 rounded-md border border-red-300 px-3 py-1 text-sm text-red-600 hover:bg-red-50"
+        className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-red-500 hover:bg-red-500 hover:text-white transition"
+
       >
         <Icon type="trash" size={16} />
         Deletar
-      </Button>
+      </button>
     </div>
   );
 };
