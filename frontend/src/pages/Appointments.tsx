@@ -160,6 +160,13 @@ const Appointments: React.FC = () => {
     return daySchedule?.events || [];
   };
 
+  const getBadgeClass = (title: string) => {
+    if (title.includes('Consulta')) return 'bg-green-100 text-green-800';
+    if (title.includes('Indisponível')) return 'bg-red-100 text-red-800';
+    if (title.includes('Intervalo')) return 'bg-yellow-100 text-yellow-800';
+      return 'bg-gray-200 text-gray-800';
+  };
+
   return (
     <MainLayout>
       <div className="pb-6">
@@ -322,23 +329,26 @@ const Appointments: React.FC = () => {
       >
         {selectedEvent && (
           <div className="space-y-4">
-            <div className={`p-4 rounded-lg`}>
-              <h3 className="text-xl font-semibold mb-2">{selectedEvent.title}</h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <Icon type="clock" size={18} className="mr-2 opacity-70" />
-                  <span className="font-medium">{selectedEvent.time}</span>
-                </div>
-                
-                {selectedEvent.type === 'appointment' && selectedEvent.patientName && (
+            <div className="p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-semibold">{selectedEvent.title}</h3>
+                    <span className={`text-sm font-medium px-2 py-0.5 rounded-full flex items-center ${getBadgeClass(selectedEvent.title)}`}>
+                      <Icon type="clock" size={14} className="mr-1 opacity-70" />
+                        {selectedEvent.time}
+                      </span>
+                  </div>
+
+
+                <div className="space-y-3">
+                  {selectedEvent.type === 'appointment' && selectedEvent.patientName && (
                   <div className="flex items-center">
                     <Icon type="user" size={18} className="mr-2 opacity-70" />
                     <span>{selectedEvent.patientName}</span>
                   </div>
-                )}
-              </div>
-            </div>
+                  )}
+                </div>
+          </div>
+
             
             {/* Detalhes adicionais */}
             <div className="border-t pt-4 mt-4">
