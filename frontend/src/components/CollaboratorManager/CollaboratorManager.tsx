@@ -5,6 +5,9 @@ import Button from '../Button';
 import Input from '../Form/Input';
 import Label from '../Form/Label';
 import Modal from '../Modal/Modal';
+import Icon from "../Icon/Icon";
+import { FiEye } from "react-icons/fi";
+import Swal from "sweetalert2";
 
 interface Collaborator {
   id: string;
@@ -16,6 +19,25 @@ interface Collaborator {
 interface CollaboratorManagerProps {
   initialCollaborators?: Collaborator[];
   onSave?: (data: Collaborator[]) => void;
+}
+
+const handleDeleteDocument = (id: string) => {
+  Swal.fire({
+    title: 'Tem certeza?',
+    text: 'Essa ação não poderá ser desfeita!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#aaa',
+    confirmButtonText: 'Sim, deletar',
+    cancelButtonText: 'Cancelar',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      console.log("Documento deletado:", id);
+      // Aqui você pode fazer a lógica real de exclusão (API, estado, etc.)
+      Swal.fire('Deletado!', 'O documento foi deletado.', 'success');
+    }
+  });
 }
 
 const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({
@@ -67,13 +89,29 @@ const CollaboratorManager: React.FC<CollaboratorManagerProps> = ({
   // Componente personalizado para a coluna de ações
   const ActionCell: React.FC<{ value: string }> = ({ value }) => {
     return (
-      <Button 
-        variant="danger" 
-        size="sm"
-        onClick={() => handleRemoveCollaborator(value)}
-      >
-        Remover
-      </Button>
+      <div className="flex space-x-2">
+        <button
+          onClick={() => console.log("Visualizar colaborador", value)}
+          className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700  hover:text-white transition"
+        >
+          <FiEye size={16} />
+        </button>
+
+        <button
+        onClick={() => console.log("Edit document", value)}
+                 className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-green-700 hover:bg-green-700  hover:text-white transition"
+
+        >
+          <Icon type="edit" size={16} />
+        </button>
+
+        <button
+          onClick={() => handleDeleteDocument(value)}
+          className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-red-500 hover:bg-red-500 hover:text-white transition"
+        >
+          <Icon type="trash" size={16} />
+        </button>
+      </div>
     );
   };
 
