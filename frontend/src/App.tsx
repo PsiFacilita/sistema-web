@@ -4,6 +4,7 @@ import { AuthProvider } from './hooks/useAuth';
 
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
+import DocumentViewer from './pages/DocumentViewer';
 import Appointments from './pages/Appointments';
 import Settings from './pages/Settings';
 import PatientRecord from './pages/PatientRecord';
@@ -22,6 +23,7 @@ const App: React.FC = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/documents" element={<Documents />} />
+            <Route path="/documents/:id/view" element={<DocumentViewer />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/records" element={<PatientRecord />} />
             <Route path="/patients" element={<Patients />} />
