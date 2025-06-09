@@ -345,7 +345,7 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
       <div className="mt-8">
         <div className="flex justify-between items-center mb-4">
           <h4 className="font-medium text-lg">Exceções e Datas Especiais</h4>
-          <Button variant="secondary" onClick={handleAddException}>
+          <Button variant="primary" onClick={handleAddException}>
             Adicionar Exceção
           </Button>
         </div>
