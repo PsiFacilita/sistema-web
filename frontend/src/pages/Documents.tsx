@@ -10,7 +10,7 @@ import DocumentCategoryDropdown from "../components/DocumentCategoryDropdown";
 import Icon from "../components/Icon/Icon";
 import Modal from "../components/Modal/Modal";
 import { Select } from "../components/Form/Select/Select";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
 import Swal from "sweetalert2";
 
 export interface Document {
@@ -74,13 +74,15 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
   return (
     <div className="flex space-x-2">
       {/* Botão Visualizar */}
-      <Button
-        onClick={() => navigate(`/documents/${value}/view`)}
-        className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
-      >
-        <Icon type="folder" size={16} />
+      <button
+        onClick={() => console.log("Visualizar documento", value)}
+               className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700  hover:text-white transition"
+      
+        >
+        
+        <FiEye size={16} />
         Visualizar
-      </Button>
+      </button>
 
 
       {/* Botão Editar */}
