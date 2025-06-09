@@ -46,8 +46,10 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
       {/* Botão visualizar */}
      <button
   onClick={() => console.log("Visualizar documento", value)}
-  className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
->
+         className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700  hover:text-white transition"
+
+  >
+  
   <FiEye size={16} />
   Visualizar
 </button>
@@ -55,7 +57,8 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
       {/* Botão Editar */}
       <button
         onClick={() => console.log("Edit document", value)}
-        className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                 className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-green-700 hover:bg-green-700  hover:text-white transition"
+
       >
         <Icon type="edit" size={16} />
         Editar
