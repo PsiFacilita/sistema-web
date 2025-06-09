@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Title from "../components/Title/Title";
 import MainLayout from "../components/layout/MainLayout/MainLayout";
 import Card from "../components/Card/Card";
@@ -12,7 +13,7 @@ import { Select } from "../components/Form/Select/Select";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import Swal from "sweetalert2";
 
-interface Document {
+export interface Document {
   id: string;
   title: string;
   category: string;
@@ -68,8 +69,20 @@ const StatusCell: React.FC<{ value: Document["status"] }> = ({ value }) => {
 };
 
 const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
+  const navigate = useNavigate();
+  
   return (
     <div className="flex space-x-2">
+      {/* Botão Visualizar */}
+      <Button
+        onClick={() => navigate(`/documents/${value}/view`)}
+        className="flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        <Icon type="folder" size={16} />
+        Visualizar
+      </Button>
+
+
       {/* Botão Editar */}
       <button
         onClick={() => console.log("Edit document", value)}
