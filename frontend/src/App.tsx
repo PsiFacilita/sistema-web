@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import Patients from './pages/Patients';
 import Help from './pages/Help';
 import PasswordReset from './pages/PasswordReset';
+import PatientView from './pages/PatientView';
 
 const App: React.FC = () => {
   return (
@@ -27,6 +28,7 @@ const App: React.FC = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/records" element={<PatientRecord />} />
             <Route path="/patients" element={<Patients />} />
+            <Route path="/patients/:id" element={<PatientView />} />
             <Route path="/help" element={<Help />} />
 
             <Route path="/password-reset" element={<PasswordReset />} />
