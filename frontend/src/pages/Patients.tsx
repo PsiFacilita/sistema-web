@@ -7,6 +7,7 @@ import Input from "../components/Form/Input/Input";
 import Table from "../components/Table/Table";
 import Icon from "../components/Icon/Icon";
 import { FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 interface Patient {
   id: string;
@@ -40,23 +41,29 @@ const StatusCell: React.FC<{ value: Patient["status"] }> = ({ value }) => {
   );
 };
 
+
 const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
+  const navigate = useNavigate(); // Utilize o hook aqui
+
   return (
     <div className="flex space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        icon={<FiEye size={16} />}
-        aria-label="Visualizar"
-        onClick={() => console.log("View patient", value)}
-      />
-      <Button
-        variant="outline"
-        size="sm"
-        icon={<Icon type="edit" size={16} />}
-        aria-label="Editar"
-        onClick={() => console.log("Edit patient", value)}
-      />
+      {/* Botão visualizar */}
+      <button
+        onClick={() => navigate(`/patients/:id`)} // Navegação para a página PatientView
+        className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700 hover:text-white transition"
+      >
+        <FiEye size={16} />
+        Visualizar
+      </button>
+
+      {/* Botão Editar */}
+      <button
+        onClick={() => console.log("Editar documento", value)}
+        className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-green-700 hover:bg-green-700 hover:text-white transition"
+      >
+        <Icon type="edit" size={16} />
+        Editar
+      </button>
     </div>
   );
 };

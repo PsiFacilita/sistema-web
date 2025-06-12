@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Title from "../components/Title/Title";
 import MainLayout from "../components/layout/MainLayout/MainLayout";
 import Card from "../components/Card/Card";
@@ -7,10 +8,12 @@ import Input from "../components/Form/Input/Input";
 import Table from "../components/Table/Table";
 import DocumentCategoryDropdown from "../components/DocumentCategoryDropdown";
 import Icon from "../components/Icon/Icon";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import Modal from "../components/Modal/Modal";
+import { Select } from "../components/Form/Select/Select";
+import { FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
 import Swal from "sweetalert2";
 
-interface Document {
+export interface Document {
   id: string;
   title: string;
   category: string;
@@ -66,32 +69,45 @@ const StatusCell: React.FC<{ value: Document["status"] }> = ({ value }) => {
 };
 
 const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
+  const navigate = useNavigate();
+  
   return (
     <div className="flex space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        icon={<Icon type="edit" size={16} />}
-        aria-label="Editar"
+      {/* Botão Visualizar */}
+      <button
+        onClick={() => console.log("Visualizar documento", value)}
+               className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700  hover:text-white transition"
+      
+        >
+        
+        <FiEye size={16} />
+        Visualizar
+      </button>
+
+
+      {/* Botão Editar */}
+      <button
         onClick={() => console.log("Edit document", value)}
-      />
-      <Button
-        variant="outline"
-        size="sm"
-        icon={<Icon type="folder" size={16} />}
-        aria-label="Visualizar"
-        onClick={() => console.log("View document", value)}
-      />
-      <Button
-        variant="danger"
-        size="sm"
-        icon={<Icon type="trash" size={16} />}
-        aria-label="Excluir"
-         onClick={() => handleDeleteDocument(value)}
-      />
+        className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-green-700 hover:bg-green-700  hover:text-white transition"
+      >
+        <Icon type="edit" size={16} />
+        Editar
+      </button>
+
+      {/* Botão Deletar */}
+      <button
+        onClick={() => handleDeleteDocument(value)}
+        className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-red-500 hover:bg-red-500 hover:text-white transition"
+
+      >
+        <Icon type="trash" size={16} />
+        Deletar
+      </button>
     </div>
   );
 };
+
+
 
 const Documents: React.FC = () => {
   const [documents] = useState<Document[]>(
@@ -115,6 +131,12 @@ const Documents: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newDocument, setNewDocument] = useState({
+    title: "",
+    category: "",
+    patient: "",
+  });
   const documentsPerPage = 11;
 
   const documentCategories = [
@@ -164,9 +186,42 @@ const Documents: React.FC = () => {
       Cell: ActionsCell,
     },
   ];
-
   const totalPages = Math.ceil(filteredDocuments.length / documentsPerPage);
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  const handleCreateDocument = () => {
+    if (!newDocument.title || !newDocument.category || !newDocument.patient) {
+      Swal.fire('Erro', 'Preencha todos os campos obrigatórios', 'error');
+      return;
+    }
+
+    // Aqui você adicionaria a lógica para salvar o documento na API
+    console.log("Criando documento:", newDocument);
+    
+    Swal.fire('Sucesso!', 'Documento criado com sucesso!', 'success');
+    setIsModalOpen(false);
+    setNewDocument({ title: "", category: "", patient: "" });
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setNewDocument(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  const categoryOptions = [
+    { value: "Anamnese", label: "Anamnese" },
+    { value: "Relatório", label: "Relatório" },
+    { value: "Evolução", label: "Evolução" },
+    { value: "Laudo", label: "Laudo" },
+  ];
+
+  // Lista de pacientes 
+  const patientOptions = [
+    { value: "1", label: "Paciente 1" },
+    { value: "2", label: "Paciente 2" },
+    { value: "3", label: "Paciente 3" },
+  ];
 
   return (
     <MainLayout>
@@ -185,18 +240,16 @@ const Documents: React.FC = () => {
           />
         </div>
 
-        <div className="flex gap-2">
-          <Button
+        <div className="flex gap-2">          <Button
             variant="primary"
             icon={<Icon type="plus" size={16} />}
-            onClick={() => console.log("Criar novo documento")}
+            onClick={() => setIsModalOpen(true)}
           >
             Novo Documento
           </Button>
         </div>
-      </div>
-
-      <Card>
+      </div>      
+       <Card>
         {currentDocuments.length > 0 ? (
           <>
             <Table data={currentDocuments} columns={columns} />
@@ -318,6 +371,72 @@ const Documents: React.FC = () => {
           </div>
         )}
       </Card>
+
+      {/* Modal para criar novo documento */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Criar Novo Documento"
+        size="medium"
+        showCloseButton={true}
+      >
+        <div className="space-y-4 mt-4">
+          <div>
+            <label htmlFor="document-title" className="block text-sm font-medium text-gray-700 mb-1">
+              Título do Documento *
+            </label>
+            <Input
+              id="document-title"
+              type="text"
+              placeholder="Digite o título do documento"
+              value={newDocument.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="document-category" className="block text-sm font-medium text-gray-700 mb-1">
+              Categoria *
+            </label>
+            <Select
+              id="document-category"
+              value={newDocument.category}
+              onChange={(e) => handleInputChange("category", e.target.value)}
+              options={categoryOptions}
+              placeholder="Selecione uma categoria"
+              required
+            />
+          </div>          <div>
+            <label htmlFor="document-patient" className="block text-sm font-medium text-gray-700 mb-1">
+              Paciente *
+            </label>
+            <Select
+              id="document-patient"
+              value={newDocument.patient}
+              onChange={(e) => handleInputChange("patient", e.target.value)}
+              options={patientOptions}
+              placeholder="Selecione um paciente"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateDocument}
+            >
+              Criar Documento
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </MainLayout>
   );
 };

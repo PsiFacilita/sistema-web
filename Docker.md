@@ -1,6 +1,6 @@
 # Docker
 
-Os comandos listados a seguir são baseado em "docker compose", para funcionarem nesse projeto, devem ser executados na raiz do projeto.
+Os comandos listados a seguir são baseados em "docker compose", para funcionarem nesse projeto, devem ser executados na raiz do projeto.
 
 ## Executando todos os containers
 

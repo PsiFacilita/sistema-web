@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
       {
         label: 'Pacientes Inativos',
         data: [2, 3, 1, 5, 2, 1],
-        backgroundColor: '#047857',
+        backgroundColor: '#903A1D',
       },
     ],
   };
