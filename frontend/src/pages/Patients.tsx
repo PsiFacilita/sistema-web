@@ -7,7 +7,15 @@ import Input from "../components/Form/Input/Input";
 import Table from "../components/Table/Table";
 import Icon from "../components/Icon/Icon";
 import { FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
+<<<<<<< Updated upstream
 import { useNavigate } from "react-router-dom";
+=======
+<<<<<<< Updated upstream
+=======
+import { useNavigate } from "react-router-dom";
+import PatientModal from "../components/PatientModal/PatientModal";
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
 interface Patient {
   id: string;
@@ -43,6 +51,7 @@ const StatusCell: React.FC<{ value: Patient["status"] }> = ({ value }) => {
 
 
 const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
+<<<<<<< Updated upstream
   const navigate = useNavigate(); // Utilize o hook aqui
 
   return (
@@ -50,13 +59,38 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
       {/* Botão visualizar */}
       <button
         onClick={() => navigate(`/patients/:id`)} // Navegação para a página PatientView
+=======
+<<<<<<< Updated upstream
+  return (
+    <div className="flex space-x-2">
+      {/* Botão visualizar */}
+     <button
+  onClick={() => console.log("Visualizar documento", value)}
+         className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700  hover:text-white transition"
+
+  >
+  
+  <FiEye size={16} />
+  Visualizar
+</button>
+=======
+  const navigate = useNavigate();
+
+  return (
+    <div className="flex space-x-2">
+      <button
+        onClick={() => navigate(`/pacientes/${value}`)}
+>>>>>>> Stashed changes
         className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700 hover:text-white transition"
       >
         <FiEye size={16} />
         Visualizar
       </button>
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
-      {/* Botão Editar */}
       <button
         onClick={() => console.log("Editar documento", value)}
         className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-green-700 hover:bg-green-700 hover:text-white transition"
@@ -69,7 +103,7 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
 };
 
 const Patients: React.FC = () => {
-  const [patients] = useState<Patient[]>(
+  const [patients, setPatients] = useState<Patient[]>(
     Array.from({ length: 50 }, (_, i) => ({
       id: `patient-${i + 1}`,
       name: `Paciente ${i + 1}`,
@@ -82,6 +116,7 @@ const Patients: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const patientsPerPage = 11;
 
   const filteredPatients = patients.filter(
@@ -118,6 +153,17 @@ const Patients: React.FC = () => {
   const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
+  const handleAddPatient = (newPatient: Omit<Patient, 'id' | 'createdAt'>) => {
+    const patientToAdd: Patient = {
+      ...newPatient,
+      id: `patient-${patients.length + 1}`,
+      createdAt: new Date().toLocaleDateString("pt-BR"),
+    };
+    
+    setPatients([patientToAdd, ...patients]);
+    setIsModalOpen(false);
+  };
+
   return (
     <MainLayout>
       <div className="mb-6">
@@ -139,7 +185,7 @@ const Patients: React.FC = () => {
           <Button
             variant="primary"
             icon={<Icon type="plus" size={16} />}
-            onClick={() => console.log("Adicionar novo paciente")}
+            onClick={() => setIsModalOpen(true)}
           >
             Novo Paciente
           </Button>
@@ -267,6 +313,12 @@ const Patients: React.FC = () => {
           </div>
         )}
       </Card>
+
+      <PatientModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleAddPatient}
+      />
     </MainLayout>
   );
 };
