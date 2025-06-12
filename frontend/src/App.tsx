@@ -28,8 +28,8 @@ const App: React.FC = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/records" element={<PatientRecord />} />
             <Route path="/patients" element={<Patients />} />
+            <Route path="/patients/:id" element={<PatientView />} />
             <Route path="/help" element={<Help />} />
-            <Route path="/pacientes/:id" element={<PatientView />} />
 
             <Route path="/password-reset" element={<PasswordReset />} />
           </Routes>

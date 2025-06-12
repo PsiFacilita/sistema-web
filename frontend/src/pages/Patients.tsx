@@ -49,7 +49,7 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
     <div className="flex space-x-2">
       {/* Botão visualizar */}
       <button
-        onClick={() => navigate(`/pacientes/:id`)} // Navegação para a página PatientView
+        onClick={() => navigate(`/patients/:id`)} // Navegação para a página PatientView
         className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700 hover:text-white transition"
       >
         <FiEye size={16} />
