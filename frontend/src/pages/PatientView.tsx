@@ -61,16 +61,9 @@ const PatientView: React.FC = () => {
     key: keyof PatientData,
     className = ""
   ) => (
-    <div className={`border border-gray-200 rounded-xl p-4 bg-white ${className}`}>
-      <div className="flex justify-between items-start mb-1">
+    <div className={`border border-gray-100 rounded-xl p-4 bg-white ${className}`}>
+      <div className="flex justify-between items-start">
         <p className="text-gray-500 text-sm">{label}</p>
-        <button
-          className="text-primary-600 text-sm flex items-center gap-1"
-          onClick={() => openEdit(key, label)}
-        >
-          <Icon type="edit" size={14} />
-          Editar
-        </button>
       </div>
       <p className="text-lg font-medium">{value}</p>
     </div>
@@ -78,9 +71,30 @@ const PatientView: React.FC = () => {
 
   return (
     <MainLayout sidebarOpen={false} setSidebarOpen={() => {}}>
-      <div className="mb-6">
-        <Title level={1}>Dados do paciente</Title>
+    <div className="flex justify-between items-center mb-6">
+      <div>
+        <Title level={1}>Dados de Paciente 1</Title>
       </div>
+      
+      <div className="flex gap-4">
+        <Button
+          variant="primary"
+          onClick={() => navigate(`/record/:id`)}
+        >
+          <div className="flex items-center">
+            <Icon type="folder" className="mr-2" /> Prontuário
+          </div>
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate(-1)}
+        >
+          <div className="flex items-center">
+            <Icon type="x" className="mr-2" /> Voltar
+          </div>
+        </Button>
+      </div>
+    </div>
 
       <Card className="mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -93,23 +107,6 @@ const PatientView: React.FC = () => {
           {renderField("Anotações", patientData.notes, "notes", "md:col-span-2")}
         </div>
       </Card>
-
-      <div className="flex justify-end gap-4">
-        <Button
-          variant="primary"
-          icon={<Icon type="edit" size={16} />}
-          onClick={() => console.log("Ir para prontuário do paciente", id)}
-        >
-          Prontuário
-        </Button>
-        <Button
-          variant="outline"
-          icon={<Icon type="edit" size={16} />}
-          onClick={() => navigate(-1)}
-        >
-          Voltar
-        </Button>
-      </div>
 
       {editingField && (
         <EditFieldModal
