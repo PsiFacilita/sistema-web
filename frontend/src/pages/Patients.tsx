@@ -8,6 +8,7 @@ import Table from "../components/Table/Table";
 import Icon from "../components/Icon/Icon";
 import { FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import PatientModal from "../components/PatientModal/PatientModal";
 
 interface Patient {
   id: string;
@@ -69,7 +70,7 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
 };
 
 const Patients: React.FC = () => {
-  const [patients] = useState<Patient[]>(
+  const [patients, setPatients] = useState<Patient[]>(
     Array.from({ length: 50 }, (_, i) => ({
       id: `patient-${i + 1}`,
       name: `Paciente ${i + 1}`,
@@ -82,7 +83,19 @@ const Patients: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const patientsPerPage = 11;
+
+   const handleAddPatient = (newPatient: Omit<Patient, 'id' | 'createdAt'>) => {
+    const patientToAdd: Patient = {
+      ...newPatient,
+      id: `patient-${patients.length + 1}`,
+      createdAt: new Date().toLocaleDateString("pt-BR"),
+    };
+    
+    setPatients([patientToAdd, ...patients]);
+    setIsModalOpen(false);
+  };
 
   const filteredPatients = patients.filter(
     (patient) =>
@@ -139,7 +152,7 @@ const Patients: React.FC = () => {
           <Button
             variant="primary"
             icon={<Icon type="plus" size={16} />}
-            onClick={() => console.log("Adicionar novo paciente")}
+            onClick={() => setIsModalOpen(true)}
           >
             Novo Paciente
           </Button>
@@ -267,6 +280,12 @@ const Patients: React.FC = () => {
           </div>
         )}
       </Card>
+
+      <PatientModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAddPatient={handleAddPatient}
+      />
     </MainLayout>
   );
 };
