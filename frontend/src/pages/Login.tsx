@@ -6,6 +6,9 @@ import Anchor from '../components/Anchor/Anchor';
 import Modal from '../components/Modal/Modal';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/images/logo-psifacilita.png';
+import bgimage from '../assets/images//Backgrounds.jpeg'
+
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -32,16 +35,13 @@ const Login: React.FC = () => {
       }
     } catch {
       setError('Ocorreu um erro durante o login');
-    } finally {
+        } finally {
       setIsLoading(false);
     }
   };
 
   const handleRecoverySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Simulando o envio do email de recuperação
-    // Em um caso real, isso seria substituído por uma chamada à API
     setTimeout(() => {
       setRecoverySubmitted(true);
     }, 1000);
@@ -54,16 +54,29 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Acesse sua conta
-        </h2>
+    <div 
+  className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-600 via-gray-100 to-gray-600 overflow-hidden">
+
+      
+      
+      {/* Espaço para a logo */}
+      <div className=" flex justify-center w-full">
+        <img 
+          src={logo}
+          alt="Logo Psifacilita" 
+          className="w-80 mb-1" 
+        />
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {error && (
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white rounded-xl shadow-lg p-8 sm:p-10 w-full max-w-md border border-gray-200">
+
+
+          <h2 className="text-center text-2xl sm:text-3xl font-semibold text-gray-800 mb-6">Acesse sua conta</h2>
+
+
+
+   {error && (
             <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4">
               <div className="flex">
                 <div className="text-red-500">{error}</div>
@@ -71,9 +84,10 @@ const Login: React.FC = () => {
             </div>
           )}
           
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-3" onSubmit={handleSubmit}>
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-slate-950" >Email</Label>
+
               <Input
                 id="email"
                 name="email"
@@ -87,7 +101,8 @@ const Login: React.FC = () => {
             </div>
 
             <div>
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-slate-950">Senha</Label>
+
               <Input
                 id="password"
                 name="password"
@@ -102,6 +117,7 @@ const Login: React.FC = () => {
 
             <div>
               <Button 
+              
                 type="submit" 
                 variant="primary" 
                 fullWidth
@@ -114,17 +130,17 @@ const Login: React.FC = () => {
           </form>
 
           <div className="mt-3 text-center">
-                <Anchor 
-                  href="#" 
-                  className="text-sm text-600 underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    openRecoveryModal();
-                  }}
-                >
-                  Esqueci minha senha
-                </Anchor>
-              </div>
+            <Anchor 
+              href="#" 
+              className="text-sm text-600 underline"
+              onClick={(e) => {
+                e.preventDefault();
+                openRecoveryModal();
+              }}
+            >
+              Esqueci minha senha
+            </Anchor>
+          </div>
         </div>
       </div>
 
