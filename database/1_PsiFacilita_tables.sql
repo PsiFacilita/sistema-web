@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS configuracao_dias (
    FOREIGN KEY (configuracao_id) REFERENCES configuracao(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS configuracao_dia_especificos (
+CREATE TABLE IF NOT EXISTS configuracao_dias_especificos (
    id INT AUTO_INCREMENT PRIMARY KEY,
    configuracao_id INT NOT NULL,
    data DATE NOT NULL,
