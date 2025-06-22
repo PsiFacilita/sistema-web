@@ -19,7 +19,7 @@ const PersonalDataSettings: React.FC<PersonalDataFormProps> = ({
     name: '',
     email: '',
     phone: '',
-    specialization: '',
+    crp: '',
   },
   onSave 
 }) => {
@@ -79,13 +79,13 @@ const PersonalDataSettings: React.FC<PersonalDataFormProps> = ({
         </div>
 
         <div className="mb-4">
-          <Label htmlFor="specialization">Especialização</Label>
+          <Label className="mb-1" htmlFor="crp">CRP</Label>
           <Input
-            id="specialization"
-            name="specialization"
-            value={formData.specialization}
+            id="crp"
+            name="crp"
+            value={formData.crp}
             onChange={handleChange}
-            placeholder="Sua especialização"
+            placeholder="00/00000"
           />
         </div>
 
