@@ -72,6 +72,7 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
 };
 
 const Patients: React.FC = () => {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>(
     Array.from({ length: 50 }, (_, i) => ({
       id: `patient-${i + 1}`,
@@ -156,10 +157,9 @@ const Patients: React.FC = () => {
         <div className="flex gap-2">
           <Button
             variant="primary"
-            icon={<Icon type="plus" size={16} />}
-            onClick={() => setIsCustomFieldModalOpen(true)}
+            onClick={() => navigate("/custom-fields")}
           >
-            Campo Personalizado
+            Campos Personalizados
           </Button>
           <Button
             variant="primary"
