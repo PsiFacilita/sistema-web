@@ -294,20 +294,6 @@ const Patients: React.FC = () => {
         
       </Card>
 
-      {customFields.length > 0 && (
-        <Card className="mt-6">
-          <Title level={2}>Campos Personalizados</Title>
-          <ul className="mt-4 space-y-2">
-            {customFields.map((field, index) => (
-              <li key={index} className="flex justify-between border-b pb-2">
-                <span className="font-semibold">Nome do Campo</span> {field.name}
-                <span className="font-semibold">Tipo</span> {field.type}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
       <PatientModal
         isOpen={isPatientModalOpen}
         onClose={() => setIsPatientModalOpen(false)}
