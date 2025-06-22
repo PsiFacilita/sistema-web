@@ -9,6 +9,7 @@ import Icon from "../components/Icon/Icon";
 import { FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import PatientModal from "../components/PatientModal/PatientModal";
+import CustomFieldModal from "../components/CustomField/CustomFieldModal";
 
 interface Patient {
   id: string;
@@ -17,6 +18,11 @@ interface Patient {
   email: string;
   status: "active" | "inactive";
   createdAt: string;
+}
+
+interface CustomField {
+  name: string;
+  type: string;
 }
 
 const formatStatus = (status: Patient["status"]) => {
@@ -34,23 +40,19 @@ const StatusCell: React.FC<{ value: Patient["status"] }> = ({ value }) => {
   };
 
   return (
-    <span
-      className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[value]}`}
-    >
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[value]}`}>
       {formatStatus(value)}
     </span>
   );
 };
 
-
 const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
-  const navigate = useNavigate(); // Utilize o hook aqui
-
+  const navigate = useNavigate();
   return (
-    <div className="flex space-x-2">
-      {/* Botão visualizar */}
+    <div className="flex space-x-2">           
+      {/* Botão Visualizar */}
       <button
-        onClick={() => navigate(`/patients/:id`)} // Navegação para a página PatientView
+        onClick={() => navigate(`/patients/${value}`)}
         className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700 hover:text-white transition"
       >
         <FiEye size={16} />
@@ -70,6 +72,7 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
 };
 
 const Patients: React.FC = () => {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>(
     Array.from({ length: 50 }, (_, i) => ({
       id: `patient-${i + 1}`,
@@ -81,35 +84,38 @@ const Patients: React.FC = () => {
     }))
   );
 
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const patientsPerPage = 11;
+  const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+  const [isCustomFieldModalOpen, setIsCustomFieldModalOpen] = useState(false);
+  const patientsPerPage = 10;
 
-   const handleAddPatient = (newPatient: Omit<Patient, 'id' | 'createdAt'>) => {
+  const handleAddPatient = (newPatient: Omit<Patient, "id" | "createdAt">) => {
     const patientToAdd: Patient = {
       ...newPatient,
       id: `patient-${patients.length + 1}`,
       createdAt: new Date().toLocaleDateString("pt-BR"),
     };
-    
     setPatients([patientToAdd, ...patients]);
-    setIsModalOpen(false);
+    setIsPatientModalOpen(false);
+  };
+
+  const handleAddCustomField = (field: CustomField) => {
+    setCustomFields([...customFields, field]);
+    setIsCustomFieldModalOpen(false);
   };
 
   const filteredPatients = patients.filter(
     (patient) =>
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.phone.includes(searchTerm.toLowerCase()) ||
       patient.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const indexOfLastPatient = currentPage * patientsPerPage;
   const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
-  const currentPatients = filteredPatients.slice(
-    indexOfFirstPatient,
-    indexOfLastPatient
-  );
+  const currentPatients = filteredPatients.slice(indexOfFirstPatient, indexOfLastPatient);
 
   const columns = [
     { header: "Nome", accessor: "name" as keyof Patient },
@@ -128,7 +134,7 @@ const Patients: React.FC = () => {
     },
   ];
 
-  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
+ const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
@@ -151,8 +157,14 @@ const Patients: React.FC = () => {
         <div className="flex gap-2">
           <Button
             variant="primary"
+            onClick={() => navigate("/custom-fields")}
+          >
+            Campos Personalizados
+          </Button>
+          <Button
+            variant="primary"
             icon={<Icon type="plus" size={16} />}
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsPatientModalOpen(true)}
           >
             Novo Paciente
           </Button>
@@ -160,7 +172,7 @@ const Patients: React.FC = () => {
       </div>
 
       <Card>
-        {currentPatients.length > 0 ? (
+       {currentPatients.length > 0 ? (
           <>
             <Table data={currentPatients} columns={columns} />
 
@@ -279,12 +291,19 @@ const Patients: React.FC = () => {
             <p className="text-gray-500">Nenhum paciente encontrado.</p>
           </div>
         )}
+        
       </Card>
 
       <PatientModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAddPatient={handleAddPatient}
+        isOpen={isPatientModalOpen}
+        onClose={() => setIsPatientModalOpen(false)}
+        onSubmit={handleAddPatient}
+      />
+
+      <CustomFieldModal
+        isOpen={isCustomFieldModalOpen}
+        onClose={() => setIsCustomFieldModalOpen(false)}
+        onSubmit={handleAddCustomField}
       />
     </MainLayout>
   );
