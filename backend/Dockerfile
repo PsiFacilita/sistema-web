@@ -7,6 +7,8 @@ WORKDIR /app
 # Copie o arquivo package.json e package-lock.json para o contêiner
 COPY package*.json ./
 
+RUN apk add --no-cache python3 make g++ libtool
+
 # Instale as dependências
 RUN npm install
 
