@@ -12,8 +12,33 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.get('/api/data', (req, res) => {
-  res.json({ message: "Hello from backend" });
+app.post('/api/login', async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  try {
+    const [rows]: any = await db.query(
+      'SELECT * FROM usuario WHERE email = ? LIMIT 1',
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    const user = rows[0];
+    
+    const match = argon2.verify(user.password, password);
+
+    if (!match) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    res.json({ name: user.name, email: user.email });
+  } catch (err) {
+    console.error('Erro ao buscar usuário:', err);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
 });
 
 app.listen(port, () => {
