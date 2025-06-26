@@ -71,6 +71,36 @@ app.get('/api/dashboard', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao buscar dados do dashboard'});
 }
 });
+
+app.get('/api/patients', async (req: Request, res: Response) => {
+  try {
+    const [rows]: any = await db.query(`
+      SELECT 
+        id,
+        nome AS name,
+        telefone AS phone,
+        email,
+        ativo,
+        criado_em
+      FROM paciente
+      ORDER BY criado_em DESC
+    `);
+
+    const formatted = rows.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      phone: p.phone,
+      email: p.email,
+      status: p.ativo ? 'active' : 'inactive',
+      createdAt: new Date(p.criado_em).toLocaleDateString('pt-BR'),
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('Erro ao buscar pacientes:', err);
+    res.status(500).json({ error: 'Erro ao buscar pacientes' });
+  }
+});
 });
 
 app.listen(port, () => {

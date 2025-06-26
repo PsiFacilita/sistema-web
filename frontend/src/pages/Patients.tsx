@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Title from "../components/Title/Title";
 import MainLayout from "../components/layout/MainLayout/MainLayout";
 import Card from "../components/Card/Card";
@@ -49,8 +49,7 @@ const StatusCell: React.FC<{ value: Patient["status"] }> = ({ value }) => {
 const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
   const navigate = useNavigate();
   return (
-    <div className="flex space-x-2">           
-      {/* Botão Visualizar */}
+    <div className="flex space-x-2">
       <button
         onClick={() => navigate(`/patients/${value}`)}
         className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700 hover:text-white transition"
@@ -59,7 +58,6 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
         Visualizar
       </button>
 
-      {/* Botão Editar */}
       <button
         onClick={() => console.log("Editar documento", value)}
         className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-green-700 hover:bg-green-700 hover:text-white transition"
@@ -73,17 +71,8 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
 
 const Patients: React.FC = () => {
   const navigate = useNavigate();
-  const [patients, setPatients] = useState<Patient[]>(
-    Array.from({ length: 50 }, (_, i) => ({
-      id: `patient-${i + 1}`,
-      name: `Paciente ${i + 1}`,
-      phone: `(${11 + (i % 3)}) 9${8000 + i}-${4000 + i}`,
-      email: `paciente${i + 1}@email.com`,
-      status: i % 4 === 0 ? "inactive" : "active",
-      createdAt: new Date(Date.now() - i * 86400000).toLocaleDateString("pt-BR"),
-    }))
-  );
-
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,10 +80,29 @@ const Patients: React.FC = () => {
   const [isCustomFieldModalOpen, setIsCustomFieldModalOpen] = useState(false);
   const patientsPerPage = 10;
 
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/patients", {
+          credentials: "include",
+        });
+        const data = await response.json();
+        setPatients(data);
+      } catch (error) {
+        console.error("Erro ao buscar pacientes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatients();
+  }, []);
+
   const handleAddPatient = (newPatient: Omit<Patient, "id" | "createdAt">) => {
+    // Exemplo fictício de inclusão manual (não persiste no backend)
     const patientToAdd: Patient = {
       ...newPatient,
-      id: `patient-${patients.length + 1}`,
+      id: crypto.randomUUID(),
       createdAt: new Date().toLocaleDateString("pt-BR"),
     };
     setPatients([patientToAdd, ...patients]);
@@ -134,7 +142,7 @@ const Patients: React.FC = () => {
     },
   ];
 
- const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
+  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
@@ -155,10 +163,7 @@ const Patients: React.FC = () => {
         </div>
 
         <div className="flex gap-2">
-          <Button
-            variant="primary"
-            onClick={() => navigate("/custom-fields")}
-          >
+          <Button variant="primary" onClick={() => navigate("/custom-fields")}>
             Campos Personalizados
           </Button>
           <Button
@@ -172,10 +177,13 @@ const Patients: React.FC = () => {
       </div>
 
       <Card>
-       {currentPatients.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Carregando pacientes...</p>
+          </div>
+        ) : currentPatients.length > 0 ? (
           <>
             <Table data={currentPatients} columns={columns} />
-
             {totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4">
                 <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
@@ -186,9 +194,7 @@ const Patients: React.FC = () => {
                       <span className="font-medium">
                         {Math.min(indexOfLastPatient, filteredPatients.length)}
                       </span>{" "}
-                      de{" "}
-                      <span className="font-medium">{filteredPatients.length}</span>{" "}
-                      resultados
+                      de <span className="font-medium">{filteredPatients.length}</span> resultados
                     </p>
                   </div>
                   <div>
@@ -201,81 +207,28 @@ const Patients: React.FC = () => {
                         size="sm"
                         onClick={() => paginate(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 hover:bg-gray-50 focus:z-20"
+                        className="rounded-l-md px-2 py-2 text-gray-400 hover:bg-gray-50"
                       >
                         <span className="sr-only">Anterior</span>
                         <FiChevronLeft size={16} />
                       </Button>
-
-                      {(() => {
-                        const visiblePages = 5;
-                        const pages: number[] = [];
-                        let start = Math.max(1, currentPage - Math.floor(visiblePages / 2));
-                        let end = Math.min(totalPages, start + visiblePages - 1);
-
-                        if (end - start < visiblePages - 1) {
-                          start = Math.max(1, end - visiblePages + 1);
-                        }
-
-                        for (let i = start; i <= end; i++) {
-                          pages.push(i);
-                        }
-
-                        return (
-                          <>
-                            {start > 1 && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => paginate(1)}
-                                  className="px-3 py-1 text-sm"
-                                >
-                                  1
-                                </Button>
-                                <span className="px-2 py-1 text-sm text-gray-500">...</span>
-                              </>
-                            )}
-
-                            {pages.map((pageNumber) => (
-                              <Button
-                                key={pageNumber}
-                                variant={pageNumber === currentPage ? "primary" : "outline"}
-                                size="sm"
-                                onClick={() => paginate(pageNumber)}
-                                className={`px-4 py-2 text-sm font-semibold ${
-                                  pageNumber === currentPage
-                                    ? "z-10 bg-primary-600 text-white"
-                                    : "text-gray-900 hover:bg-gray-50"
-                                }`}
-                              >
-                                {pageNumber}
-                              </Button>
-                            ))}
-
-                            {end < totalPages && (
-                              <>
-                                <span className="px-2 py-1 text-sm text-gray-500">...</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => paginate(totalPages)}
-                                  className="px-3 py-1 text-sm"
-                                >
-                                  {totalPages}
-                                </Button>
-                              </>
-                            )}
-                          </>
-                        );
-                      })()}
-
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <Button
+                          key={i + 1}
+                          variant={i + 1 === currentPage ? "primary" : "outline"}
+                          size="sm"
+                          onClick={() => paginate(i + 1)}
+                          className="px-3 py-1"
+                        >
+                          {i + 1}
+                        </Button>
+                      ))}
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 hover:bg-gray-50 focus:z-20"
+                        className="rounded-r-md px-2 py-2 text-gray-400 hover:bg-gray-50"
                       >
                         <span className="sr-only">Próximo</span>
                         <FiChevronRight size={16} />
@@ -291,7 +244,6 @@ const Patients: React.FC = () => {
             <p className="text-gray-500">Nenhum paciente encontrado.</p>
           </div>
         )}
-        
       </Card>
 
       <PatientModal
