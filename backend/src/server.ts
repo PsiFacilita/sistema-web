@@ -44,6 +44,7 @@ app.post('/api/login', async (req: Request, res: Response) => {
 
 app.get('/api/dashboard', async (req: Request, res: Response) => {
   try {
+    // TODO PROX SEMESTRE: PEGAR O ID DO USUARIO LOGADO E ADICIONAR NA QUERY
     const [ativosRows]: any = await db.query('SELECT COUNT(*) AS ativos FROM paciente WHERE ativo = 1');
     const [inativosRows]: any = await db.query('SELECT COUNT(*) AS inativos FROM paciente WHERE ativo = 0');
     const [agendadasRows]: any = await db.query('SELECT COUNT(*) AS agendadas FROM agenda WHERE horario_inicio >= CURDATE()');
@@ -74,6 +75,7 @@ app.get('/api/dashboard', async (req: Request, res: Response) => {
 
 app.get('/api/patients', async (req: Request, res: Response) => {
   try {
+    // TODO PROX SEMESTRE: PEGAR O ID DO USUARIO LOGADO E ADICIONAR NA QUERY
     const [rows]: any = await db.query(`
       SELECT 
         id,
@@ -106,6 +108,7 @@ app.get('/api/patients/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
+    // TODO PROX SEMESTRE: PEGAR O ID DO USUARIO LOGADO E ADICIONAR NA QUERY
     const [rows]: any = await db.query(
       `SELECT 
         id,
