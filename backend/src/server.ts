@@ -132,6 +132,59 @@ app.get('/api/patients/:id', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/api/patients', async (req: Request, res: Response) => {
+  try {
+    const {
+      name,
+      cpf,
+      rg,
+      birthDate,
+      email,
+      phone,
+      notes,
+    } = req.body;
+
+    // TODO: usar ID do usuário autenticado
+    const usuarioId = 1;
+
+    // Normalização dos campos opcionais
+    const rgClean = rg?.trim() || null;
+    const emailClean = email?.trim() || null;
+    const notesClean = notes?.trim() || null;
+    const birthDateClean = birthDate?.trim() || null;
+    const cpfClean = cpf?.trim() || null;
+
+    const [result]: any = await db.query(
+      `INSERT INTO paciente (
+        usuario_id, nome, cpf, rg, data_nascimento, email, telefone, notas
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [usuarioId, name, cpfClean, rgClean, birthDateClean, emailClean, phone, notesClean]
+    );
+
+    const newId = result.insertId;
+
+    const [rows]: any = await db.query(
+      `SELECT id, nome AS name, telefone AS phone, email, ativo, criado_em 
+       FROM paciente WHERE id = ?`,
+      [newId]
+    );
+
+    const p = rows[0];
+
+    res.status(201).json({
+      id: p.id,
+      name: p.name,
+      phone: p.phone,
+      email: p.email,
+      status: p.ativo ? "active" : "inactive",
+      createdAt: new Date(p.criado_em).toLocaleDateString("pt-BR"),
+    });
+  } catch (err) {
+    console.error("Erro ao criar paciente:", err);
+    res.status(500).json({ error: "Erro ao criar paciente" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Backend running at http://localhost:${port}`);
 });

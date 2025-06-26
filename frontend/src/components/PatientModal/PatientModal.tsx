@@ -13,6 +13,7 @@ interface PatientModalProps {
     rg?: string;
     phone: string;
     email?: string;
+    notes?: string;
     status: "active" | "inactive";
   }) => void;
 }
@@ -24,6 +25,7 @@ const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSubmit }
   const [rg, setRg] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,6 +37,7 @@ const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSubmit }
       rg: rg || undefined,
       phone,
       email: email || undefined,
+      notes,
       status,
     });
     // Reset form
@@ -45,6 +48,7 @@ const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSubmit }
     setPhone("");
     setEmail("");
     setStatus("active");
+    setNotes("");
   };
 
   return (
@@ -115,7 +119,17 @@ const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSubmit }
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
-        
+
+        <label htmlFor="notes" className="block">
+          Anotações
+          <Input
+            id="notes"
+            placeholder="Observações sobre o paciente"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </label>
+
 
         <div className="flex justify-end space-x-3 pt-4">
           <Button variant="outline" type="button" onClick={onClose}>

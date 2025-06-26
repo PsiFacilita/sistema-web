@@ -14,9 +14,13 @@ import CustomFieldModal from "../components/CustomField/CustomFieldModal";
 interface Patient {
   id: string;
   name: string;
+  cpf: string;
+  rg: string;
+  birthDate: string;
   phone: string;
   email: string;
   status: "active" | "inactive";
+  notes: string;
   createdAt: string;
 }
 
@@ -98,17 +102,38 @@ const Patients: React.FC = () => {
     fetchPatients();
   }, []);
 
-  const handleAddPatient = (newPatient: Omit<Patient, "id" | "createdAt">) => {
-    // Exemplo fictício de inclusão manual (não persiste no backend)
-    const patientToAdd: Patient = {
-      ...newPatient,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toLocaleDateString("pt-BR"),
-    };
-    setPatients([patientToAdd, ...patients]);
-    setIsPatientModalOpen(false);
-  };
+  const handleAddPatient = async (newPatient: Omit<Patient, "id" | "createdAt">) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/patients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: newPatient.name,
+          cpf: newPatient.cpf,
+          rg: newPatient.rg,
+          birthDate: newPatient.birthDate,
+          email: newPatient.email,
+          phone: newPatient.phone,
+          notes: newPatient.notes?.trim() || "Nada a observar."
 
+        }),
+      });
+
+      if (!response.ok) throw new Error("Erro ao criar paciente");
+
+      const created = await response.json();
+      setPatients((prev) => [created, ...prev]);
+    } catch (error) {
+      console.error("Erro ao adicionar paciente:", error);
+      alert("Erro ao adicionar paciente");
+    } finally {
+      setIsPatientModalOpen(false);
+    }
+  };
+  
   const handleAddCustomField = (field: CustomField) => {
     setCustomFields([...customFields, field]);
     setIsCustomFieldModalOpen(false);
