@@ -101,6 +101,35 @@ app.get('/api/patients', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao buscar pacientes' });
   }
 });
+
+app.get('/api/patients/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const [rows]: any = await db.query(
+      `SELECT 
+        id,
+        nome AS name,
+        cpf,
+        rg,
+        DATE_FORMAT(data_nascimento, '%d/%m/%Y') AS birthDate,
+        email,
+        telefone AS phone,
+        notas AS notes
+      FROM paciente
+      WHERE id = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Paciente não encontrado' });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Erro ao buscar paciente:', err);
+    res.status(500).json({ error: 'Erro ao buscar paciente' });
+  }
 });
 
 app.listen(port, () => {

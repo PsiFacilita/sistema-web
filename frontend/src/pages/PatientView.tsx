@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout/MainLayout";
 import Title from "../components/Title/Title";
@@ -22,26 +22,37 @@ const PatientView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [patientData, setPatientData] = useState<PatientData>({
-    id: "patient-1",
-    name: "João da Silva",
-    cpf: "123.456.789-00",
-    rg: "12.345.678-9",
-    birthDate: "15/03/1980",
-    email: "joao.silva@email.com",
-    phone: "(11) 98765-4321",
-    notes: "Paciente com histórico de depressão e ansiedade generalizada.",
-  });
-
+  const [patientData, setPatientData] = useState<PatientData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [editingField, setEditingField] = useState<{
     key: keyof PatientData;
     label: string;
   } | null>(null);
 
+  useEffect(() => {
+    const fetchPatient = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/patients/${id}`, {
+          credentials: "include",
+        });
+        const data = await response.json();
+        setPatientData(data);
+      } catch (error) {
+        console.error("Erro ao buscar paciente:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchPatient();
+    }
+  }, [id]);
+
   const handleSaveField = (newValue: string) => {
-    if (editingField) {
+    if (editingField && patientData) {
       setPatientData((prev) => ({
-        ...prev,
+        ...prev!,
         [editingField.key]: newValue,
       }));
     }
@@ -69,32 +80,48 @@ const PatientView: React.FC = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="text-center py-10 text-gray-600">Carregando paciente...</div>
+      </MainLayout>
+    );
+  }
+
+  if (!patientData) {
+    return (
+      <MainLayout>
+        <div className="text-center py-10 text-red-600">Paciente não encontrado.</div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout sidebarOpen={false} setSidebarOpen={() => {}}>
-    <div className="flex justify-between items-center mb-6">
-      <div>
-        <Title level={1}>Dados de Paciente 1</Title>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <Title level={1}>Dados de {patientData.name}</Title>
+        </div>
+
+        <div className="flex gap-4">
+          <Button
+            variant="primary"
+            onClick={() => navigate(`/record/${id}`)}
+          >
+            <div className="flex items-center">
+              <Icon type="folder" className="mr-2" /> Prontuário
+            </div>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(-1)}
+          >
+            <div className="flex items-center">
+              <Icon type="x" className="mr-2" /> Voltar
+            </div>
+          </Button>
+        </div>
       </div>
-      
-      <div className="flex gap-4">
-        <Button
-          variant="primary"
-          onClick={() => navigate(`/record/:id`)}
-        >
-          <div className="flex items-center">
-            <Icon type="folder" className="mr-2" /> Prontuário
-          </div>
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate(-1)}
-        >
-          <div className="flex items-center">
-            <Icon type="x" className="mr-2" /> Voltar
-          </div>
-        </Button>
-      </div>
-    </div>
 
       <Card className="mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
