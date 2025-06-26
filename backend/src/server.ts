@@ -41,6 +41,36 @@ app.post('/api/login', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
+
+app.get('/api/dashboard', async (req: Request, res: Response) => {
+  try {
+    const [ativosRows]: any = await db.query('SELECT COUNT(*) AS ativos FROM paciente WHERE ativo = 1');
+    const [inativosRows]: any = await db.query('SELECT COUNT(*) AS inativos FROM paciente WHERE ativo = 0');
+    const [agendadasRows]: any = await db.query('SELECT COUNT(*) AS agendadas FROM agenda WHERE horario_inicio >= CURDATE()');
+
+    const [graficoRows]: any = await db.query(`
+      SELECT 
+        MONTH(criado_em) AS mes,
+        SUM(CASE WHEN ativo = 1 THEN 1 ELSE 0 END) AS ativos,
+        SUM(CASE WHEN ativo = 0 THEN 1 ELSE 0 END) AS inativos
+      FROM paciente
+      WHERE YEAR(criado_em) = YEAR(CURDATE())
+      GROUP BY MONTH(criado_em)
+      ORDER BY mes
+    `);
+
+    const cards = {
+      ativos: ativosRows[0]?.ativos || 0,
+      inativos: inativosRows[0]?.inativos || 0,
+      agendadas: agendadasRows[0]?.agendadas || 0,
+    };
+
+    res.json({ cards, grafico: graficoRows });
+  } catch (err) {
+    console.error('Erro no dashboard:', err);
+    res.status(500).json({ error: 'Erro ao buscar dados do dashboard'});
+}
+});
 });
 
 app.listen(port, () => {
