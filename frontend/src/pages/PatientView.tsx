@@ -7,6 +7,14 @@ import Button from "../components/Button/Button";
 import Icon from "../components/Icon/Icon";
 import PatientModal from "../components/PatientModal/PatientModal";
 
+interface CustomField {
+  id: number;
+  name: string;
+  type: string;
+  required: boolean;
+  value: string;
+}
+
 interface PatientData {
   id: string;
   name: string;
@@ -17,6 +25,7 @@ interface PatientData {
   phone: string;
   notes: string;
   status: "active" | "inactive";
+  customFields?: CustomField[];
 }
 
 const PatientView: React.FC = () => {
@@ -145,6 +154,21 @@ const PatientView: React.FC = () => {
           {renderField("Data de Nascimento", patientData.birthDate, "birthDate")}
           {renderField("E-mail", patientData.email, "email")}
           {renderField("Telefone", patientData.phone, "phone")}
+          {renderField("Status", patientData.status === "active" ? "Ativo" : "Inativo", "status")}
+
+          {patientData.customFields?.map((field) => (
+            <div
+              key={field.id}
+              className="border border-gray-100 rounded-xl p-4 bg-white"
+            >
+              <div className="flex justify-between items-start">
+                <p className="text-gray-500 text-sm">{field.name}</p>
+              </div>
+              <p className="text-lg font-medium break-words">
+                {field.value || <span className="text-gray-400 italic">Não preenchido</span>}
+              </p>
+            </div>
+          ))}
           {renderField("Anotações", patientData.notes, "notes", "md:col-span-2")}
         </div>
       </Card>
