@@ -9,7 +9,6 @@ import Icon from "../components/Icon/Icon";
 import { FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import PatientModal from "../components/PatientModal/PatientModal";
-import CustomFieldModal from "../components/CustomField/CustomFieldModal";
 
 interface Patient {
   id: string;
@@ -22,11 +21,6 @@ interface Patient {
   status: "active" | "inactive";
   notes: string;
   createdAt: string;
-}
-
-interface CustomField {
-  name: string;
-  type: string;
 }
 
 const formatStatus = (status: Patient["status"]) => {
@@ -77,11 +71,9 @@ const Patients: React.FC = () => {
   const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
-  const [isCustomFieldModalOpen, setIsCustomFieldModalOpen] = useState(false);
   const patientsPerPage = 10;
 
   useEffect(() => {
@@ -132,11 +124,6 @@ const Patients: React.FC = () => {
     } finally {
       setIsPatientModalOpen(false);
     }
-  };
-  
-  const handleAddCustomField = (field: CustomField) => {
-    setCustomFields([...customFields, field]);
-    setIsCustomFieldModalOpen(false);
   };
 
   const filteredPatients = patients.filter(
@@ -275,12 +262,6 @@ const Patients: React.FC = () => {
         isOpen={isPatientModalOpen}
         onClose={() => setIsPatientModalOpen(false)}
         onSubmit={handleAddPatient}
-      />
-
-      <CustomFieldModal
-        isOpen={isCustomFieldModalOpen}
-        onClose={() => setIsCustomFieldModalOpen(false)}
-        onSubmit={handleAddCustomField}
       />
     </MainLayout>
   );
