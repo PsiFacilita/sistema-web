@@ -3,6 +3,14 @@ import Button from "../Button/Button";
 import Input from "../Form/Input/Input";
 import Modal from "../Modal/Modal";
 
+interface CustomField {
+  id: number;
+  name: string;
+  type: string;
+  required: boolean;
+  value: string;
+}
+
 interface PatientModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,8 +23,10 @@ interface PatientModalProps {
     email?: string;
     notes?: string;
     status: "active" | "inactive";
+    customFields?: { id: number; value: string }[];
   }) => void;
   initialData?: {
+    id?: string;
     name?: string;
     birthDate?: string;
     cpf?: string;
@@ -25,6 +35,7 @@ interface PatientModalProps {
     email?: string;
     notes?: string;
     status?: "active" | "inactive";
+    customFields?: CustomField[];
   };
   title?: string;
   submitLabel?: string;
@@ -46,8 +57,23 @@ const PatientModal: React.FC<PatientModalProps> = ({
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   useEffect(() => {
+    const loadFields = async () => {
+      if (initialData?.id) {
+        const res = await fetch(`http://localhost:5000/api/patients/${initialData.id}`);
+        const data = await res.json();
+        if (data.customFields) setCustomFields(data.customFields);
+      } else {
+        const res = await fetch("http://localhost:5000/api/fields?usuario_id=1");
+        const fields = await res.json();
+        setCustomFields(fields.map((f: any) => ({ ...f, value: "" })));
+      }
+    };
+
+    loadFields();
+
     if (initialData) {
       setName(initialData.name || "");
       setBirthDate(initialData.birthDate || "");
@@ -62,6 +88,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     onSubmit({
       name,
       birthDate,
@@ -71,9 +98,9 @@ const PatientModal: React.FC<PatientModalProps> = ({
       email: email || undefined,
       notes,
       status,
+      customFields: customFields.map(({ id, value }) => ({ id, value })),
     });
 
-    // Limpa apenas se for criação (sem initialData)
     if (!initialData) {
       setName("");
       setBirthDate("");
@@ -83,6 +110,9 @@ const PatientModal: React.FC<PatientModalProps> = ({
       setEmail("");
       setStatus("active");
       setNotes("");
+      setCustomFields((prev) =>
+        prev.map((field) => ({ ...field, value: "" }))
+      );
     }
   };
 
@@ -154,6 +184,25 @@ const PatientModal: React.FC<PatientModalProps> = ({
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
+
+        {/* Campos personalizados dinâmicos */}
+        {customFields.map((field) => (
+          <label key={field.id} className="block">
+            {field.name}
+            <Input
+              type={field.type === "number" ? "number" : "text"}
+              value={field.value}
+              required={field.required}
+              onChange={(e) =>
+                setCustomFields((prev) =>
+                  prev.map((f) =>
+                    f.id === field.id ? { ...f, value: e.target.value } : f
+                  )
+                )
+              }
+            />
+          </label>
+        ))}
 
         <label htmlFor="notes" className="block">
           Anotações
