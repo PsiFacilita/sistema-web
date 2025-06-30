@@ -117,12 +117,12 @@ const CustomFields: React.FC = () => {
           </Button>
           <Button
             variant="outline"
-            icon={<Icon type="arrow-left" size={16} />}
-            onClick={() => navigate("/patients")}
+            onClick={() => navigate(-1)}
           >
-            Voltar para Pacientes
+            <div className="flex items-center">
+              <Icon type="x" className="mr-2" /> Voltar
+            </div>
           </Button>
-          
         </div>
       </div>
 
