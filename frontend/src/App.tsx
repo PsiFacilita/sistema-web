@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Patients from './pages/Patients';
 import Help from './pages/Help';
 import PasswordReset from './pages/PasswordReset';
+import CustomFields from './pages/CustomFields';
 
 const App: React.FC = () => {
   return (
@@ -27,6 +28,7 @@ const App: React.FC = () => {
             <Route path="/patients/:id" element={<PatientView />} />
             <Route path="/records/:id" element={<PatientRecord />} />
 
+            <Route path="/custom-fields" element={<CustomFields />} />
 
             <Route path="/appointments" element={<Appointments />} />
 
