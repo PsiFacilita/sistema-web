@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "../Button/Button";
 import Input from "../Form/Input/Input";
 import Modal from "../Modal/Modal";
@@ -16,9 +16,28 @@ interface PatientModalProps {
     notes?: string;
     status: "active" | "inactive";
   }) => void;
+  initialData?: {
+    name?: string;
+    birthDate?: string;
+    cpf?: string;
+    rg?: string;
+    phone?: string;
+    email?: string;
+    notes?: string;
+    status?: "active" | "inactive";
+  };
+  title?: string;
+  submitLabel?: string;
 }
 
-const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const PatientModal: React.FC<PatientModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+  title = "Adicionar Novo Paciente",
+  submitLabel = "Salvar Paciente",
+}) => {
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [cpf, setCpf] = useState("");
@@ -27,6 +46,19 @@ const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSubmit }
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
+
+  useEffect(() => {
+    if (initialData) {
+      setName(initialData.name || "");
+      setBirthDate(initialData.birthDate || "");
+      setCpf(initialData.cpf || "");
+      setRg(initialData.rg || "");
+      setPhone(initialData.phone || "");
+      setEmail(initialData.email || "");
+      setNotes(initialData.notes || "");
+      setStatus(initialData.status || "active");
+    }
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,19 +72,22 @@ const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSubmit }
       notes,
       status,
     });
-    // Reset form
-    setName("");
-    setBirthDate("");
-    setCpf("");
-    setRg("");
-    setPhone("");
-    setEmail("");
-    setStatus("active");
-    setNotes("");
+
+    // Limpa apenas se for criação (sem initialData)
+    if (!initialData) {
+      setName("");
+      setBirthDate("");
+      setCpf("");
+      setRg("");
+      setPhone("");
+      setEmail("");
+      setStatus("active");
+      setNotes("");
+    }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Adicionar Novo Paciente">
+    <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label htmlFor="name" className="block">
           Nome completo
@@ -130,13 +165,23 @@ const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSubmit }
           />
         </label>
 
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={status === "active"}
+            onChange={() =>
+              setStatus((prev) => (prev === "active" ? "inactive" : "active"))
+            }
+          />
+          Ativo
+        </label>
 
         <div className="flex justify-end space-x-3 pt-4">
           <Button variant="outline" type="button" onClick={onClose}>
             Cancelar
           </Button>
           <Button variant="primary" type="submit">
-            Salvar Paciente
+            {submitLabel}
           </Button>
         </div>
       </form>

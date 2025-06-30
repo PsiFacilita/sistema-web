@@ -188,6 +188,57 @@ app.post('/api/patients', async (req: Request, res: Response) => {
   }
 });
 
+app.put('/api/patient/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const {
+    name,
+    cpf,
+    rg,
+    birthDate,
+    email,
+    phone,
+    notes,
+    status,
+  } = req.body;
+
+  try {
+    const ativo = status === 'active';
+
+    const [result]: any = await db.query(
+      `UPDATE paciente SET 
+        nome = ?, 
+        cpf = ?, 
+        rg = ?, 
+        data_nascimento = ?, 
+        email = ?, 
+        telefone = ?, 
+        notas = ?, 
+        ativo = ?
+      WHERE id = ?`,
+      [
+        name?.trim(),
+        cpf?.trim(),
+        rg?.trim(),
+        birthDate?.trim(),
+        email?.trim() || null,
+        phone?.trim(),
+        notes?.trim() || null,
+        ativo,
+        id,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Paciente não encontrado' });
+    }
+
+    res.status(200).json({ message: 'Paciente atualizado com sucesso' });
+  } catch (err) {
+    console.error('Erro ao atualizar paciente:', err);
+    res.status(500).json({ error: 'Erro ao atualizar paciente' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Backend running at http://localhost:${port}`);
 });

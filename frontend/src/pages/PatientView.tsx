@@ -5,7 +5,7 @@ import Title from "../components/Title/Title";
 import Card from "../components/Card/Card";
 import Button from "../components/Button/Button";
 import Icon from "../components/Icon/Icon";
-import EditFieldModal from "../components/EditFieldModal/EditFieldModal";
+import PatientModal from "../components/PatientModal/PatientModal";
 
 interface PatientData {
   id: string;
@@ -16,6 +16,7 @@ interface PatientData {
   email: string;
   phone: string;
   notes: string;
+  status: "active" | "inactive";
 }
 
 const PatientView: React.FC = () => {
@@ -24,10 +25,7 @@ const PatientView: React.FC = () => {
 
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editingField, setEditingField] = useState<{
-    key: keyof PatientData;
-    label: string;
-  } | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     const fetchPatient = async () => {
@@ -49,23 +47,6 @@ const PatientView: React.FC = () => {
     }
   }, [id]);
 
-  const handleSaveField = (newValue: string) => {
-    if (editingField && patientData) {
-      setPatientData((prev) => ({
-        ...prev!,
-        [editingField.key]: newValue,
-      }));
-    }
-  };
-
-  const openEdit = (key: keyof PatientData, label: string) => {
-    setEditingField({ key, label });
-  };
-
-  const closeModal = () => {
-    setEditingField(null);
-  };
-
   const renderField = (
     label: string,
     value: string,
@@ -79,6 +60,31 @@ const PatientView: React.FC = () => {
       <p className="text-lg font-medium">{value}</p>
     </div>
   );
+
+  const handleUpdate = async (updatedPatient: Partial<PatientData>) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/patient/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPatient),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar paciente');
+      }
+
+      const data = await response.json();
+      console.log('Paciente atualizado:', data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleModalSubmit = async (updated: Partial<PatientData>) => {
+    await handleUpdate(updated);
+    setPatientData({ ...patientData!, ...updated });
+    setShowEditModal(false);
+  };
 
   if (loading) {
     return (
@@ -97,7 +103,7 @@ const PatientView: React.FC = () => {
   }
 
   return (
-    <MainLayout sidebarOpen={false} setSidebarOpen={() => {}}>
+    <MainLayout sidebarOpen={false} setSidebarOpen={() => { }}>
       <div className="flex justify-between items-center mb-6">
         <div>
           <Title level={1}>Dados de {patientData.name}</Title>
@@ -110,6 +116,14 @@ const PatientView: React.FC = () => {
           >
             <div className="flex items-center">
               <Icon type="folder" className="mr-2" /> Prontuário
+            </div>
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => setShowEditModal(true)}
+          >
+            <div className="flex items-center">
+              <Icon type="edit" className="mr-2" /> Editar
             </div>
           </Button>
           <Button
@@ -135,13 +149,14 @@ const PatientView: React.FC = () => {
         </div>
       </Card>
 
-      {editingField && (
-        <EditFieldModal
-          isOpen={true}
-          fieldLabel={editingField.label}
-          currentValue={patientData[editingField.key]}
-          onClose={closeModal}
-          onSave={handleSaveField}
+      {showEditModal && (
+        <PatientModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSubmit={handleModalSubmit}
+          initialData={patientData}
+          title="Editar Paciente"
+          submitLabel="Salvar Alterações"
         />
       )}
     </MainLayout>
