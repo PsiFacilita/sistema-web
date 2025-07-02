@@ -20,6 +20,7 @@ interface Patient {
   email: string;
   status: "active" | "inactive";
   notes: string;
+  customFields?: { id: number; value: string }[];
   createdAt: string;
 }
 
@@ -109,8 +110,8 @@ const Patients: React.FC = () => {
           birthDate: newPatient.birthDate,
           email: newPatient.email,
           phone: newPatient.phone,
-          notes: newPatient.notes?.trim() || "Nada a observar."
-
+          notes: newPatient.notes?.trim() || "Nada a observar.",
+          customFields: newPatient.customFields || []
         }),
       });
 
