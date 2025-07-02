@@ -10,7 +10,7 @@ const Settings: React.FC = () => {
     name: 'Dr. Psicólogo',
     email: 'psicologo@clinica.com',
     phone: '(11) 99999-9999',
-    specialization: 'Psicologia Clínica'
+    crp: '00/05222'
   });
 
   // Estado para armazenar o horário semanal com exceções

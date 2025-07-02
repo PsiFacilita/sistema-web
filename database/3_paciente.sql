@@ -1,0 +1,22 @@
+INSERT INTO paciente (usuario_id, nome, cpf, rg, data_nascimento, email, telefone, notas, ativo, criado_em)
+VALUES
+(1, 'Paciente A', '.456.789-00', '**1234', '1990-05-20', 'pacientea@email.com', '(11) 90000-0001', 'Paciente em tratamento de ansiedade.', 1, '2025-01-05'),
+(1, 'Paciente B', '.987.654-00', '**5678', '1985-08-15', 'pacienteb@email.com', '(11) 90000-0002', 'Paciente com histórico de depressão.', 0, '2025-01-10'),
+(1, 'Paciente C', '.111.222-00', '**9012', '1992-11-11', 'pacientec@email.com', '(11) 90000-0003', 'Paciente com TDAH.', 1, '2025-02-03'),
+(1, 'Paciente D', '.333.444-00', '**3456', '1978-03-07', 'paciented@email.com', '(11) 90000-0004', 'Paciente em tratamento de luto.', 0, '2025-02-18'),
+(1, 'Paciente E', '.555.666-00', '**7890', '1995-12-25', 'pacientee@email.com', '(11) 90000-0005', 'Paciente com transtorno bipolar.', 1, '2025-02-25'),
+(1, 'Paciente F', '.777.888-00', '**1122', '2000-01-01', 'pacientef@email.com', '(11) 90000-0006', 'Paciente com fobia social.', 1, '2025-03-01'),
+(1, 'Paciente G', '.999.000-00', '**3344', '1988-06-18', 'pacienteg@email.com', '(11) 90000-0007', 'Paciente com estresse pós-traumático.', 0, '2025-03-09'),
+(1, 'Paciente H', '.121.212-00', '**5566', '1993-09-09', 'pacienteh@email.com', '(11) 90000-0008', 'Paciente em acompanhamento por insônia.', 1, '2025-03-15'),
+(1, 'Paciente I', '.343.434-00', '**7788', '1982-04-04', 'pacientei@email.com', '(11) 90000-0009', 'Paciente em reabilitação emocional.', 1, '2025-04-01'),
+(1, 'Paciente J', '.565.656-00', '**9900', '1975-10-10', 'pacientej@email.com', '(11) 90000-0010', 'Paciente com dependência emocional.', 0, '2025-04-10'),
+(1, 'Paciente K', '.676.767-00', '**1111', '1991-02-02', 'pacientek@email.com', '(11) 90000-0011', 'Paciente com transtorno de personalidade.', 1, '2025-04-21'),
+(1, 'Paciente L', '.787.878-00', '**2222', '1989-07-07', 'pacientel@email.com', '(11) 90000-0012', 'Paciente com dificuldades relacionais.', 1, '2025-04-28'),
+(1, 'Paciente M', '.898.989-00', '**3333', '1996-08-08', 'pacientem@email.com', '(11) 90000-0013', 'Paciente com burnout.', 1, '2025-05-04'),
+(1, 'Paciente N', '.909.090-00', '**4444', '1983-12-12', 'pacienten@email.com', '(11) 90000-0014', 'Paciente com baixa autoestima.', 0, '2025-05-12'),
+(1, 'Paciente O', '.010.101-00', '**5555', '1979-05-05', 'pacienteo@email.com', '(11) 90000-0015', 'Paciente em tratamento familiar.', 1, '2025-05-21'),
+(1, 'Paciente P', '.121.314-00', '**6666', '1997-03-03', 'pacientep@email.com', '(11) 90000-0016', 'Paciente com dificuldades acadêmicas.', 0, '2025-05-30'),
+(1, 'Paciente Q', '.232.425-00', '**7777', '2001-11-11', 'pacienteq@email.com', '(11) 90000-0017', 'Paciente com transtorno alimentar.', 1, '2025-06-01'),
+(1, 'Paciente R', '.343.536-00', '**8888', '1986-06-06', 'pacienter@email.com', '(11) 90000-0018', 'Paciente com medo de falar em público.', 1, '2025-06-07'),
+(1, 'Paciente S', '.454.647-00', '**9999', '1994-09-09', 'pacientes@email.com', '(11) 90000-0019', 'Paciente com crise de identidade.', 0, '2025-06-14'),
+(1, 'Paciente T', '.565.758-00', '**0000', '1998-01-01', 'pacientet@email.com', '(11) 90000-0020', 'Paciente com estresse no trabalho.', 1, '2025-06-20');

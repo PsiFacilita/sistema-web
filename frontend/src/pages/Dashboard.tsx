@@ -1,39 +1,64 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import Title from '../components/Title/Title';
 import Card from '../components/Card/Card';
 import Chart from '../components/Chart/Chart';
 import MainLayout from '../components/layout/MainLayout/MainLayout';
 
 const Dashboard: React.FC = () => {
+  const [cards, setCards] = useState({
+    ativos: 0,
+    inativos: 0,
+    agendadas: 0,
+  });
+  const [grafico, setGrafico] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/dashboard', {
+          withCredentials: true,
+        });
+        setCards(response.data.cards);
+        setGrafico(response.data.grafico);
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
   const dashboardCards = [
     {
       title: 'Pacientes Ativos',
-      value: 42,
-      description: '+5 desde a última semana',
+      value: cards.ativos,
+      description: '',
     },
     {
       title: 'Pacientes Inativos',
-      value: 8,
-      description: '+1 desde a última semana',
+      value: cards.inativos,
+      description: '',
     },
     {
       title: 'Consultas Agendadas',
-      value: 23,
-      description: '3 hoje',
+      value: cards.agendadas,
+      description: '',
     },
   ];
 
   const chartData = {
-    labels: ['Jan', 'Fev', 'Mar', 'Abr'],
+    labels: grafico.map((g) => `Mês ${g.mes}`),
     datasets: [
       {
         label: 'Pacientes Ativos',
-        data: [12, 19, 3, 5, 2, 3],
+        data: grafico.map((g) => g.ativos),
         backgroundColor: '#065f46',
       },
       {
-        label: 'Pacientes Inativos',
-        data: [2, 3, 1, 5, 2, 1],
-        backgroundColor: '#903A1D',
+      label: 'Pacientes Inativos',
+      data: grafico.map((g) => g.inativos),
+      backgroundColor: '#903A1D',
       },
     ],
   };
@@ -65,4 +90,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export default Dashboard;
