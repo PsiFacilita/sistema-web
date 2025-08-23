@@ -24,16 +24,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const navigate = useNavigate();
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    if (email && password) {
-      setUser({
-        name: 'Psicólogo',
-        email: email,
-      });
-      navigate('/dashboard');
-      return true;
+  try {
+    const response = await fetch('http://localhost:5000/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    if (!response.ok) {
+      return false;
     }
+
+    const data = await response.json();
+
+    setUser({
+      name: data.name,
+      email: data.email
+    });
+
+    navigate('/dashboard');
+    return true;
+  } catch (error) {
+    console.error('Erro no login:', error);
     return false;
-  };
+  }
+};
 
   const logout = (): void => {
     setUser(null);

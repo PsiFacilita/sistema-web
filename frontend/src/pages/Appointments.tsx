@@ -14,6 +14,7 @@ interface CalendarEvent {
   type: 'appointment' | 'break' | 'unavailable';
   patientName?: string;
   status?: 'agendado' | 'confirmado' | 'cancelado' | 'reagendado';
+  notes?: string;
 }
 
 interface DaySchedule {
@@ -35,6 +36,14 @@ const Appointments: React.FC = () => {
   
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  
+  // Estados para edição de agendamento
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedEvent, setEditedEvent] = useState<CalendarEvent | null>(null);
+  const [editValidationErrors, setEditValidationErrors] = useState<{
+    time?: string;
+    status?: string;
+  }>({});
   
   // Estado para o modal de novo agendamento
   const [isNewAppointmentModalOpen, setIsNewAppointmentModalOpen] = useState(false);
@@ -258,15 +267,17 @@ const Appointments: React.FC = () => {
   };
 
   // Verifica se um horário já está ocupado para uma data específica
-  const isTimeSlotOccupied = (date: string, time: string): boolean => {
+  const isTimeSlotOccupied = (date: string, time: string, excludeEventId?: string): boolean => {
     const daySchedule = daySchedules.find(schedule => schedule.date === date);
     if (!daySchedule) return false;
     
-    return daySchedule.events.some(event => event.time === time);
+    return daySchedule.events.some(event => 
+      event.time === time && (!excludeEventId || event.id !== excludeEventId)
+    );
   };
   
   // Obtém os horários disponíveis para uma data específica
-  const getAvailableTimesForDate = (date: string): string[] => {
+  const getAvailableTimesForDate = (date: string, excludeEventId?: string): string[] => {
     // Gera todas as horas possíveis (8:00 - 18:00)
     const allTimes = [
       ...Array.from({ length: 4 }, (_, i) => `${(8 + i).toString().padStart(2, '0')}:00`),  // 08:00 a 11:00
@@ -274,7 +285,10 @@ const Appointments: React.FC = () => {
     ];
     
     // Filtra os horários que já estão ocupados
-    return allTimes.filter(time => !isTimeSlotOccupied(date, time) && !isTimeInPast(date, time));
+    return allTimes.filter(time => 
+      !isTimeSlotOccupied(date, time, excludeEventId) && 
+      !isTimeInPast(date, time)
+    );
   };
 
   // Handler para criar agendamento
@@ -301,7 +315,8 @@ const Appointments: React.FC = () => {
       time: newAppointmentData.time,
       type: 'appointment',
       patientName: newAppointmentData.patientName,
-      status: 'agendado' // Status inicial para novos agendamentos
+      status: 'agendado', // Status inicial para novos agendamentos
+      notes: newAppointmentData.notes
     };
     
     // Atualiza o daySchedules com o novo evento
@@ -314,14 +329,21 @@ const Appointments: React.FC = () => {
           a.time.localeCompare(b.time))
       };
       setDaySchedules(updatedSchedules);
+      
+      // Salva no localStorage
+      saveSchedulesToLocalStorage(updatedSchedules);
     } else {
-      setDaySchedules([
+      const updatedSchedules = [
         ...daySchedules,
         {
           date: newAppointmentData.date,
           events: [newEvent]
         }
-      ]);
+      ];
+      setDaySchedules(updatedSchedules);
+      
+      // Salva no localStorage
+      saveSchedulesToLocalStorage(updatedSchedules);
     }
     
     // Fecha o modal
@@ -340,53 +362,75 @@ const Appointments: React.FC = () => {
     setValidationErrors({});
   };
 
+  // Salva agendamentos no localStorage
+  const saveSchedulesToLocalStorage = (schedules: DaySchedule[]) => {
+    localStorage.setItem('daySchedules', JSON.stringify(schedules));
+  };
+
+  // Carrega agendamentos do localStorage
+  const loadSchedulesFromLocalStorage = (): DaySchedule[] => {
+    const saved = localStorage.getItem('daySchedules');
+    return saved ? JSON.parse(saved) : [];
+  };
+
   // Simulação de dados de agendamento (normalmente viria de uma API)
   useEffect(() => {
-    // Simula carregamento de dados
-    const loadSchedules = async () => {
-      // Aqui você faria uma chamada API real
-      const mockSchedules: DaySchedule[] = [];
-      
-      // Gera alguns eventos de exemplo
-      for (let day of daysInMonth) {
-        if (day && Math.random() > 0.6) { // 40% de chance de ter eventos neste dia
-          const numEvents = Math.floor(Math.random() * 4) + 1;
-          const events: CalendarEvent[] = [];
-          
-          for (let i = 0; i < numEvents; i++) {
-            const hour = 8 + Math.floor(Math.random() * 9); // 8h-17h
-            const minute = '00';
-            const types = ['appointment', 'break', 'unavailable'] as const;
-            const type = types[Math.floor(Math.random() * types.length)];
+    // Tenta carregar do localStorage primeiro
+    const savedSchedules = loadSchedulesFromLocalStorage();
+    
+    if (savedSchedules.length > 0) {
+      setDaySchedules(savedSchedules);
+    } else {
+      // Se não houver dados no localStorage, gera dados mock
+      const loadSchedules = async () => {
+        // Aqui você faria uma chamada API real
+        const mockSchedules: DaySchedule[] = [];
+        
+        // Gera alguns eventos de exemplo
+        for (let day of daysInMonth) {
+          if (day && Math.random() > 0.6) { // 40% de chance de ter eventos neste dia
+            const numEvents = Math.floor(Math.random() * 4) + 1;
+            const events: CalendarEvent[] = [];
             
-            // Definir status aleatório para appointments
-            let status;
-            if (type === 'appointment') {
-              const statuses = ['agendado', 'confirmado', 'cancelado', 'reagendado'] as const;
-              status = statuses[Math.floor(Math.random() * statuses.length)];
+            for (let i = 0; i < numEvents; i++) {
+              const hour = 8 + Math.floor(Math.random() * 9); // 8h-17h
+              const minute = '00';
+              const types = ['appointment', 'break', 'unavailable'] as const;
+              const type = types[Math.floor(Math.random() * types.length)];
+              
+              // Definir status aleatório para appointments
+              let status;
+              if (type === 'appointment') {
+                const statuses = ['agendado', 'confirmado', 'cancelado', 'reagendado'] as const;
+                status = statuses[Math.floor(Math.random() * statuses.length)];
+              }
+              
+              events.push({
+                id: `event-${day.getDate()}-${i}`,
+                title: type === 'appointment' ? 'Consulta' : type === 'break' ? 'Intervalo' : 'Indisponível',
+                time: `${hour}:${minute}`,
+                type,
+                patientName: type === 'appointment' ? `Paciente ${i+1}` : undefined,
+                status: type === 'appointment' ? status : undefined,
+                notes: type === 'appointment' ? 'Anotações de exemplo para consulta.' : undefined
+              });
             }
             
-            events.push({
-              id: `event-${day.getDate()}-${i}`,
-              title: type === 'appointment' ? 'Consulta' : type === 'break' ? 'Intervalo' : 'Indisponível',
-              time: `${hour}:${minute}`,
-              type,
-              patientName: type === 'appointment' ? `Paciente ${i+1}` : undefined,
-              status: type === 'appointment' ? status : undefined
+            mockSchedules.push({
+              date: day.toISOString().split('T')[0],
+              events: events.sort((a, b) => a.time.localeCompare(b.time))
             });
           }
-          
-          mockSchedules.push({
-            date: day.toISOString().split('T')[0],
-            events: events.sort((a, b) => a.time.localeCompare(b.time))
-          });
         }
-      }
+        
+        setDaySchedules(mockSchedules);
+        
+        // Salva os dados mock no localStorage
+        saveSchedulesToLocalStorage(mockSchedules);
+      };
       
-      setDaySchedules(mockSchedules);
-    };
-    
-    loadSchedules();
+      loadSchedules();
+    }
   }, [currentMonth]);
 
   // Handler para clique no dia
@@ -407,10 +451,102 @@ const Appointments: React.FC = () => {
     e.stopPropagation(); // Prevent triggering parent click handlers
     setSelectedEvent(event);
     setIsAppointmentModalOpen(true);
+    // Reset edição
+    setIsEditMode(false);
+    setEditedEvent(null);
+    setEditValidationErrors({});
   };
   
   const handleBackToDayView = () => {
     setIsAppointmentModalOpen(false);
+    setIsEditMode(false);
+    setEditedEvent(null);
+  };
+
+  // Handler para entrar no modo de edição
+  const handleStartEdit = () => {
+    if (!selectedEvent) return;
+    setEditedEvent({...selectedEvent});
+    setIsEditMode(true);
+  };
+  
+  // Handler para cancelar edição
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditedEvent(null);
+    setEditValidationErrors({});
+  };
+  
+  // Handler para mudanças nos campos de edição
+  const handleEditFieldChange = (field: keyof CalendarEvent, value: string) => {
+    if (!editedEvent) return;
+    
+    // Limpa erros de validação anteriores
+    if (field === 'time') {
+      setEditValidationErrors(prev => ({...prev, time: undefined}));
+    }
+    
+    // Cria uma cópia atualizada do evento
+    const updatedEvent = {...editedEvent, [field]: value};
+    setEditedEvent(updatedEvent);
+    
+    // Valida o horário
+    if (field === 'time' && selectedDate) {
+      if (isTimeInPast(selectedDate, value)) {
+        setEditValidationErrors(prev => ({
+          ...prev,
+          time: 'Não é possível agendar para horários que já passaram'
+        }));
+      }
+      
+      // Verifica se o horário já está ocupado por outro agendamento
+      if (isTimeSlotOccupied(selectedDate, value, editedEvent.id)) {
+        setEditValidationErrors(prev => ({
+          ...prev,
+          time: 'Este horário já está ocupado'
+        }));
+      }
+    }
+  };
+  
+  // Handler para salvar edições
+  const handleSaveEdit = () => {
+    if (!editedEvent || !selectedDate) return;
+    
+    // Validação final
+    if (editValidationErrors.time) {
+      return; // Não salva se houver erros
+    }
+    
+    // Atualiza o evento no estado
+    const updatedSchedules = daySchedules.map(day => {
+      if (day.date === selectedDate) {
+        return {
+          ...day,
+          events: day.events.map(event => 
+            event.id === editedEvent.id ? editedEvent : event
+          ).sort((a, b) => a.time.localeCompare(b.time))
+        };
+      }
+      return day;
+    });
+    
+    setDaySchedules(updatedSchedules);
+    
+    // Atualiza eventos do dia selecionado
+    const updatedDayEvents = updatedSchedules
+      .find(day => day.date === selectedDate)?.events || [];
+    setSelectedDayEvents(updatedDayEvents);
+    
+    // Atualiza evento selecionado
+    setSelectedEvent(editedEvent);
+    
+    // Salva no localStorage
+    saveSchedulesToLocalStorage(updatedSchedules);
+    
+    // Sai do modo de edição
+    setIsEditMode(false);
+    setEditedEvent(null);
   };
 
   // Função para determinar a classe CSS baseada no tipo de evento
@@ -450,6 +586,20 @@ const Appointments: React.FC = () => {
   
   // Obtém horários disponíveis para o dia selecionado
   const availableTimesForSelectedDate = getAvailableTimesForDate(newAppointmentData.date);
+
+  // Obtém horários disponíveis para edição (incluindo o horário atual do evento)
+  const getAvailableTimesForEdit = (date: string, eventId: string): string[] => {
+    const allTimes = [
+      ...Array.from({ length: 4 }, (_, i) => `${(8 + i).toString().padStart(2, '0')}:00`),  // 08:00 a 11:00
+      ...Array.from({ length: 4 }, (_, i) => `${(14 + i).toString().padStart(2, '0')}:00`)  // 14:00 a 17:00
+    ];
+    
+    // Para edição, inclui o horário atual do evento como opção
+    return allTimes.filter(time => 
+      (editedEvent && time === editedEvent.time) || 
+      (!isTimeSlotOccupied(date, time, eventId) && !isTimeInPast(date, time))
+    );
+  };
 
   return (
     <MainLayout>
@@ -626,11 +776,14 @@ const Appointments: React.FC = () => {
       {/* Modal para detalhes do agendamento */}
       <Modal
         isOpen={isAppointmentModalOpen}
-        onClose={() => setIsAppointmentModalOpen(false)}
-        title="Detalhes do Agendamento"
+        onClose={() => {
+          setIsAppointmentModalOpen(false);
+          setIsEditMode(false);
+        }}
+        title={isEditMode ? "Editar Agendamento" : "Detalhes do Agendamento"}
         size="small"
       >
-        {selectedEvent && (
+        {selectedEvent && !isEditMode && (
           <div className="space-y-4">
             <div className="p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
@@ -655,6 +808,13 @@ const Appointments: React.FC = () => {
                     <span>{selectedEvent.patientName}</span>
                   </div>
                   )}
+                  
+                  {selectedEvent.notes && (
+                    <div className="mt-4 border-t pt-3">
+                      <h4 className="font-medium mb-1">Anotações</h4>
+                      <p className="text-sm text-gray-600">{selectedEvent.notes}</p>
+                    </div>
+                  )}
                 </div>
             </div>
 
@@ -669,13 +829,101 @@ const Appointments: React.FC = () => {
                 <>
                   <Button
                     variant="outline"
-                    onClick={() => console.log('Edit appointment:', selectedEvent.id)}
+                    onClick={handleStartEdit}
                   >
                     <Icon type="edit" size={16} className="mr-1" />
                     Editar
                   </Button>
                 </>
               )}
+            </div>
+          </div>
+        )}
+        
+        {/* Formulário de edição */}
+        {selectedEvent && isEditMode && editedEvent && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Horário
+                </label>
+                <select
+                  className={`w-full p-2 border rounded-lg ${editValidationErrors.time ? 'border-red-500' : ''}`}
+                  value={editedEvent.time}
+                  onChange={(e) => handleEditFieldChange('time', e.target.value)}
+                >
+                  {selectedDate && getAvailableTimesForEdit(selectedDate, editedEvent.id).map(time => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+                {editValidationErrors.time && (
+                  <p className="mt-1 text-sm text-red-600">{editValidationErrors.time}</p>
+                )}
+              </div>
+              
+              {editedEvent.type === 'appointment' && (
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    className="w-full p-2 border rounded-lg"
+                    value={editedEvent.status || 'agendado'}
+                    onChange={(e) => handleEditFieldChange('status', e.target.value)}
+                  >
+                    <option value="agendado">Agendado</option>
+                    <option value="confirmado">Confirmado</option>
+                    <option value="cancelado">Cancelado</option>
+                    <option value="reagendado">Reagendado</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            
+            {editedEvent.type === 'appointment' && (
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Nome do Paciente
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-2 border rounded-lg"
+                  value={editedEvent.patientName || ''}
+                  onChange={(e) => handleEditFieldChange('patientName', e.target.value)}
+                  placeholder="Nome do paciente"
+                />
+              </div>
+            )}
+            
+            <div>
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                Anotações
+              </label>
+              <textarea
+                className="w-full p-2 border rounded-lg h-24"
+                value={editedEvent.notes || ''}
+                onChange={(e) => handleEditFieldChange('notes', e.target.value)}
+                placeholder="Adicione anotações aqui..."
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button
+                variant="danger"
+                onClick={handleCancelEdit}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSaveEdit}
+                disabled={!!editValidationErrors.time}
+              >
+                Salvar Alterações
+              </Button>
             </div>
           </div>
         )}
@@ -794,6 +1042,18 @@ const Appointments: React.FC = () => {
                     </p>
                   )}
                 </div>
+              </div>
+              
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Anotações (opcional)
+                </label>
+                <textarea
+                  className="w-full p-2 border rounded-lg h-24"
+                  value={newAppointmentData.notes}
+                  onChange={(e) => setNewAppointmentData({...newAppointmentData, notes: e.target.value})}
+                  placeholder="Adicione anotações sobre a consulta..."
+                />
               </div>
             </div>
           )}
