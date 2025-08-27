@@ -1,0 +1,13 @@
+{
+    "name": "sistema-web/backend",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "require": {
+        "monolog/monolog": "^3.9"
+    }
+}
