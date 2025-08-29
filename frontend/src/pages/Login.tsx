@@ -1,5 +1,5 @@
 import { useAuth } from '../hooks/useAuth';
-import Button from '../components/Button/Button'; 
+import Button from '../components/Button/Button';
 import Input from '../components/Form/Input/Input';
 import Label from '../components/Form/Label/Label';
 import Anchor from '../components/Anchor/Anchor';
@@ -25,17 +25,15 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    
+
     try {
       const success = await login(email, password);
-      if (!success) {
-        setError('Email ou senha inválidos');
-      } else {
+      if (success) {
         navigate('/dashboard');
       }
-    } catch {
-      setError('Ocorreu um erro durante o login');
-        } finally {
+    } catch (err: any) {
+      setError(err?.message || 'Ocorreu um erro durante o login');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -54,17 +52,17 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div 
-  className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-600 via-gray-100 to-gray-600 overflow-hidden">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-600 via-gray-100 to-gray-600 overflow-hidden">
 
-      
-      
+
+
       {/* Espaço para a logo */}
       <div className=" flex justify-center w-full">
-        <img 
+        <img
           src={logo}
-          alt="Logo Psifacilita" 
-          className="w-80 mb-1" 
+          alt="Logo Psifacilita"
+          className="w-80 mb-1"
         />
       </div>
 
@@ -76,14 +74,14 @@ const Login: React.FC = () => {
 
 
 
-   {error && (
+          {error && (
             <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4">
               <div className="flex">
                 <div className="text-red-500">{error}</div>
               </div>
             </div>
           )}
-          
+
           <form className="space-y-3" onSubmit={handleSubmit}>
             <div>
               <Label htmlFor="email" className="text-slate-950" >Email</Label>
@@ -116,10 +114,10 @@ const Login: React.FC = () => {
             </div>
 
             <div>
-              <Button 
-              
-                type="submit" 
-                variant="primary" 
+              <Button
+
+                type="submit"
+                variant="primary"
                 fullWidth
                 loading={isLoading}
                 disabled={isLoading}
@@ -130,8 +128,8 @@ const Login: React.FC = () => {
           </form>
 
           <div className="mt-3 text-center">
-            <Anchor 
-              href="#" 
+            <Anchor
+              href="#"
               className="text-sm text-600 underline"
               onClick={(e) => {
                 e.preventDefault();
