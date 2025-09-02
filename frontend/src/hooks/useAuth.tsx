@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 interface User {
   name: string;
@@ -19,66 +18,76 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const API_URL =
+  (import.meta as any).env?.BACKEND_URL ||
+  'http://localhost:5000';
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    const stored = localStorage.getItem('auth.user');
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch {
+        localStorage.removeItem('auth.user');
+      }
+    }
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-  try {
-    const response = await fetch('http://localhost:5000/api/login', {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) {
-      return false;
+    let data: any = null;
+    try {
+      data = await response.json();
+    } catch {
     }
 
-    const data = await response.json();
+    if (!response.ok || data?.ok === false) {
+      const backendMsg =
+        data?.message ||
+        (response.status === 401 ? 'Credenciais inválidas.' : 'Erro ao autenticar.');
+      throw new Error(backendMsg);
+    }
 
-    setUser({
-      name: data.name,
-      email: data.email
-    });
+    const rawUser = data?.user ?? {};
+    const normalizedUser: User = {
+      name: (rawUser.nome ?? rawUser.name ?? '').toString(),
+      email: rawUser.email ?? email,
+    };
 
-    navigate('/dashboard');
+    // persiste token + user
+    if (data?.token) localStorage.setItem('auth.token', data.token);
+    localStorage.setItem('auth.user', JSON.stringify(normalizedUser));
+    setUser(normalizedUser);
+
     return true;
-  } catch (error) {
-    console.error('Erro no login:', error);
-    return false;
-  }
-};
+  };
 
   const logout = (): void => {
+    localStorage.removeItem('auth.token');
+    localStorage.removeItem('auth.user');
     setUser(null);
-    navigate('/login');
   };
 
   const isAuthenticated = (): boolean => {
-    return user !== null;
+    const token = localStorage.getItem('auth.token');
+    return Boolean(token && user);
   };
 
-  const value: AuthContextType = {
-    user,
-    login,
-    logout,
-    isAuthenticated
-  };
+  const value: AuthContextType = { user, login, logout, isAuthenticated };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 };

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use Slim\Factory\AppFactory;
 use Symfony\Component\Dotenv\Dotenv;
+use App\Http\Middleware\CorsMiddleware;
 
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/routes.php';
@@ -14,6 +15,8 @@ if (is_file($envPath)) {
 
 $app = AppFactory::create();
 $app->addRoutingMiddleware();
+$app->addBodyParsingMiddleware();
+$app->add(new CorsMiddleware());
 $app->addErrorMiddleware(
     filter_var($_ENV['APP_DEBUG'] ?? true, FILTER_VALIDATE_BOOL),
     true,
