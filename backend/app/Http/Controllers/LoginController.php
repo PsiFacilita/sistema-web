@@ -5,50 +5,73 @@ namespace App\Http\Controllers;
 
 use App\Config\Database;
 use App\Services\AuthService;
+use App\Helpers\BaseLogger;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Throwable;
 
 final class LoginController
 {
     public function login(Request $request, Response $response): Response
     {
-        $data = (array) ($request->getParsedBody() ?? []);
-        $email = trim((string)($data['email'] ?? ''));
-        $password = (string)($data['password'] ?? '');
+        $logger = new BaseLogger('auth');
 
-        if ($email === '' || $password === '') {
-            return $this->json($response, ['ok' => false, 'message' => 'Email e senha são obrigatórios.'], 422);
+        try {
+            $data = (array) ($request->getParsedBody() ?? []);
+            $email = trim((string)($data['email'] ?? ''));
+            $password = (string)($data['password'] ?? '');
+
+            $logger->info('Login request received', [
+                'email' => $email !== '' ? $email : '[empty]',
+                'ip'    => $request->getServerParams()['REMOTE_ADDR'] ?? null,
+            ]);
+
+            if ($email === '' || $password === '') {
+                $logger->warning('Login attempt with missing credentials', [
+                    'email' => $email,
+                ]);
+                return $this->json($response, ['ok' => false, 'message' => 'Email e senha são obrigatórios.'], 422);
+            }
+
+            $auth = new AuthService(
+                $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? 'change_me',
+                $_ENV['JWT_ISSUER'] ?? $_SERVER['JWT_ISSUER'] ?? 'app',
+                (int)($_ENV['JWT_EXPIRE_MINUTES'] ?? $_SERVER['JWT_EXPIRE_MINUTES'] ?? 60),
+            );
+
+            $user = $auth->validateCredentials($email, $password);
+            if (!$user) {
+                $logger->notice('Invalid login attempt', ['email' => $email]);
+                return $this->json($response, ['ok' => false, 'message' => 'Credenciais inválidas.'], 401);
+            }
+
+            $token = $auth->generateToken($user);
+
+            $logger->info('Login successful', [
+                'user_id' => $user->id,
+                'email'   => $user->email,
+            ]);
+
+            return $this->json($response, [
+                'ok'         => true,
+                'token'      => $token,
+                'token_type' => 'Bearer',
+                'expires_in' => (int)($auth->getTtlSeconds()),
+                'user'       => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+            ], 200);
+        } catch (Throwable $e) {
+            $logger->critical('Unexpected error during login', [
+                'exception' => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
+            return $this->json($response, ['ok' => false, 'message' => 'Erro interno.'], 500);
         }
-
-        $pdo = Database::connection();
-
-        $auth = new AuthService(
-            $pdo,
-            $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? 'change_me',
-            $_ENV['JWT_ISSUER'] ?? $_SERVER['JWT_ISSUER'] ?? 'app',
-            (int)($_ENV['JWT_EXPIRE_MINUTES'] ?? $_SERVER['JWT_EXPIRE_MINUTES'] ?? 60),
-        );
-
-        $user = $auth->validateCredentials($email, $password);
-        if (!$user) {
-            return $this->json($response, ['ok' => false, 'message' => 'Credenciais inválidas.'], 401);
-        }
-
-        $token = $auth->generateToken($user);
-
-        return $this->json($response, [
-            'ok'         => true,
-            'token'      => $token,
-            'token_type' => 'Bearer',
-            'expires_in' => (int)($auth->getTtlSeconds()),
-            'user'       => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
-        ], 200);
     }
 
     private function json(Response $response, array $payload, int $status = 200): Response
     {
         $response->getBody()->write((string)json_encode($payload, JSON_UNESCAPED_UNICODE));
         return $response->withHeader('Content-Type', 'application/json; charset=utf-8')
-                        ->withStatus($status);
+            ->withStatus($status);
     }
 }

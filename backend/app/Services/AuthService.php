@@ -11,7 +11,6 @@ use PDO;
 final class AuthService
 {
     public function __construct(
-        private PDO $db,
         private string $jwtSecret,
         private string $jwtIssuer,
         private int $jwtExpireMinutes = 60
@@ -19,7 +18,8 @@ final class AuthService
 
     public function validateCredentials(string $email, string $password): ?User
     {
-        $user = User::findByEmail($this->db, $email);
+        $user = new User();
+        $user = $user->findByEmail($email);
         if (!$user) return null;
         if (!$user->verifyPassword($password)) return null;
         return $user;
@@ -36,8 +36,6 @@ final class AuthService
             'nbf'   => $now,
             'exp'   => $exp,
             'sub'   => $user->id,
-            'email' => $user->email,
-            'name'  => $user->name,
         ];
 
         return JWT::encode($payload, $this->jwtSecret, 'HS256');
