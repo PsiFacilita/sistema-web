@@ -3,69 +3,43 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use PDO;
+use App\Models\Model;
 
-final class User
+final class User extends Model
 {
     public ?int $id = null;
-    public string $nome = '';
+    public string $name = '';
+    public string $cpf = '';
     public string $email = '';
-    public string $senha = '';
-    public ?string $crp = null;
-    public ?string $telefone = null;
-    public string $cargo = 'psicologo';
+    private string $password = '';
+    public bool $subscription_active = false;
+    public ?string $subscription_expires = null;
 
-    public static function findByEmail(PDO $db, string $email): ?self
+    public function __construct()
     {
-        $stmt = $db->prepare('SELECT * FROM usuario WHERE email = :email LIMIT 1');
-        $stmt->execute(['email' => $email]);
-        $row = $stmt->fetch();
+        parent::__construct();
+    }
 
-        if (!$row) {
-            return null;
-        }
-
+    private static function fromRow(array $row): self
+    {
         $u = new self();
-        $u->id       = (int)$row['id'];
-        $u->nome     = (string)$row['nome'];
-        $u->email    = (string)$row['email'];
-        $u->senha    = (string)$row['senha'];
-        $u->crp      = $row['crp'] ?? null;
-        $u->telefone = $row['telefone'] ?? null;
-        $u->cargo    = (string)$row['cargo'];
-
+        $u->id                   = (int) $row['id'];
+        $u->name                 = (string) $row['nome'];
+        $u->email                = (string) $row['email'];
+        $u->password             = (string) $row['senha'];
         return $u;
     }
 
-    /**
-     * Cria um novo usuário (com senha já hashada).
-     */
-    public static function create(PDO $db, array $data): self
+    public function findByEmail(string $email): ?self
     {
-        $hash = password_hash($data['senha'], PASSWORD_ARGON2ID);
-
-        $stmt = $db->prepare("
-            INSERT INTO usuario (nome, email, senha, crp, telefone, cargo)
-            VALUES (:nome, :email, :senha, :crp, :telefone, :cargo)
-        ");
-        $stmt->execute([
-            'nome'     => $data['nome'],
-            'email'    => $data['email'],
-            'senha'    => $hash,
-            'crp'      => $data['crp'] ?? null,
-            'telefone' => $data['telefone'] ?? null,
-            'cargo'    => $data['cargo'] ?? 'psicologo',
-        ]);
-
-        $id = (int)$db->lastInsertId();
-        return self::findByEmail($db, $data['email']);
+        $query = "SELECT id, nome, email, senha
+                  FROM usuario WHERE email = :email";
+        $row = $this->fetchRow($query, ['email' => $email]);
+        return $row ? self::fromRow($row) : null;
     }
 
-    /**
-     * Verifica senha usando Argon2id.
-     */
     public function verifyPassword(string $plain): bool
     {
-        return password_verify($plain, $this->senha);
+        return password_verify($plain, $this->password);
     }
 }
