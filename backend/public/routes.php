@@ -10,6 +10,8 @@ final class Routes
     public static function register(App $app): void
     {
         $app->get('/hello-world', [HomeController::class, 'index']);
+
+        $app->get('/auth/me', [LoginController::class, 'me']);
         $app->post('/auth/login', [LoginController::class, 'login']);
     }
 }

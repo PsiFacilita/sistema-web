@@ -8,7 +8,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: () => boolean;
 }
 
@@ -18,9 +18,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-const API_URL =
-  (import.meta as any).env?.BACKEND_URL ||
-  'http://localhost:5000';
+const API_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:5000';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -36,10 +34,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const bootstrap = async () => {
+      try {
+        const res = await fetch(`${API_URL}/auth/me`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            ...(localStorage.getItem('auth.token')
+                ? { Authorization: `Bearer ${localStorage.getItem('auth.token')}` }
+                : {}),
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.ok && data?.user) {
+            const normalized: User = {
+              name: (data.user.nome ?? data.user.name ?? '').toString(),
+              email: data.user.email ?? '',
+            };
+            setUser(normalized);
+            localStorage.setItem('auth.user', JSON.stringify(normalized));
+          }
+        }
+      } catch {
+      }
+    };
+
+    bootstrap();
+  }, []);
+
   const login = async (email: string, password: string): Promise<boolean> => {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
 
@@ -47,12 +78,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       data = await response.json();
     } catch {
+      // ignore
     }
 
     if (!response.ok || data?.ok === false) {
       const backendMsg =
-        data?.message ||
-        (response.status === 401 ? 'Credenciais inválidas.' : 'Erro ao autenticar.');
+          data?.message ||
+          (response.status === 401 ? 'Credenciais inválidas.' : 'Erro ao autenticar.');
       throw new Error(backendMsg);
     }
 
@@ -62,15 +94,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       email: rawUser.email ?? email,
     };
 
-    // persiste token + user
     if (data?.token) localStorage.setItem('auth.token', data.token);
+
     localStorage.setItem('auth.user', JSON.stringify(normalizedUser));
     setUser(normalizedUser);
-
     return true;
   };
 
-  const logout = (): void => {
+  const logout = async (): Promise<void> => {
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('auth.token')
+              ? { Authorization: `Bearer ${localStorage.getItem('auth.token')}` }
+              : {}),
+        },
+      });
+    } catch {
+    }
+
     localStorage.removeItem('auth.token');
     localStorage.removeItem('auth.user');
     setUser(null);
@@ -78,7 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = (): boolean => {
     const token = localStorage.getItem('auth.token');
-    return Boolean(token && user);
+    return Boolean((token || user) && user);
   };
 
   const value: AuthContextType = { user, login, logout, isAuthenticated };

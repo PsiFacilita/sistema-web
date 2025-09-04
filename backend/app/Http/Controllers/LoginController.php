@@ -17,13 +17,13 @@ final class LoginController
         $logger = new BaseLogger('auth');
 
         try {
-            $data = (array) ($request->getParsedBody() ?? []);
+            $data = (array)($request->getParsedBody() ?? []);
             $email = trim((string)($data['email'] ?? ''));
             $password = (string)($data['password'] ?? '');
 
             $logger->info('Login request received', [
                 'email' => $email !== '' ? $email : '[empty]',
-                'ip'    => $request->getServerParams()['REMOTE_ADDR'] ?? null,
+                'ip' => $request->getServerParams()['REMOTE_ADDR'] ?? null,
             ]);
 
             if ($email === '' || $password === '') {
@@ -45,24 +45,49 @@ final class LoginController
                 return $this->json($response, ['ok' => false, 'message' => 'Credenciais inválidas.'], 401);
             }
 
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                session_set_cookie_params([
+                    'lifetime' => 0,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+                session_start();
+            }
+
+            session_regenerate_id(true);
+
+            $_SESSION['user'] = [
+                'id' => $user->id,
+            ];
+
             $token = $auth->generateToken($user);
+
+            $cookie = sprintf(
+                'access_token=%s; Expires=%s; Path=/; HttpOnly; Secure; SameSite=Lax',
+                rawurlencode($token),
+                gmdate('D, d M Y H:i:s \G\M\T', time() + $auth->getTtlSeconds())
+            );
+            $response = $response->withAddedHeader('Set-Cookie', $cookie);
 
             $logger->info('Login successful', [
                 'user_id' => $user->id,
-                'email'   => $user->email,
+                'email' => $user->email,
             ]);
 
             return $this->json($response, [
-                'ok'         => true,
-                'token'      => $token,
+                'ok' => true,
+                'token' => $token,
                 'token_type' => 'Bearer',
-                'expires_in' => (int)($auth->getTtlSeconds()),
-                'user'       => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+                'expires_in' => ($auth->getTtlSeconds()),
+                'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
             ], 200);
         } catch (Throwable $e) {
             $logger->critical('Unexpected error during login', [
                 'exception' => $e->getMessage(),
-                'trace'     => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return $this->json($response, ['ok' => false, 'message' => 'Erro interno.'], 500);
         }
@@ -74,4 +99,12 @@ final class LoginController
         return $response->withHeader('Content-Type', 'application/json; charset=utf-8')
             ->withStatus($status);
     }
+
+    public function me($req, $res) {
+        if (!isset($_SESSION['user'])) {
+            return $this->json($res, ['ok' => false], 401);
+        }
+        return $this->json($res, ['ok' => true, 'user' => $_SESSION['user']]);
+    }
+
 }
