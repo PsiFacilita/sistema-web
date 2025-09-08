@@ -18,7 +18,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-const API_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:5000';
+const API_URL = (import.meta as any).env?.BACKEND_URL || 'http://localhost:5000';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);

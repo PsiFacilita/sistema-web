@@ -45,12 +45,16 @@ final class LoginController
                 return $this->json($response, ['ok' => false, 'message' => 'Credenciais inválidas.'], 401);
             }
 
+            $appEnv = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'production';
+
+            $secure = $appEnv === 'production';
+
             if (session_status() !== PHP_SESSION_ACTIVE) {
                 session_set_cookie_params([
                     'lifetime' => 0,
                     'path' => '/',
                     'domain' => '',
-                    'secure' => true,
+                    'secure' => $secure,
                     'httponly' => true,
                     'samesite' => 'Lax',
                 ]);
@@ -100,11 +104,17 @@ final class LoginController
             ->withStatus($status);
     }
 
-    public function me($req, $res) {
+    public function me($req, $res)
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
         if (!isset($_SESSION['user'])) {
             return $this->json($res, ['ok' => false], 401);
         }
         return $this->json($res, ['ok' => true, 'user' => $_SESSION['user']]);
     }
+
 
 }

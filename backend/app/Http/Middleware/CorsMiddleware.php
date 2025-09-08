@@ -35,7 +35,7 @@ final class CorsMiddleware
             ->withHeader('Vary', 'Origin')
             ->withHeader('Access-Control-Allow-Credentials', 'true')
             ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
-            ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+            ->withHeader('Access-Control-Allow-Headers', 'Accept, Content-Type, Authorization, X-Requested-With')
             ->withHeader('Access-Control-Max-Age', '86400');
     }
 }
