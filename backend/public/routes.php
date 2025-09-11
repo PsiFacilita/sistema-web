@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PatientsController;
 use App\Http\Middleware\AuthMiddleware;
 use Slim\App;
 use App\Http\Controllers\HomeController;
@@ -20,6 +21,7 @@ final class Routes
         $app->group('/api', function (RouteCollectorProxy $group) {
             $group->get('/dashboard', [DashboardController::class, 'index']);
 
+            $group->get('/patients', [PatientsController::class, 'getPatients']);
         })->add(new AuthMiddleware());
     }
 }
