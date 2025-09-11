@@ -19,14 +19,8 @@ final class DashboardController extends Controller
 {
     public function __construct(
         private ?Dashboard $dashboard = null,
-        private ?AuthService $authService = null
     ) {
         $this->dashboard = $this->dashboard ?? new Dashboard();
-        $this->authService = $this->authService ?? new AuthService(
-            $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? 'change_me',
-            $_ENV['JWT_ISSUER'] ?? $_SERVER['JWT_ISSUER'] ?? 'app',
-            (int)($_ENV['JWT_EXPIRE_MINUTES'] ?? $_SERVER['JWT_EXPIRE_MINUTES'] ?? 60),
-        );
     }
 
     /**
