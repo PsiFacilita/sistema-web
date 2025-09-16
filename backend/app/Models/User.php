@@ -12,8 +12,8 @@ final class User extends Model
     public string $cpf = '';
     public string $email = '';
     private string $password = '';
-    public bool $subscription_active = false;
-    public ?string $subscription_expires = null;
+    public string $role = '';
+    public ?int $psicologoId = null;
 
     public function __construct()
     {
@@ -27,16 +27,31 @@ final class User extends Model
         $u->name                 = (string) $row['nome'];
         $u->email                = (string) $row['email'];
         $u->password             = (string) $row['senha'];
+        $u->role                 = (string) $row['cargo'];
+        $u->psicologoId          = (int) $row['psicologo_id'] ?? null;
         return $u;
     }
 
     public function findByEmail(string $email): ?self
     {
-        $query = "SELECT id, nome, email, senha
-                  FROM usuario WHERE email = :email";
+        $query = "
+        SELECT
+            u.id,
+            u.nome,
+            u.email,
+            u.senha,
+            u.cargo,
+            sp.psicologo_id AS psicologo_id
+        FROM usuario u
+        LEFT JOIN secretaria_pertence sp
+            ON sp.secretaria_id = u.id
+        WHERE u.email = :email
+        LIMIT 1
+    ";
         $row = $this->fetchRow($query, ['email' => $email]);
         return $row ? self::fromRow($row) : null;
     }
+
 
     public function verifyPassword(string $plain): bool
     {

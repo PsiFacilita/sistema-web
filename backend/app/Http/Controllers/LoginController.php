@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Config\Database;
+use App\Config\Controller;
 use App\Services\AuthService;
 use App\Helpers\BaseLogger;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Throwable;
 
-final class LoginController
+final class LoginController extends Controller
 {
     public function login(Request $request, Response $response): Response
     {
@@ -86,7 +86,7 @@ final class LoginController
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'expires_in' => ($auth->getTtlSeconds()),
-                'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+                'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'cargo' => $user->role, 'psicologo_id' => $user->psicologoId],
             ], 200);
         } catch (Throwable $e) {
             $logger->critical('Unexpected error during login', [
@@ -95,13 +95,6 @@ final class LoginController
             ]);
             return $this->json($response, ['ok' => false, 'message' => 'Erro interno.'], 500);
         }
-    }
-
-    private function json(Response $response, array $payload, int $status = 200): Response
-    {
-        $response->getBody()->write((string)json_encode($payload, JSON_UNESCAPED_UNICODE));
-        return $response->withHeader('Content-Type', 'application/json; charset=utf-8')
-            ->withStatus($status);
     }
 
     public function me($req, $res)
@@ -115,6 +108,4 @@ final class LoginController
         }
         return $this->json($res, ['ok' => true, 'user' => $_SESSION['user']]);
     }
-
-
 }
