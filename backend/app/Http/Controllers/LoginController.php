@@ -86,7 +86,7 @@ final class LoginController extends Controller
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'expires_in' => ($auth->getTtlSeconds()),
-                'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'cargo' => $user->role, 'psicologo_id' => $user->psicologoId],
+                'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role, 'psicologo_id' => $user->psicologoId],
             ], 200);
         } catch (Throwable $e) {
             $logger->critical('Unexpected error during login', [
@@ -97,15 +97,68 @@ final class LoginController extends Controller
         }
     }
 
-    public function me($req, $res)
+    public function me(Request $req, Response $res): Response
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
+            @session_start();
         }
 
-        if (!isset($_SESSION['user'])) {
+        // 1) Se já existe sessão, usamos apenas o id salvo nela
+        $sessionId = $_SESSION['user']['id'] ?? null;
+        if (is_numeric($sessionId)) {
+            $userModel = new \App\Models\User();
+            $user = $userModel->findById((int)$sessionId);
+            if ($user) {
+                return $this->json($res, [
+                    'ok'   => true,
+                    'user' => [
+                        'id'           => $user->id,
+                        'name'         => $user->name,
+                        'email'        => $user->email,
+                        'role'         => $user->role,
+                        'psicologo_id' => $user->psicologoId ?? null,
+                    ],
+                ]);
+            }
             return $this->json($res, ['ok' => false], 401);
         }
-        return $this->json($res, ['ok' => true, 'user' => $_SESSION['user']]);
+
+        // 2) Sem sessão: tenta via JWT (Authorization: Bearer <token>)
+        $authHeader = $req->getHeaderLine('Authorization');
+        if ($authHeader && preg_match('/Bearer\s+(.+)/i', $authHeader, $m)) {
+            try {
+                $auth = new \App\Services\AuthService(
+                    $_ENV['JWT_SECRET'] ?? $_SERVER['JWT_SECRET'] ?? 'change_me',
+                    $_ENV['JWT_ISSUER'] ?? $_SERVER['JWT_ISSUER'] ?? 'app',
+                    (int)($_ENV['JWT_EXPIRE_MINUTES'] ?? $_SERVER['JWT_EXPIRE_MINUTES'] ?? 60),
+                );
+                $payload = $auth->verifyToken($m[1]);
+                $sub = $payload['sub'] ?? null;
+
+                if (is_numeric($sub)) {
+                    $userModel = new \App\Models\User();
+                    $user = $userModel->findById((int)$sub);
+                    if ($user) {
+                        // Grava na sessão apenas o id, como você pediu
+                        $_SESSION['user'] = ['id' => $user->id];
+
+                        return $this->json($res, [
+                            'ok'   => true,
+                            'user' => [
+                                'id'           => $user->id,
+                                'name'         => $user->name,
+                                'email'        => $user->email,
+                                'role'         => $user->role,
+                                'psicologo_id' => $user->psicologoId ?? null,
+                            ],
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // silencioso: cai no 401 abaixo
+            }
+        }
+
+        return $this->json($res, ['ok' => false], 401);
     }
 }

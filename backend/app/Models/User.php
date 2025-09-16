@@ -28,7 +28,7 @@ final class User extends Model
         $u->email                = (string) $row['email'];
         $u->password             = (string) $row['senha'];
         $u->role                 = (string) $row['cargo'];
-        $u->psicologoId          = (int) $row['psicologo_id'] ?? null;
+        $u->psicologoId          = (isset($row['psicologo_id'])) ? (int)$row['psicologo_id'] : null;
         return $u;
     }
 
@@ -57,4 +57,25 @@ final class User extends Model
     {
         return password_verify($plain, $this->password);
     }
+
+    public function findById(int $id): ?self
+    {
+        $query = "
+        SELECT
+            u.id,
+            u.nome,
+            u.email,
+            u.senha,
+            u.cargo,
+            sp.psicologo_id AS psicologo_id
+        FROM usuario u
+        LEFT JOIN secretaria_pertence sp
+            ON sp.secretaria_id = u.id
+        WHERE u.id = :id
+        LIMIT 1
+    ";
+        $row = $this->fetchRow($query, [':id' => $id]);
+        return $row ? self::fromRow($row) : null;
+    }
+
 }
