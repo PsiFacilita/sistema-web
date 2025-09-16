@@ -134,3 +134,14 @@ CREATE TABLE IF NOT EXISTS configuracao_dias_especificos (
    FOREIGN KEY (configuracao_id) REFERENCES configuracao(id) ON DELETE CASCADE,
    UNIQUE (configuracao_id, data)
 );
+
+CREATE TABLE IF NOT EXISTS secretaria_pertence (
+    psicologo_id INT NOT NULL,
+    secretaria_id INT NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (psicologo_id, secretaria_id),
+    FOREIGN KEY (psicologo_id) REFERENCES usuario(id) ON DELETE CASCADE,
+    FOREIGN KEY (secretaria_id) REFERENCES usuario(id) ON DELETE CASCADE
+);
+
