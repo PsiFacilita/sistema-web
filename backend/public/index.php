@@ -22,13 +22,7 @@ $app->addErrorMiddleware(
     true
 );
 
-$app->add(new CorsMiddleware(
-    maxAttempts: 5,
-    decaySeconds: 60,
-    storagePath: __DIR__ . '/../storage/rate_limit'
-));
-$app->add(new RateLimiterMiddleware());
-
+$app->add(new CorsMiddleware());
 Routes::register($app);
 
 $app->run();

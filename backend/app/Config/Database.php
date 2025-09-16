@@ -26,7 +26,7 @@ final class Database
 
         $driver    = self::env('DB_DRIVER', 'mysql');
         $host      = self::env('DB_HOST', '127.0.0.1');
-        $port      = self::env('DB_PORT', '3307');
+        $port      = self::env('DB_PORT', '3306');
         $db        = self::env('DB_DATABASE', 'faculdade');
         $user      = self::env('DB_USERNAME', 'root');
         $pass      = self::env('DB_PASSWORD', '');
