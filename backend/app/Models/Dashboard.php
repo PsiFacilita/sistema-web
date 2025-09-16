@@ -28,19 +28,23 @@ final class Dashboard extends Model
      */
     public function getCards(int $userId): array
     {
-        // NOTE: Adjust table/column names if your schema differs.
+        $ownerSql = "COALESCE(
+            (SELECT sp.psicologo_id FROM secretaria_pertence sp WHERE sp.secretaria_id = :uid LIMIT 1),
+            :uid
+        )";
+
         $ativos = (int) ($this->fetchColumn(
-            "SELECT COUNT(*) AS ativos FROM paciente WHERE ativo = 1 AND usuario_id = :uid",
+            "SELECT COUNT(*) FROM paciente WHERE ativo = 1 AND usuario_id = {$ownerSql}",
             [':uid' => $userId]
         ) ?? 0);
 
         $inativos = (int) ($this->fetchColumn(
-            "SELECT COUNT(*) AS inativos FROM paciente WHERE ativo = 0 AND usuario_id = :uid",
+            "SELECT COUNT(*) FROM paciente WHERE ativo = 0 AND usuario_id = {$ownerSql}",
             [':uid' => $userId]
         ) ?? 0);
 
         $agendadas = (int) ($this->fetchColumn(
-            "SELECT COUNT(*) AS agendadas FROM agenda WHERE horario_inicio >= CURDATE() AND usuario_id = :uid",
+            "SELECT COUNT(*) FROM agenda WHERE horario_inicio >= CURDATE() AND usuario_id = {$ownerSql}",
             [':uid' => $userId]
         ) ?? 0);
 
@@ -69,6 +73,11 @@ final class Dashboard extends Model
      */
     public function getYearlyPatientChart(int $userId): array
     {
+        $ownerSql = "COALESCE(
+            (SELECT sp.psicologo_id FROM secretaria_pertence sp WHERE sp.secretaria_id = :uid LIMIT 1),
+            :uid
+        )";
+
         $sql = "
             SELECT
                 MONTH(criado_em) AS mes,
@@ -76,7 +85,7 @@ final class Dashboard extends Model
                 SUM(CASE WHEN ativo = 0 THEN 1 ELSE 0 END) AS inativos
             FROM paciente
             WHERE YEAR(criado_em) = YEAR(CURDATE())
-              AND usuario_id = :uid
+              AND usuario_id = {$ownerSql}
             GROUP BY MONTH(criado_em)
             ORDER BY mes
         ";
@@ -90,7 +99,6 @@ final class Dashboard extends Model
         }
         unset($r);
 
-        /** @var list<array{mes:int,ativos:int,inativos:int}> $rows */
         return $rows;
     }
 }
