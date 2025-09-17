@@ -25,6 +25,11 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
       TZ: ${TZ}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_ENCRYPTION: ${SMTP_ENCRYPTION}
     volumes:
       - ./backend:/var/www/html
     depends_on:
@@ -62,6 +67,20 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - app-network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    ports:
+      - ${MAILPIT_WEB_PORT}:8025
+      - ${SMTP_PORT}:1025
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8025/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
   frontend-node-modules:
