@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Http\Middleware\RateLimitMiddleware;
 use Slim\Factory\AppFactory;
 use Symfony\Component\Dotenv\Dotenv;
 use App\Http\Middleware\CorsMiddleware;
