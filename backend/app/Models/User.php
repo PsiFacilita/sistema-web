@@ -78,4 +78,9 @@ final class User extends Model
         return $row ? self::fromRow($row) : null;
     }
 
+    public function updatePassword(int $id, string $passwordHash): bool
+    {
+        $sql = 'UPDATE usuario SET senha = ? WHERE id = ?';
+        return $this->executeQuery($sql, [1 => $passwordHash, 2 => $id]);
+    }
 }
