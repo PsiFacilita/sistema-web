@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PatientsController;
 use App\Http\Middleware\AuthMiddleware;
 use Slim\App;
@@ -17,6 +18,10 @@ final class Routes
 
         $app->get('/auth/me', [LoginController::class, 'me']);
         $app->post('/auth/login', [LoginController::class, 'login']);
+
+        $app->post('/auth/password/forgot', [PasswordResetController::class, 'forgot']);
+        $app->get('/auth/password/validate/{token}', [PasswordResetController::class, 'validate']);
+        $app->post('/auth/password/reset', [PasswordResetController::class, 'reset']);
 
         $app->group('/api', function (RouteCollectorProxy $group) {
             $group->get('/dashboard', [DashboardController::class, 'index']);

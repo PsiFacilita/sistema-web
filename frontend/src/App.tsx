@@ -115,6 +115,8 @@ const App: React.FC = () => {
                     {/* Não autorizado */}
                     <Route path="/not-authorized" element={<NonAuthorized />} />
 
+                    <Route path="/reset-password/:token" element={<PasswordReset />} />
+
                     {/* 404 → volta para login */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
