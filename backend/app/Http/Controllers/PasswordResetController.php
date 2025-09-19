@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 
 use App\Config\Controller;
 use App\Helpers\BaseLogger;
-use App\Models\PasswordReset;
-use App\Models\User;
 use App\Services\PasswordResetService;
-use PasswordException;
+use App\Exceptions\PasswordException;
 use PHPMailer\PHPMailer\PHPMailer;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -67,7 +65,6 @@ final class PasswordResetController extends Controller
 
             $this->logger->info('Password reset email processed');
             return $this->json($response, [
-                'ok' => true,
                 'message' => 'Se este e-mail estiver cadastrado, você receberá instruções para redefinir a senha.'
             ]);
 
@@ -91,6 +88,7 @@ final class PasswordResetController extends Controller
                 'ok' => false,
                 'error' => 'RESET_REQUEST_FAILED',
                 'message' => 'Não foi possível processar sua solicitação. Tente novamente mais tarde.',
+                'asd' => $e->getMessage()
             ], 500);
         }
     }

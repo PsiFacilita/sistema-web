@@ -5,8 +5,7 @@ namespace App\Services;
 
 use App\Models\PasswordReset;
 use App\Models\User;
-use Exception;
-use PasswordException;
+use App\Exceptions\PasswordException;
 use PHPMailer\PHPMailer\PHPMailer;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use DateTimeImmutable;
@@ -31,6 +30,10 @@ final class PasswordResetService
     public function sendResetLink(string $email, Request $request): void
     {
         $userData = $this->user->findByEmail($email);
+
+        if(!$userData) {
+            throw new PasswordException('Se este e-mail estiver cadastrado, você receberá instruções para redefinir a senha.');
+        }
 
         $token = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $token);
