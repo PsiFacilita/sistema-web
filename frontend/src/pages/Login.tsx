@@ -196,25 +196,25 @@ const Login: () => JSX.Element = () => {
                 </div>
             </div>
 
-            <Modal isOpen={otpOpen} onClose={() => {}} title="Two-factor verification" size="small" confirmButtonText="">
+            <Modal isOpen={otpOpen} onClose={() => {}} title="Verificação de Dois Fatores" size="small" confirmButtonText="Verificar">
                 <form onSubmit={handleVerifyOtp} className="space-y-4">
                     <div>
-                        <Label htmlFor="otp">6-digit code</Label>
+                        <Label htmlFor="otp">Código de 6 digitos</Label>
                         <Input id="otp" name="otp" type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} required value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g,''))} disabled={otpLoading} />
                     </div>
 
                     <div className="flex items-center gap-2">
                         <input id="rememberDevice" type="checkbox" checked={rememberDevice} onChange={(e)=>setRememberDevice(e.target.checked)} disabled={otpLoading} />
-                        <label htmlFor="rememberDevice" className="text-sm">Remember this device for 30 days</label>
+                        <label htmlFor="rememberDevice" className="text-sm">Lembrar o dispositivo por 30 dias</label>
                     </div>
 
                     {otpError && <div className="bg-red-50 border-l-4 border-red-500 p-3 text-sm text-red-700">{otpError}</div>}
 
                     <div className="flex justify-between">
-                        <button type="button" className="text-sm underline" onClick={handleResendOtp} disabled={otpLoading}>Resend code</button>
+                        <button type="button" className="text-sm underline" onClick={handleResendOtp} disabled={otpLoading}>Reenviar</button>
                         <div className="flex gap-2">
-                            <Button variant="secondary" type="button" onClick={()=>setOtpOpen(false)} disabled={otpLoading}>Cancel</Button>
-                            <Button variant="primary" type="submit" loading={otpLoading} disabled={otpLoading || otpCode.length!==6}>Verify</Button>
+                            <Button variant="secondary" type="button" onClick={()=>setOtpOpen(false)} disabled={otpLoading}>Cancelar</Button>
+                            <Button variant="primary" type="submit" loading={otpLoading} disabled={otpLoading || otpCode.length!==6}>Verificar</Button>
                         </div>
                     </div>
                 </form>
