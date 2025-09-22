@@ -144,4 +144,33 @@ CREATE TABLE IF NOT EXISTS secretaria_pertence (
     FOREIGN KEY (psicologo_id) REFERENCES usuario(id) ON DELETE CASCADE,
     FOREIGN KEY (secretaria_id) REFERENCES usuario(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS codigos_otp (
+                                           id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                           usuario_id INT NOT NULL,
+                                           desafio_id CHAR(36) NOT NULL,
+    codigo_hash VARCHAR(255) NOT NULL,
+    expira_em DATETIME NOT NULL,
+    tentativas INT NOT NULL DEFAULT 0,
+    usado TINYINT(1) NOT NULL DEFAULT 0,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY(desafio_id),
+    KEY(usuario_id),
+    KEY(expira_em),
+    CONSTRAINT fk_codigos_otp_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+    );
+
+CREATE TABLE IF NOT EXISTS dispositivos_confiaveis (
+                                                       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                                       usuario_id INT NOT NULL,
+                                                       hash_dispositivo CHAR(64) NOT NULL,
+    agente_usuario TEXT NULL,
+    ip VARCHAR(45) NULL,
+    expira_em DATETIME NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY(usuario_id, hash_dispositivo),
+    KEY(expira_em),
+    CONSTRAINT fk_dispositivos_confiaveis_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE
+    );
 

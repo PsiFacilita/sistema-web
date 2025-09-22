@@ -18,6 +18,8 @@ final class Routes
 
         $app->get('/auth/me', [LoginController::class, 'me']);
         $app->post('/auth/login', [LoginController::class, 'login']);
+        $app->post('/auth/2fa/verify', [LoginController::class, 'verify2fa']);
+        $app->post('/auth/2fa/resend', [LoginController::class, 'resend2fa']);
 
         $app->post('/auth/password/forgot', [PasswordResetController::class, 'forgot']);
         $app->get('/auth/password/validate/{token}', [PasswordResetController::class, 'validate']);

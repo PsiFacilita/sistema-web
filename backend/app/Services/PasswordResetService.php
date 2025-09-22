@@ -3,17 +3,16 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\MailHelper;
 use App\Models\PasswordReset;
 use App\Models\User;
 use App\Exceptions\PasswordException;
-use PHPMailer\PHPMailer\PHPMailer;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use DateTimeImmutable;
 
 final class PasswordResetService
 {
     public function __construct(
-        private PHPMailer $mailer,
         private string    $appUrl,
         private int       $tokenTtlSeconds = 900,
         private ?User $user = null,
@@ -31,11 +30,11 @@ final class PasswordResetService
     {
         $userData = $this->user->findByEmail($email);
 
-        if(!$userData) {
+        if (!$userData) {
             throw new PasswordException('Se este e-mail estiver cadastrado, você receberá instruções para redefinir a senha.');
         }
 
-        $token = bin2hex(random_bytes(32));
+        $token     = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $token);
         $expiresAt = new DateTimeImmutable('+' . $this->tokenTtlSeconds . ' seconds');
 
@@ -50,17 +49,20 @@ final class PasswordResetService
             userAgent: $ua
         );
 
-        $link = rtrim($this->appUrl, '/') . '/reset-password/' . $token;
-
-        $this->mailer->clearAllRecipients();
-        $this->mailer->addAddress($userData->email, $userData->name ?? $userData->email);
-        $this->mailer->Subject = 'Redefinição de senha';
-        $this->mailer->isHTML();
-        $this->mailer->Body = '<p>Olá,</p><p>Para redefinir sua senha, clique no link abaixo:</p><p><a href="' .
+        $link    = rtrim($this->appUrl, '/') . '/reset-password/' . $token;
+        $subject = 'Redefinição de senha';
+        $html    = '<p>Olá,</p><p>Para redefinir sua senha, clique no link abaixo:</p><p><a href="' .
             htmlspecialchars($link, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($link, ENT_QUOTES, 'UTF-8') .
             '</a></p><p>Se você não solicitou, ignore este e-mail.</p>';
-        $this->mailer->AltBody = "Para redefinir sua senha, acesse: $link";
-        $this->mailer->send();
+        $alt     = "Para redefinir sua senha, acesse: $link";
+
+        MailHelper::send(
+            toEmail: $userData->email,
+            toName:  $userData->name ?? $userData->email,
+            subject: $subject,
+            htmlBody:$html,
+            altBody: $alt
+        );
     }
 
     public function validateToken(string $token): void
