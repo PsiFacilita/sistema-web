@@ -1,31 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import Title from '../Title/Title';
-import Button from '../Button';
-import Input from '../Form/Input';
-import Label from '../Form/Label';
-import Select from '../Form/Select';
+import Button from '../Button/Button';
+import Input from '../Form/Input/Input';
+import Label from '../Form/Label/Label';
+import Select from '../Form/Select/Select';
 import Modal from '../Modal/Modal';
+import { FiClock, FiCalendar, FiPlus, FiEdit2, FiTrash2, FiCopy } from 'react-icons/fi';
 
 // Interface para representar horários de um dia da semana
 interface WeekdaySchedule {
-  isOpen: boolean;  // Se está aberto neste dia
-  openTime: string; // Horário de abertura (formato HH:MM)
-  closeTime: string; // Horário de fechamento (formato HH:MM)
-  hasBreak: boolean; // Se possui intervalo
-  breakStart: string; // Início do intervalo (formato HH:MM)
-  breakEnd: string; // Fim do intervalo (formato HH:MM)
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+  hasBreak: boolean;
+  breakStart: string;
+  breakEnd: string;
 }
 
 // Interface para exceções (datas específicas)
 interface ScheduleException {
-  id: string; // ID único para a exceção
-  date: string; // Formato YYYY-MM-DD
-  isOpen: boolean; // false = fechado neste dia
-  openTime?: string; // Opcional, só usado se isOpen=true
-  closeTime?: string; // Opcional, só usado se isOpen=true
-  hasBreak?: boolean; // Opcional, só usado se isOpen=true
-  breakStart?: string; // Opcional, só usado se isOpen=true
-  breakEnd?: string; // Opcional, só usado se isOpen=true
+  id: string;
+  date: string;
+  isOpen: boolean;
+  openTime?: string;
+  closeTime?: string;
+  hasBreak?: boolean;
+  breakStart?: string;
+  breakEnd?: string;
 }
 
 // Interface principal para configuração de horários
@@ -37,7 +38,7 @@ interface WeeklyScheduleConfig {
   friday: WeekdaySchedule;
   saturday: WeekdaySchedule;
   sunday: WeekdaySchedule;
-  exceptions: ScheduleException[]; // Datas específicas que diferem do padrão
+  exceptions: ScheduleException[];
 }
 
 interface WorkScheduleManagerProps {
@@ -99,9 +100,9 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
   const [currentException, setCurrentException] = useState<ScheduleException | null>(null);
   const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
   const [exceptionToDelete, setExceptionToDelete] = useState<string | null>(null);
+  const [copySourceDay, setCopySourceDay] = useState<keyof Omit<WeeklyScheduleConfig, 'exceptions'> | null>(null);
   
   useEffect(() => {
-    // Inicializar com a configuração fornecida ou padrão
     setConfig(deepCopy(initialConfig));
   }, [initialConfig]);
 
@@ -113,7 +114,6 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
       [field]: value 
     };
 
-    // Se o dia for marcado como fechado, desabilitar o intervalo
     if (field === 'isOpen' && value === false) {
       updatedConfig[day].hasBreak = false;
     }
@@ -125,14 +125,32 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
     }
   };
 
+  // Função para copiar horário para todos os dias
+  const handleCopyToAllDays = (sourceDay: keyof Omit<WeeklyScheduleConfig, 'exceptions'>) => {
+    const sourceSchedule = config[sourceDay];
+    const updatedConfig = { ...config };
+    
+    weekdayKeys.forEach(day => {
+      if (day !== sourceDay) {
+        updatedConfig[day] = deepCopy(sourceSchedule);
+      }
+    });
+    
+    setConfig(updatedConfig);
+    
+    if (onSave) {
+      onSave(deepCopy(updatedConfig));
+    }
+    setCopySourceDay(null);
+  };
+
   // Função para abrir modal de exceção
   const handleAddException = () => {
-    // Criar uma nova exceção com valores padrão
     const today = new Date().toISOString().split('T')[0];
     const newException: ScheduleException = {
       id: Date.now().toString(),
       date: today,
-      isOpen: false, // Por padrão, uma exceção é para marcar dia fechado
+      isOpen: false,
       openTime: '08:00',
       closeTime: '17:00',
       hasBreak: false,
@@ -191,7 +209,6 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
       [field]: value
     });
     
-    // Se marcar como fechado, desabilitar configurações de horário
     if (field === 'isOpen' && value === false) {
       setCurrentException(prev => ({
         ...prev!,
@@ -223,182 +240,213 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
     setCurrentException(null);
   };
 
-  // Função para copiar horário para todos os dias da semana
-  const copyScheduleToAllDays = (sourceDay: keyof Omit<WeeklyScheduleConfig, 'exceptions'>) => {
-    const sourceSchedule = config[sourceDay];
-    const updatedConfig = { ...config };
-    
-    weekdayKeys.forEach(day => {
-      if (day !== sourceDay) {
-        updatedConfig[day] = deepCopy(sourceSchedule);
-      }
-    });
-    
-    setConfig(updatedConfig);
-    
-    if (onSave) {
-      onSave(deepCopy(updatedConfig));
-    }
-  };
-
   return (
-    <div className="bg-white p-6 rounded-lg shadow mt-6">
-      <Title level={3}>Horários de Funcionamento</Title>
+    <div className="p-1">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="bg-sage-100 rounded-lg p-3">
+          <FiClock size={24} className="text-sage-600" />
+        </div>
+        <Title level={3} className="text-sage-800 mb-0">Horários de Funcionamento</Title>
+      </div>
       
       {/* Tabela de horários da semana */}
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="border p-3 text-left">Dia da semana</th>
-              <th className="border p-3 text-center">Status</th>
-              <th className="border p-3 text-center">Horário</th>
-              <th className="border p-3 text-center">Intervalo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {weekdayKeys.map((day, index) => (
-              <tr key={day} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                <td className="border p-4">
-                  <span className="font-medium">{weekdayNames[index]}</span>
-                </td>
-                <td className="border p-4 text-center">
-                  <label className="inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config[day].isOpen}
-                      onChange={(e) => updateWeekdaySchedule(day, 'isOpen', e.target.checked)}
-                      className="form-checkbox h-5 w-5 text-blue-600"
-                    />
-                    <span className="ml-2">
-                      {config[day].isOpen ? 'Aberto' : 'Fechado'}
-                    </span>
-                  </label>
-                </td>
-                <td className="border p-4">
-                  {config[day].isOpen ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <Input
-                        type="time"
-                        value={config[day].openTime}
-                        onChange={(e) => updateWeekdaySchedule(day, 'openTime', e.target.value)}
-                        disabled={!config[day].isOpen}
-                        className="w-24"
-                      />
-                      <span>às</span>
-                      <Input
-                        type="time"
-                        value={config[day].closeTime}
-                        onChange={(e) => updateWeekdaySchedule(day, 'closeTime', e.target.value)}
-                        disabled={!config[day].isOpen}
-                        className="w-24"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-gray-500">Não disponível</span>
-                  )}
-                </td>
-                <td className="border p-4">
-                  {config[day].isOpen ? (
-                    <>
-                      <label className="inline-flex items-center cursor-pointer mb-2">
-                        <input
-                          type="checkbox"
-                          checked={config[day].hasBreak}
-                          onChange={(e) => updateWeekdaySchedule(day, 'hasBreak', e.target.checked)}
-                          disabled={!config[day].isOpen}
-                          className="form-checkbox h-5 w-5 text-blue-600"
-                        />
-                        <span className="ml-2">Possui intervalo</span>
-                      </label>
-                      {config[day].hasBreak && (
-                        <div className="flex items-center justify-center space-x-2 mt-2">
-                          <Input
-                            type="time"
-                            value={config[day].breakStart}
-                            onChange={(e) => updateWeekdaySchedule(day, 'breakStart', e.target.value)}
-                            disabled={!config[day].isOpen || !config[day].hasBreak}
-                            className="w-24"
-                          />
-                          <span>às</span>
-                          <Input
-                            type="time"
-                            value={config[day].breakEnd}
-                            onChange={(e) => updateWeekdaySchedule(day, 'breakEnd', e.target.value)}
-                            disabled={!config[day].isOpen || !config[day].hasBreak}
-                            className="w-24"
-                          />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-gray-500">Não disponível</span>
-                  )}
-                </td>
+      <div className="bg-white rounded-xl border border-sage-200 overflow-hidden mb-8">
+        <div className="bg-sage-50 px-6 py-4 border-b border-sage-200">
+          <h4 className="font-semibold text-sage-800">Horários Semanais</h4>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-sage-50">
+                <th className="p-4 text-left font-semibold text-sage-700">Dia da semana</th>
+                <th className="p-4 text-center font-semibold text-sage-700">Status</th>
+                <th className="p-4 text-center font-semibold text-sage-700">Horário</th>
+                <th className="p-4 text-center font-semibold text-sage-700">Intervalo</th>
+                <th className="p-4 text-center font-semibold text-sage-700">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-sage-100">
+              {weekdayKeys.map((day, index) => (
+                <tr key={day} className="hover:bg-sage-50 transition-colors">
+                  <td className="p-4">
+                    <span className="font-medium text-sage-800">{weekdayNames[index]}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config[day].isOpen}
+                        onChange={(e) => updateWeekdaySchedule(day, 'isOpen', e.target.checked)}
+                        className="rounded border-sage-300 text-sage-600 focus:ring-sage-500"
+                      />
+                      <span className="ml-2 text-sm font-medium">
+                        {config[day].isOpen ? (
+                          <span className="text-green-600">Aberto</span>
+                        ) : (
+                          <span className="text-red-600">Fechado</span>
+                        )}
+                      </span>
+                    </label>
+                  </td>
+                  <td className="p-4">
+                    {config[day].isOpen ? (
+                      <div className="flex items-center justify-center space-x-3">
+                        <Input
+                          type="time"
+                          value={config[day].openTime}
+                          onChange={(e) => updateWeekdaySchedule(day, 'openTime', e.target.value)}
+                          disabled={!config[day].isOpen}
+                          className="w-28 border-sage-200"
+                        />
+                        <span className="text-sage-500">às</span>
+                        <Input
+                          type="time"
+                          value={config[day].closeTime}
+                          onChange={(e) => updateWeekdaySchedule(day, 'closeTime', e.target.value)}
+                          disabled={!config[day].isOpen}
+                          className="w-28 border-sage-200"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-sage-400 text-sm">Não disponível</span>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    {config[day].isOpen ? (
+                      <div className="space-y-2">
+                        <label className="inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={config[day].hasBreak}
+                            onChange={(e) => updateWeekdaySchedule(day, 'hasBreak', e.target.checked)}
+                            disabled={!config[day].isOpen}
+                            className="rounded border-sage-300 text-sage-600 focus:ring-sage-500"
+                          />
+                          <span className="ml-2 text-sm">Possui intervalo</span>
+                        </label>
+                        {config[day].hasBreak && (
+                          <div className="flex items-center justify-center space-x-3">
+                            <Input
+                              type="time"
+                              value={config[day].breakStart}
+                              onChange={(e) => updateWeekdaySchedule(day, 'breakStart', e.target.value)}
+                              disabled={!config[day].isOpen || !config[day].hasBreak}
+                              className="w-28 border-sage-200"
+                            />
+                            <span className="text-sage-500">às</span>
+                            <Input
+                              type="time"
+                              value={config[day].breakEnd}
+                              onChange={(e) => updateWeekdaySchedule(day, 'breakEnd', e.target.value)}
+                              disabled={!config[day].isOpen || !config[day].hasBreak}
+                              className="w-28 border-sage-200"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sage-400 text-sm">Não disponível</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-center">
+                    <button
+                      onClick={() => setCopySourceDay(copySourceDay === day ? null : day)}
+                      className="flex items-center gap-1 text-sage-600 hover:text-sage-700 text-sm"
+                    >
+                      <FiCopy size={14} />
+                      <span>Copiar</span>
+                    </button>
+                    {copySourceDay === day && (
+                      <div className="mt-2 p-2 bg-sage-100 rounded-lg">
+                        <p className="text-xs text-sage-600 mb-2">Copiar para:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {weekdayKeys.filter(d => d !== day).map(otherDay => (
+                            <button
+                              key={otherDay}
+                              onClick={() => handleCopyToAllDays(day)}
+                              className="px-2 py-1 bg-sage-600 text-white text-xs rounded hover:bg-sage-700"
+                            >
+                              {weekdayNames[weekdayKeys.indexOf(otherDay)].substring(0, 3)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Seção de exceções */}
-      <div className="mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="font-medium text-lg">Exceções e Datas Especiais</h4>
-          <Button variant="primary" onClick={handleAddException}>
+      <div className="bg-white rounded-xl border border-sage-200 overflow-hidden">
+        <div className="bg-sage-50 px-6 py-4 border-b border-sage-200 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <FiCalendar size={20} className="text-sage-600" />
+            <h4 className="font-semibold text-sage-800">Exceções e Datas Especiais</h4>
+          </div>
+          <Button 
+            variant="primary" 
+            onClick={handleAddException}
+            icon={<FiPlus size={16} />}
+            className="bg-sage-600 hover:bg-sage-700 border-sage-600"
+          >
             Adicionar Exceção
           </Button>
         </div>
 
-        {config.exceptions.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {config.exceptions.map((exception) => (
-              <div key={exception.id} className="border rounded-lg p-4 relative">
-                <div className="flex justify-between items-center mb-2">
-                  <h5 className="font-medium">{formatDateWithWeekday(exception.date)}</h5>
-                  <div className="flex space-x-1">
-                    <button 
-                      onClick={() => handleEditException(exception.id)}
-                      className="text-blue-500 hover:text-blue-700"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                      </svg>
-                    </button>
-                    <button 
-                      onClick={() => handleConfirmDeleteException(exception.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </button>
+        <div className="p-6">
+          {config.exceptions.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {config.exceptions.map((exception) => (
+                <div key={exception.id} className="border border-sage-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-3">
+                    <h5 className="font-medium text-sage-800">{formatDateWithWeekday(exception.date)}</h5>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleEditException(exception.id)}
+                        className="text-sage-600 hover:text-sage-700 p-1 rounded"
+                      >
+                        <FiEdit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleConfirmDeleteException(exception.id)}
+                        className="text-red-600 hover:text-red-700 p-1 rounded"
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    {exception.isOpen ? (
+                      <>
+                        <p className="text-green-600 text-sm">
+                          <span className="font-medium">Aberto:</span> {exception.openTime} às {exception.closeTime}
+                        </p>
+                        {exception.hasBreak && (
+                          <p className="text-orange-500 text-sm mt-1">
+                            <span className="font-medium">Intervalo:</span> {exception.breakStart} às {exception.breakEnd}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-red-600 font-medium text-sm">Fechado</p>
+                    )}
                   </div>
                 </div>
-                <div className="mt-2">
-                  {exception.isOpen ? (
-                    <>
-                      <p className="text-green-600">
-                        <span className="font-medium">Aberto:</span> {exception.openTime} às {exception.closeTime}
-                      </p>
-                      {exception.hasBreak && (
-                        <p className="text-orange-500">
-                          <span className="font-medium">Intervalo:</span> {exception.breakStart} às {exception.breakEnd}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-red-600 font-medium">Fechado</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500 border rounded-lg">
-            Nenhuma exceção cadastrada. Clique em "Adicionar Exceção" para criar uma.
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-sage-600">
+              <FiCalendar size={48} className="mx-auto mb-4 text-sage-300" />
+              <p>Nenhuma exceção cadastrada.</p>
+              <p className="text-sm text-sage-500 mt-1">Clique em "Adicionar Exceção" para criar uma.</p>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* Modal para adicionar/editar exceção */}
@@ -409,102 +457,126 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
         size="medium"
       >
         {currentException && (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="exception-date">Data da Exceção</Label>
-              <Input
-                id="exception-date"
-                type="date"
-                value={currentException.date}
-                onChange={(e) => updateExceptionField('date', e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
-            
-            <div>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={currentException.isOpen}
-                  onChange={(e) => updateExceptionField('isOpen', e.target.checked)}
-                  className="form-checkbox h-5 w-5 text-blue-600"
-                />
-                <span className="ml-2">Estabelecimento aberto nesta data</span>
-              </label>
-            </div>
-            
-            {currentException.isOpen && (
-              <>
-                <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-                  <div className="flex-1">
-                    <Label htmlFor="exception-open">Horário de Abertura</Label>
-                    <Input
-                      id="exception-open"
-                      type="time"
-                      value={currentException.openTime}
-                      onChange={(e) => updateExceptionField('openTime', e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Label htmlFor="exception-close">Horário de Fechamento</Label>
-                    <Input
-                      id="exception-close"
-                      type="time"
-                      value={currentException.closeTime}
-                      onChange={(e) => updateExceptionField('closeTime', e.target.value)}
-                    />
-                  </div>
-                </div>
-                
+          <div className="space-y-6 mt-4">
+            <div className="bg-sage-50 rounded-xl p-4">
+              <h3 className="flex items-center gap-2 text-sage-700 font-semibold mb-4">
+                <FiCalendar size={18} />
+                Configuração da Exceção
+              </h3>
+              
+              <div className="space-y-4">
                 <div>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={currentException.hasBreak || false}
-                      onChange={(e) => updateExceptionField('hasBreak', e.target.checked)}
-                      className="form-checkbox h-5 w-5 text-blue-600"
-                    />
-                    <span className="ml-2">Possui intervalo</span>
-                  </label>
+                  <Label className="block text-sm font-medium text-sage-700 mb-2" htmlFor="exception-date">
+                    Data da Exceção
+                  </Label>
+                  <Input
+                    id="exception-date"
+                    type="date"
+                    value={currentException.date}
+                    onChange={(e) => updateExceptionField('date', e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="border-sage-200 focus:border-sage-400"
+                  />
                 </div>
                 
-                {currentException.hasBreak && (
-                  <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-                    <div className="flex-1">
-                      <Label htmlFor="exception-break-start">Início do Intervalo</Label>
-                      <Input
-                        id="exception-break-start"
-                        type="time"
-                        value={currentException.breakStart}
-                        onChange={(e) => updateExceptionField('breakStart', e.target.value)}
-                      />
+                <div className="flex items-center p-3 bg-white rounded-lg border border-sage-200">
+                  <input
+                    type="checkbox"
+                    checked={currentException.isOpen}
+                    onChange={(e) => updateExceptionField('isOpen', e.target.checked)}
+                    className="rounded border-sage-300 text-sage-600 focus:ring-sage-500"
+                  />
+                  <span className="ml-3 text-sm font-medium text-sage-700">
+                    Estabelecimento aberto nesta data
+                  </span>
+                </div>
+                
+                {currentException.isOpen && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="block text-sm font-medium text-sage-700 mb-2" htmlFor="exception-open">
+                          Horário de Abertura
+                        </Label>
+                        <Input
+                          id="exception-open"
+                          type="time"
+                          value={currentException.openTime}
+                          onChange={(e) => updateExceptionField('openTime', e.target.value)}
+                          className="border-sage-200 focus:border-sage-400"
+                        />
+                      </div>
+                      <div>
+                        <Label className="block text-sm font-medium text-sage-700 mb-2" htmlFor="exception-close">
+                          Horário de Fechamento
+                        </Label>
+                        <Input
+                          id="exception-close"
+                          type="time"
+                          value={currentException.closeTime}
+                          onChange={(e) => updateExceptionField('closeTime', e.target.value)}
+                          className="border-sage-200 focus:border-sage-400"
+                        />
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <Label htmlFor="exception-break-end">Fim do Intervalo</Label>
-                      <Input
-                        id="exception-break-end"
-                        type="time"
-                        value={currentException.breakEnd}
-                        onChange={(e) => updateExceptionField('breakEnd', e.target.value)}
+                    
+                    <div className="flex items-center p-3 bg-white rounded-lg border border-sage-200">
+                      <input
+                        type="checkbox"
+                        checked={currentException.hasBreak || false}
+                        onChange={(e) => updateExceptionField('hasBreak', e.target.checked)}
+                        className="rounded border-sage-300 text-sage-600 focus:ring-sage-500"
                       />
+                      <span className="ml-3 text-sm font-medium text-sage-700">Possui intervalo</span>
                     </div>
-                  </div>
+                    
+                    {currentException.hasBreak && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="block text-sm font-medium text-sage-700 mb-2" htmlFor="exception-break-start">
+                            Início do Intervalo
+                          </Label>
+                          <Input
+                            id="exception-break-start"
+                            type="time"
+                            value={currentException.breakStart}
+                            onChange={(e) => updateExceptionField('breakStart', e.target.value)}
+                            className="border-sage-200 focus:border-sage-400"
+                          />
+                        </div>
+                        <div>
+                          <Label className="block text-sm font-medium text-sage-700 mb-2" htmlFor="exception-break-end">
+                            Fim do Intervalo
+                          </Label>
+                          <Input
+                            id="exception-break-end"
+                            type="time"
+                            value={currentException.breakEnd}
+                            onChange={(e) => updateExceptionField('breakEnd', e.target.value)}
+                            className="border-sage-200 focus:border-sage-400"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
+              </div>
+            </div>
             
-            <div className="mt-6 flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 pt-4 border-t border-sage-100">
               <Button 
-                variant="secondary"
+                variant="outline"
                 onClick={() => setIsExceptionModalOpen(false)}
+                className="border-sage-300 text-sage-700 hover:bg-sage-50"
               >
                 Cancelar
               </Button>
               <Button 
                 variant="primary"
                 onClick={handleSaveException}
+                className="bg-sage-600 hover:bg-sage-700 border-sage-600"
               >
-                Salvar
+                Salvar Exceção
               </Button>
             </div>
           </div>
@@ -518,18 +590,21 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
         title="Confirmar Exclusão"
         size="small"
       >
-        <div>
-          <p className="mb-6">Tem certeza que deseja excluir esta exceção?</p>
-          <div className="flex justify-end space-x-2">
+        <div className="text-center py-4">
+          <FiTrash2 size={48} className="mx-auto mb-4 text-red-400" />
+          <p className="text-sage-700 mb-6">Tem certeza que deseja excluir esta exceção?</p>
+          <div className="flex justify-end space-x-2 pt-4 border-t border-sage-100">
             <Button 
-              variant="secondary"
+              variant="outline"
               onClick={() => setIsConfirmDeleteModalOpen(false)}
+              className="border-sage-300 text-sage-700 hover:bg-sage-50"
             >
               Cancelar
             </Button>
             <Button 
-              variant="danger"
+              variant="primary"
               onClick={handleDeleteException}
+              className="bg-red-600 hover:bg-red-700 border-red-600"
             >
               Excluir
             </Button>

@@ -15,17 +15,17 @@ const sidebarItems = [
 
 const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   return (
-    <div className="w-full h-full bg-green-800 text-white p-4">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-bold">PsiFacilita</h1>
+    <div className="w-full h-full bg-sage-700 text-sage-50 p-6">
+      <div className="flex items-center justify-between mb-10">
+        <h1 className="text-2xl font-light tracking-wide">PsiFacilita</h1>
         {onClose && (
-          <button onClick={onClose} className="md:hidden text-white">
+          <button onClick={onClose} className="md:hidden text-sage-200 hover:text-white">
             <XMarkIcon className="h-6 w-6" />
           </button>
         )}
       </div>
       <nav>
-        <ul>
+        <ul className="space-y-2">
           {sidebarItems.map((item) => (
             <SidebarItem key={item.name} {...item} />
           ))}

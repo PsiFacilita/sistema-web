@@ -5,7 +5,7 @@ import Card from '../components/Card/Card';
 import Button from '../components/Button/Button';
 import Icon from '../components/Icon/Icon';
 import Modal from '../components/Modal/Modal';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiSearch, FiUser, FiCalendar, FiClock, FiEdit3 } from 'react-icons/fi';
 
 interface CalendarEvent {
   id: string;
@@ -63,7 +63,7 @@ const Appointments: React.FC = () => {
     date?: string;
     time?: string;
   }>({});
-  
+
   // Mock de pacientes
   const [patients, setPatients] = useState<Patient[]>([
     { id: '1', name: 'Ana Silva' },
@@ -81,34 +81,31 @@ const Appointments: React.FC = () => {
   const getStatusBadgeClass = (status?: string) => {
     switch (status) {
       case 'confirmado':
-        return 'bg-blue-100 text-blue-800 border-blue-200'; // primary
+        return 'bg-blue-100 text-blue-800 border border-blue-200';
       case 'agendado':
-        return 'bg-purple-100 text-purple-800 border-purple-200'; // secondary
+        return 'bg-purple-100 text-purple-800 border border-purple-200';
       case 'cancelado':
-        return 'bg-red-100 text-red-800 border-red-200'; // danger
+        return 'bg-red-100 text-red-800 border border-red-200';
       case 'reagendado':
-        return 'bg-gray-100 text-gray-800 border-gray-200'; // outline
+        return 'bg-gray-100 text-gray-800 border border-gray-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border border-gray-200';
     }
   };
 
   // Funções de validação
-  // Verifica se a data está no passado
   const isDateInPast = (dateStr: string): boolean => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(dateStr);
     selectedDate.setHours(0, 0, 0, 0);
     return selectedDate < today;
   };
 
-  // Verifica se o horário já passou (para datas de hoje)
   const isTimeInPast = (dateStr: string, timeStr: string): boolean => {
     const now = new Date();
     const selectedDate = new Date(dateStr);
     
-    // Só verifica o horário se a data for hoje
     if (selectedDate.toDateString() === now.toDateString()) {
       const [hours, minutes] = timeStr.split(':').map(Number);
       const selectedDateTime = new Date(selectedDate);
@@ -124,15 +121,12 @@ const Appointments: React.FC = () => {
     const date = new Date(year, month, 1);
     const days = [];
     
-    // Determina o primeiro dia da semana (0 = domingo)
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     
-    // Adiciona dias vazios para o início do mês alinhado à semana
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(null);
     }
     
-    // Adiciona os dias do mês
     while (date.getMonth() === month) {
       days.push(new Date(date));
       date.setDate(date.getDate() + 1);
@@ -165,11 +159,8 @@ const Appointments: React.FC = () => {
   const handleOpenNewAppointmentModal = (date?: string) => {
     setNewAppointmentStep(1);
     setSearchTerm('');
-    
-    // Reset validation errors
     setValidationErrors({});
     
-    // Se for uma data passada, use a data atual
     const selectedDateObj = date ? new Date(date) : new Date();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -201,10 +192,8 @@ const Appointments: React.FC = () => {
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = e.target.value;
     
-    // Limpa erro anterior
     setValidationErrors(prev => ({ ...prev, date: undefined }));
     
-    // Valida
     if (isDateInPast(newDate)) {
       setValidationErrors(prev => ({ 
         ...prev, 
@@ -212,14 +201,11 @@ const Appointments: React.FC = () => {
       }));
     }
     
-    // Atualiza estado
     setNewAppointmentData({
       ...newAppointmentData,
       date: newDate
     });
     
-    // Reseta o horário para garantir que seja selecionado um horário válido
-    // após a mudança de data
     setNewAppointmentData(prev => {
       const availableTimes = getAvailableTimesForDate(newDate);
       return {
@@ -234,10 +220,8 @@ const Appointments: React.FC = () => {
   const handleTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newTime = e.target.value;
     
-    // Limpa erro anterior
     setValidationErrors(prev => ({ ...prev, time: undefined }));
     
-    // Valida
     if (isTimeInPast(newAppointmentData.date, newTime)) {
       setValidationErrors(prev => ({ 
         ...prev, 
@@ -245,7 +229,6 @@ const Appointments: React.FC = () => {
       }));
     }
     
-    // Atualiza estado
     setNewAppointmentData({
       ...newAppointmentData,
       time: newTime
@@ -278,13 +261,11 @@ const Appointments: React.FC = () => {
   
   // Obtém os horários disponíveis para uma data específica
   const getAvailableTimesForDate = (date: string, excludeEventId?: string): string[] => {
-    // Gera todas as horas possíveis (8:00 - 18:00)
     const allTimes = [
-      ...Array.from({ length: 4 }, (_, i) => `${(8 + i).toString().padStart(2, '0')}:00`),  // 08:00 a 11:00
-      ...Array.from({ length: 4 }, (_, i) => `${(14 + i).toString().padStart(2, '0')}:00`)  // 14:00 a 17:00
+      ...Array.from({ length: 4 }, (_, i) => `${(8 + i).toString().padStart(2, '0')}:00`),
+      ...Array.from({ length: 4 }, (_, i) => `${(14 + i).toString().padStart(2, '0')}:00`)
     ];
     
-    // Filtra os horários que já estão ocupados
     return allTimes.filter(time => 
       !isTimeSlotOccupied(date, time, excludeEventId) && 
       !isTimeInPast(date, time)
@@ -293,7 +274,6 @@ const Appointments: React.FC = () => {
 
   // Handler para criar agendamento
   const handleCreateAppointment = () => {
-    // Valida dados antes de salvar
     const dateError = isDateInPast(newAppointmentData.date) ? 
       'Não é possível agendar para datas passadas' : undefined;
       
@@ -302,24 +282,21 @@ const Appointments: React.FC = () => {
     
     if (dateError || timeError) {
       setValidationErrors({ date: dateError, time: timeError });
-      return; // Impede a submissão
+      return;
     }
     
-    // Em um app real, enviaria para uma API
     console.log('Criando agendamento:', newAppointmentData);
     
-    // Adiciona o evento ao estado local
     const newEvent: CalendarEvent = {
       id: `event-${Date.now()}`,
       title: 'Consulta',
       time: newAppointmentData.time,
       type: 'appointment',
       patientName: newAppointmentData.patientName,
-      status: 'agendado', // Status inicial para novos agendamentos
+      status: 'agendado',
       notes: newAppointmentData.notes
     };
     
-    // Atualiza o daySchedules com o novo evento
     const dateExists = daySchedules.findIndex(day => day.date === newAppointmentData.date);
     if (dateExists >= 0) {
       const updatedSchedules = [...daySchedules];
@@ -329,8 +306,6 @@ const Appointments: React.FC = () => {
           a.time.localeCompare(b.time))
       };
       setDaySchedules(updatedSchedules);
-      
-      // Salva no localStorage
       saveSchedulesToLocalStorage(updatedSchedules);
     } else {
       const updatedSchedules = [
@@ -341,15 +316,10 @@ const Appointments: React.FC = () => {
         }
       ];
       setDaySchedules(updatedSchedules);
-      
-      // Salva no localStorage
       saveSchedulesToLocalStorage(updatedSchedules);
     }
     
-    // Fecha o modal
     setIsNewAppointmentModalOpen(false);
-    
-    // Reset data
     setNewAppointmentData({
       patientId: '',
       patientName: '',
@@ -373,32 +343,27 @@ const Appointments: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   };
 
-  // Simulação de dados de agendamento (normalmente viria de uma API)
+  // Simulação de dados de agendamento
   useEffect(() => {
-    // Tenta carregar do localStorage primeiro
     const savedSchedules = loadSchedulesFromLocalStorage();
     
     if (savedSchedules.length > 0) {
       setDaySchedules(savedSchedules);
     } else {
-      // Se não houver dados no localStorage, gera dados mock
       const loadSchedules = async () => {
-        // Aqui você faria uma chamada API real
         const mockSchedules: DaySchedule[] = [];
         
-        // Gera alguns eventos de exemplo
         for (let day of daysInMonth) {
-          if (day && Math.random() > 0.6) { // 40% de chance de ter eventos neste dia
+          if (day && Math.random() > 0.6) {
             const numEvents = Math.floor(Math.random() * 4) + 1;
             const events: CalendarEvent[] = [];
             
             for (let i = 0; i < numEvents; i++) {
-              const hour = 8 + Math.floor(Math.random() * 9); // 8h-17h
+              const hour = 8 + Math.floor(Math.random() * 9);
               const minute = '00';
               const types = ['appointment', 'break', 'unavailable'] as const;
               const type = types[Math.floor(Math.random() * types.length)];
               
-              // Definir status aleatório para appointments
               let status;
               if (type === 'appointment') {
                 const statuses = ['agendado', 'confirmado', 'cancelado', 'reagendado'] as const;
@@ -424,8 +389,6 @@ const Appointments: React.FC = () => {
         }
         
         setDaySchedules(mockSchedules);
-        
-        // Salva os dados mock no localStorage
         saveSchedulesToLocalStorage(mockSchedules);
       };
       
@@ -440,7 +403,6 @@ const Appointments: React.FC = () => {
     const dateString = day.toISOString().split('T')[0];
     setSelectedDate(dateString);
     
-    // Busca eventos para esta data
     const daySchedule = daySchedules.find(schedule => schedule.date === dateString);
     setSelectedDayEvents(daySchedule?.events || []);
     
@@ -448,10 +410,9 @@ const Appointments: React.FC = () => {
   };
 
   const handleAppointmentClick = (event: CalendarEvent, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent click handlers
+    e.stopPropagation();
     setSelectedEvent(event);
     setIsAppointmentModalOpen(true);
-    // Reset edição
     setIsEditMode(false);
     setEditedEvent(null);
     setEditValidationErrors({});
@@ -481,16 +442,13 @@ const Appointments: React.FC = () => {
   const handleEditFieldChange = (field: keyof CalendarEvent, value: string) => {
     if (!editedEvent) return;
     
-    // Limpa erros de validação anteriores
     if (field === 'time') {
       setEditValidationErrors(prev => ({...prev, time: undefined}));
     }
     
-    // Cria uma cópia atualizada do evento
     const updatedEvent = {...editedEvent, [field]: value};
     setEditedEvent(updatedEvent);
     
-    // Valida o horário
     if (field === 'time' && selectedDate) {
       if (isTimeInPast(selectedDate, value)) {
         setEditValidationErrors(prev => ({
@@ -499,7 +457,6 @@ const Appointments: React.FC = () => {
         }));
       }
       
-      // Verifica se o horário já está ocupado por outro agendamento
       if (isTimeSlotOccupied(selectedDate, value, editedEvent.id)) {
         setEditValidationErrors(prev => ({
           ...prev,
@@ -513,12 +470,10 @@ const Appointments: React.FC = () => {
   const handleSaveEdit = () => {
     if (!editedEvent || !selectedDate) return;
     
-    // Validação final
     if (editValidationErrors.time) {
-      return; // Não salva se houver erros
+      return;
     }
     
-    // Atualiza o evento no estado
     const updatedSchedules = daySchedules.map(day => {
       if (day.date === selectedDate) {
         return {
@@ -532,19 +487,11 @@ const Appointments: React.FC = () => {
     });
     
     setDaySchedules(updatedSchedules);
-    
-    // Atualiza eventos do dia selecionado
     const updatedDayEvents = updatedSchedules
       .find(day => day.date === selectedDate)?.events || [];
     setSelectedDayEvents(updatedDayEvents);
-    
-    // Atualiza evento selecionado
     setSelectedEvent(editedEvent);
-    
-    // Salva no localStorage
     saveSchedulesToLocalStorage(updatedSchedules);
-    
-    // Sai do modo de edição
     setIsEditMode(false);
     setEditedEvent(null);
   };
@@ -553,13 +500,13 @@ const Appointments: React.FC = () => {
   const getEventTypeClass = (type: CalendarEvent['type']) => {
     switch (type) {
       case 'appointment':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-800 border border-green-200';
       case 'break':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
       case 'unavailable':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800 border border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border border-gray-200';
     }
   };
 
@@ -573,10 +520,10 @@ const Appointments: React.FC = () => {
   };
 
   const getBadgeClass = (title: string) => {
-    if (title.includes('Consulta')) return 'bg-green-100 text-green-800';
-    if (title.includes('Indisponível')) return 'bg-red-100 text-red-800';
-    if (title.includes('Intervalo')) return 'bg-yellow-100 text-yellow-800';
-      return 'bg-gray-200 text-gray-800';
+    if (title.includes('Consulta')) return 'bg-green-100 text-green-800 border border-green-200';
+    if (title.includes('Indisponível')) return 'bg-red-100 text-red-800 border border-red-200';
+    if (title.includes('Intervalo')) return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+    return 'bg-gray-200 text-gray-800 border border-gray-200';
   };
   
   // Filtra os pacientes baseado na busca
@@ -587,14 +534,13 @@ const Appointments: React.FC = () => {
   // Obtém horários disponíveis para o dia selecionado
   const availableTimesForSelectedDate = getAvailableTimesForDate(newAppointmentData.date);
 
-  // Obtém horários disponíveis para edição (incluindo o horário atual do evento)
+  // Obtém horários disponíveis para edição
   const getAvailableTimesForEdit = (date: string, eventId: string): string[] => {
     const allTimes = [
-      ...Array.from({ length: 4 }, (_, i) => `${(8 + i).toString().padStart(2, '0')}:00`),  // 08:00 a 11:00
-      ...Array.from({ length: 4 }, (_, i) => `${(14 + i).toString().padStart(2, '0')}:00`)  // 14:00 a 17:00
+      ...Array.from({ length: 4 }, (_, i) => `${(8 + i).toString().padStart(2, '0')}:00`),
+      ...Array.from({ length: 4 }, (_, i) => `${(14 + i).toString().padStart(2, '0')}:00`)
     ];
     
-    // Para edição, inclui o horário atual do evento como opção
     return allTimes.filter(time => 
       (editedEvent && time === editedEvent.time) || 
       (!isTimeSlotOccupied(date, time, eventId) && !isTimeInPast(date, time))
@@ -603,112 +549,121 @@ const Appointments: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="pb-6">
-        <div className="flex justify-between items-center mb-6">
-          <Title level={1} className="text-xl md:text-3xl">Agenda</Title>
-          
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setCurrentMonth(new Date())}
-              className="px-3"
-            >
-              Hoje
-            </Button>
-            <div className="flex border rounded-md">
+      <div className="mb-8">
+        <Title level={1} className="text-sage-700">Agenda</Title>
+      </div>
+
+      {/* Header com controles */}
+      <Card variant="elevated" className="mb-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <Button 
                 variant="outline" 
-                onClick={() => changeMonth(-1)}
-                className="border-0 rounded-r-none"
+                onClick={() => setCurrentMonth(new Date())}
+                className="border-sage-300 text-sage-700 hover:bg-sage-50"
               >
-                <FiChevronLeft size={16} />
+                Hoje
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => changeMonth(1)}
-                className="border-0 border-l rounded-l-none"
-              >
-                <FiChevronRight size={16} />
-              </Button>
+              <div className="flex border border-sage-200 rounded-lg">
+                <Button 
+                  variant="outline" 
+                  onClick={() => changeMonth(-1)}
+                  className="border-0 rounded-r-none hover:bg-sage-50"
+                >
+                  <FiChevronLeft size={16} />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => changeMonth(1)}
+                  className="border-0 border-l border-sage-200 rounded-l-none hover:bg-sage-50"
+                >
+                  <FiChevronRight size={16} />
+                </Button>
+              </div>
             </div>
+            <h2 className="text-xl font-medium capitalize text-sage-800">
+              {monthName} {year}
+            </h2>
           </div>
-        </div>
-        
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-medium capitalize">
-            {monthName} {year}
-          </h2>
 
           <Button
             variant="primary"
-            icon={<Icon type="plus" size={16} />}
+            icon={<FiCalendar size={18} />}
             onClick={() => handleOpenNewAppointmentModal()}
+            className="bg-sage-600 hover:bg-sage-700 border-sage-600"
           >
             Novo Agendamento
           </Button>
         </div>
+      </Card>
 
-        <Card>
-          {/* Grade dos dias da semana */}
-          <div className="grid grid-cols-7 gap-px bg-gray-200">
-            {weekDays.map(day => (
-              <div key={day} className="bg-white p-2 text-center font-medium text-gray-700">
-                {day}
-              </div>
-            ))}
+      {/* Calendário */}
+      <Card variant="elevated" className="p-0 overflow-hidden">
+        {/* Cabeçalho dos dias da semana */}
+        <div className="grid grid-cols-7 bg-sage-100 border-b border-sage-200">
+          {weekDays.map(day => (
+            <div key={day} className="p-4 text-center font-semibold text-sage-700">
+              {day}
+            </div>
+          ))}
+        </div>
+        
+        {/* Grade de dias */}
+        <div className="grid grid-cols-7 gap-px bg-sage-100">
+          {daysInMonth.map((day, index) => {
+            const events = getDayEvents(day);
+            const isToday = day && new Date().toDateString() === day.toDateString();
+            const hasEvents = events.length > 0;
             
-            {/* Dias do mês */}
-            {daysInMonth.map((day, index) => {
-              const events = getDayEvents(day);
-              const isToday = day && new Date().toDateString() === day.toDateString();
-              const hasEvents = events.length > 0;
-              
-              return (
-                <div 
-                  key={index}
-                  className={`bg-white relative min-h-[100px] p-2 border border-transparent hover:border-blue-300 
-                    ${isToday ? 'bg-blue-50' : ''} 
-                    ${day ? 'cursor-pointer' : 'bg-gray-50'}`}
-                  onClick={() => day && handleDayClick(day)}
-                >
-                  {day && (
-                    <>
-                      <div className={`text-right ${isToday ? 'font-bold text-blue-600' : ''}`}>
-                        {day.getDate()}
-                      </div>
+            return (
+              <div 
+                key={index}
+                className={`bg-white relative min-h-[120px] p-3 transition-all duration-200
+                  ${isToday ? 'bg-sage-50 ring-2 ring-sage-400' : ''} 
+                  ${day ? 'cursor-pointer hover:bg-sage-50' : 'bg-sage-50'}`}
+                onClick={() => day && handleDayClick(day)}
+              >
+                {day && (
+                  <>
+                    <div className={`text-right text-sm font-medium mb-2
+                      ${isToday ? 'text-sage-700' : 'text-sage-600'}
+                      ${day.getDate() === 1 ? 'text-sage-800 font-bold' : ''}`}>
+                      {day.getDate()}
+                    </div>
+                    
+                    <div className="space-y-1 max-h-[80px] overflow-hidden">
+                      {events.slice(0, 3).map((event, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`text-xs px-2 py-1 rounded border cursor-pointer transition-all hover:scale-105 ${getEventTypeClass(event.type)}`}
+                          onClick={(e) => handleAppointmentClick(event, e)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">{event.time}</span>
+                            {event.type === 'appointment' && event.status && (
+                              <span className={`px-1 rounded text-[10px] ${getStatusBadgeClass(event.status)}`}>
+                                {event.status.charAt(0)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="truncate text-[10px]">{event.title}</div>
+                        </div>
+                      ))}
                       
-                      <div className="mt-1 space-y-1 max-h-[80px] overflow-hidden">
-                        {events.slice(0, 3).map((event, idx) => (
-                          <div 
-                            key={idx} 
-                            className={`text-xs px-1 py-0.5 rounded truncate border ${getEventTypeClass(event.type)} cursor-pointer hover:bg-opacity-80`}
-                            onClick={(e) => handleAppointmentClick(event, e)}
-                          >
-                            <div className="flex justify-between">
-                              <span>{event.time} - {event.title}</span>
-                              {event.type === 'appointment' && event.status && (
-                                <span className={`ml-1 px-1 rounded-full text-[10px] ${getStatusBadgeClass(event.status)}`}>
-                                  {event.status}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        
-                        {events.length > 3 && (
-                          <div className="text-xs text-center text-gray-500">
-                            +{events.length - 3} mais
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      </div>
+                      {events.length > 3 && (
+                        <div className="text-xs text-center text-sage-500 bg-sage-100 rounded px-2 py-1">
+                          +{events.length - 3} mais
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
 
       {/* Modal para visualizar eventos do dia */}
       <Modal
@@ -718,24 +673,27 @@ const Appointments: React.FC = () => {
         size="medium"
       >
         {selectedDayEvents.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {selectedDayEvents.map((event, index) => (
               <div 
                 key={index} 
-                className={`p-3 rounded border ${getEventTypeClass(event.type)} cursor-pointer hover:shadow-md transition-shadow`}
+                className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${getEventTypeClass(event.type)}`}
                 onClick={(e) => handleAppointmentClick(event, e)}
               >
                 <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{event.title}</h4>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiClock size={16} className="text-sage-600" />
+                      <span className="font-semibold text-lg">{event.time}</span>
+                    </div>
+                    <h4 className="font-medium text-sage-800">{event.title}</h4>
                     {event.patientName && (
-                      <p className="text-sm">{event.patientName}</p>
+                      <p className="text-sm text-sage-600 mt-1">{event.patientName}</p>
                     )}
                   </div>
-                  <div className="flex flex-col items-end">
-                    <div className="text-lg font-medium">{event.time}</div>
+                  <div className="flex flex-col items-end gap-2">
                     {event.status && event.type === 'appointment' && (
-                      <span className={`text-xs px-2 py-0.5 mt-1 rounded-full ${getStatusBadgeClass(event.status)}`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(event.status)}`}>
                         {event.status}
                       </span>
                     )}
@@ -745,20 +703,21 @@ const Appointments: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            Nenhum evento agendado para este dia.
+          <div className="text-center py-8 text-sage-600">
+            <FiCalendar size={48} className="mx-auto mb-4 text-sage-300" />
+            <p>Nenhum evento agendado para este dia.</p>
           </div>
         )}
         
-        <div className="mt-6 flex justify-end space-x-2">
+        <div className="mt-6 flex justify-end space-x-2 pt-4 border-t border-sage-100">
           <Button 
-            variant="danger"
+            variant="outline"
             onClick={() => setIsModalOpen(false)}
+            className="border-sage-300 text-sage-700 hover:bg-sage-50"
           >
             Fechar
           </Button>
           
-          {/* Só mostra o botão de adicionar agendamento se a data não for passada */}
           {selectedDate && !isDateInPast(selectedDate) && (
             <Button 
               variant="primary"
@@ -766,6 +725,7 @@ const Appointments: React.FC = () => {
                 handleOpenNewAppointmentModal(selectedDate);
                 setIsModalOpen(false);
               }}
+              className="bg-sage-600 hover:bg-sage-700"
             >
               Adicionar Evento
             </Button>
@@ -784,57 +744,57 @@ const Appointments: React.FC = () => {
         size="small"
       >
         {selectedEvent && !isEditMode && (
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xl font-semibold">{selectedEvent.title}</h3>
-                  <div className="flex gap-2">
-                    {selectedEvent.status && selectedEvent.type === 'appointment' && (
-                      <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${getStatusBadgeClass(selectedEvent.status)}`}>
-                        {selectedEvent.status}
-                      </span>
-                    )}
-                    <span className={`text-sm font-medium px-2 py-0.5 rounded-full flex items-center ${getBadgeClass(selectedEvent.title)}`}>
-                      <Icon type="clock" size={14} className="mr-1 opacity-70" />
-                      {selectedEvent.time}
+          <div className="space-y-6">
+            <div className="bg-sage-50 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-sage-800">{selectedEvent.title}</h3>
+                <div className="flex gap-2">
+                  {selectedEvent.status && selectedEvent.type === 'appointment' && (
+                    <span className={`text-sm font-medium px-3 py-1 rounded-full ${getStatusBadgeClass(selectedEvent.status)}`}>
+                      {selectedEvent.status}
                     </span>
-                  </div>
+                  )}
+                  <span className={`text-sm font-medium px-3 py-1 rounded-full flex items-center ${getBadgeClass(selectedEvent.title)}`}>
+                    <FiClock size={14} className="mr-1" />
+                    {selectedEvent.time}
+                  </span>
                 </div>
+              </div>
 
-                <div className="space-y-3">
-                  {selectedEvent.type === 'appointment' && selectedEvent.patientName && (
-                  <div className="flex items-center">
-                    <Icon type="user" size={18} className="mr-2 opacity-70" />
+              <div className="space-y-3">
+                {selectedEvent.type === 'appointment' && selectedEvent.patientName && (
+                  <div className="flex items-center text-sage-700">
+                    <FiUser size={18} className="mr-3 opacity-70" />
                     <span>{selectedEvent.patientName}</span>
                   </div>
-                  )}
-                  
-                  {selectedEvent.notes && (
-                    <div className="mt-4 border-t pt-3">
-                      <h4 className="font-medium mb-1">Anotações</h4>
-                      <p className="text-sm text-gray-600">{selectedEvent.notes}</p>
-                    </div>
-                  )}
-                </div>
+                )}
+                
+                {selectedEvent.notes && (
+                  <div className="mt-4 border-t border-sage-200 pt-3">
+                    <h4 className="font-medium mb-2 text-sage-700">Anotações</h4>
+                    <p className="text-sm text-sage-600 bg-white p-3 rounded-lg">{selectedEvent.notes}</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex justify-end space-x-2 mt-6">
+            <div className="flex justify-end space-x-2 pt-4 border-t border-sage-100">
               <Button
-                variant="danger"
+                variant="outline"
                 onClick={handleBackToDayView}
+                className="border-sage-300 text-sage-700 hover:bg-sage-50"
               >
                 Voltar
               </Button>
               {selectedEvent.type === 'appointment' && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={handleStartEdit}
-                  >
-                    <Icon type="edit" size={16} className="mr-1" />
-                    Editar
-                  </Button>
-                </>
+                <Button
+                  variant="primary"
+                  onClick={handleStartEdit}
+                  className="bg-sage-600 hover:bg-sage-700"
+                >
+                  <FiEdit3 size={16} className="mr-1" />
+                  Editar
+                </Button>
               )}
             </div>
           </div>
@@ -842,14 +802,16 @@ const Appointments: React.FC = () => {
         
         {/* Formulário de edição */}
         {selectedEvent && isEditMode && editedEvent && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
+                <label className="block mb-2 text-sm font-medium text-sage-700">
                   Horário
                 </label>
                 <select
-                  className={`w-full p-2 border rounded-lg ${editValidationErrors.time ? 'border-red-500' : ''}`}
+                  className={`w-full p-3 border border-sage-200 rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400 ${
+                    editValidationErrors.time ? 'border-red-500' : ''
+                  }`}
                   value={editedEvent.time}
                   onChange={(e) => handleEditFieldChange('time', e.target.value)}
                 >
@@ -866,11 +828,11 @@ const Appointments: React.FC = () => {
               
               {editedEvent.type === 'appointment' && (
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                  <label className="block mb-2 text-sm font-medium text-sage-700">
                     Status
                   </label>
                   <select
-                    className="w-full p-2 border rounded-lg"
+                    className="w-full p-3 border border-sage-200 rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400"
                     value={editedEvent.status || 'agendado'}
                     onChange={(e) => handleEditFieldChange('status', e.target.value)}
                   >
@@ -885,12 +847,12 @@ const Appointments: React.FC = () => {
             
             {editedEvent.type === 'appointment' && (
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
+                <label className="block mb-2 text-sm font-medium text-sage-700">
                   Nome do Paciente
                 </label>
                 <input
                   type="text"
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-3 border border-sage-200 rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400"
                   value={editedEvent.patientName || ''}
                   onChange={(e) => handleEditFieldChange('patientName', e.target.value)}
                   placeholder="Nome do paciente"
@@ -899,21 +861,22 @@ const Appointments: React.FC = () => {
             )}
             
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">
+              <label className="block mb-2 text-sm font-medium text-sage-700">
                 Anotações
               </label>
               <textarea
-                className="w-full p-2 border rounded-lg h-24"
+                className="w-full p-3 border border-sage-200 rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400 h-24 resize-none"
                 value={editedEvent.notes || ''}
                 onChange={(e) => handleEditFieldChange('notes', e.target.value)}
                 placeholder="Adicione anotações aqui..."
               />
             </div>
             
-            <div className="flex justify-end space-x-2 mt-6">
+            <div className="flex justify-end space-x-2 pt-4 border-t border-sage-100">
               <Button
-                variant="danger"
+                variant="outline"
                 onClick={handleCancelEdit}
+                className="border-sage-300 text-sage-700 hover:bg-sage-50"
               >
                 Cancelar
               </Button>
@@ -921,6 +884,7 @@ const Appointments: React.FC = () => {
                 variant="primary"
                 onClick={handleSaveEdit}
                 disabled={!!editValidationErrors.time}
+                className="bg-sage-600 hover:bg-sage-700"
               >
                 Salvar Alterações
               </Button>
@@ -942,41 +906,36 @@ const Appointments: React.FC = () => {
             <div className="space-y-4">
               <div className="mb-4">
                 <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400" size={18} />
                   <input
                     type="text"
-                    className="w-full p-3 border rounded-lg pl-10"
+                    className="w-full p-3 border border-sage-200 rounded-lg pl-10 focus:border-sage-400 focus:ring-1 focus:ring-sage-400"
                     placeholder="Buscar paciente..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                  <Icon 
-                    type="search" 
-                    size={18} 
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
-                  />
                 </div>
               </div>
               
-              <div className="max-h-[400px] overflow-y-auto border rounded-lg">
+              <div className="max-h-[400px] overflow-y-auto border border-sage-200 rounded-lg">
                 {filteredPatients.length > 0 ? (
-                  <div className="divide-y">
+                  <div className="divide-y divide-sage-100">
                     {filteredPatients.map(patient => (
                       <div
                         key={patient.id}
-                        className="p-3 hover:bg-gray-50 cursor-pointer flex items-center"
+                        className="p-3 hover:bg-sage-50 cursor-pointer flex items-center transition-colors"
                         onClick={() => handlePatientSelect(patient)}
                       >
-                        <div className="bg-blue-100 text-blue-800 h-10 w-10 rounded-full flex items-center justify-center mr-3">
+                        <div className="bg-sage-100 text-sage-700 h-10 w-10 rounded-full flex items-center justify-center mr-3 font-medium">
                           {patient.name.substring(0, 2).toUpperCase()}
                         </div>
-                        <div>
-                          <div className="font-medium">{patient.name}</div>
-                        </div>
+                        <div className="font-medium text-sage-800">{patient.name}</div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-gray-500">
+                  <div className="p-8 text-center text-sage-500">
+                    <FiUser size={32} className="mx-auto mb-2 text-sage-300" />
                     Nenhum paciente encontrado.
                   </div>
                 )}
@@ -987,27 +946,29 @@ const Appointments: React.FC = () => {
           {/* Step 2: Seleção de Data e Horário */}
           {newAppointmentStep === 2 && (
             <div className="space-y-6">
-              <div className="bg-blue-50 p-4 rounded-lg flex items-center">
-                <div className="bg-blue-100 text-blue-800 h-12 w-12 rounded-full flex items-center justify-center mr-3">
+              <div className="bg-sage-50 p-4 rounded-lg flex items-center">
+                <div className="bg-sage-100 text-sage-700 h-12 w-12 rounded-full flex items-center justify-center mr-3 font-medium">
                   {newAppointmentData.patientName.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <div className="text-sm text-blue-600">Paciente selecionado</div>
-                  <div className="font-medium">{newAppointmentData.patientName}</div>
+                  <div className="text-sm text-sage-600">Paciente selecionado</div>
+                  <div className="font-medium text-sage-800">{newAppointmentData.patientName}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                  <label className="block mb-2 text-sm font-medium text-sage-700">
                     Data da Consulta
                   </label>
                   <input
                     type="date"
-                    className={`w-full p-2 border rounded-lg ${validationErrors.date ? 'border-red-500' : ''}`}
+                    className={`w-full p-3 border rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400 ${
+                      validationErrors.date ? 'border-red-500' : 'border-sage-200'
+                    }`}
                     value={newAppointmentData.date}
                     onChange={handleDateChange}
-                    min={new Date().toISOString().split('T')[0]} // Impede seleção de datas passadas
+                    min={new Date().toISOString().split('T')[0]}
                   />
                   {validationErrors.date && (
                     <p className="mt-1 text-sm text-red-600">{validationErrors.date}</p>
@@ -1015,11 +976,13 @@ const Appointments: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                  <label className="block mb-2 text-sm font-medium text-sage-700">
                     Horário
                   </label>
                   <select
-                    className={`w-full p-2 border rounded-lg ${validationErrors.time ? 'border-red-500' : ''}`}
+                    className={`w-full p-3 border rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400 ${
+                      validationErrors.time ? 'border-red-500' : 'border-sage-200'
+                    }`}
                     value={newAppointmentData.time}
                     onChange={handleTimeChange}
                   >
@@ -1045,11 +1008,11 @@ const Appointments: React.FC = () => {
               </div>
               
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
+                <label className="block mb-2 text-sm font-medium text-sage-700">
                   Anotações (opcional)
                 </label>
                 <textarea
-                  className="w-full p-2 border rounded-lg h-24"
+                  className="w-full p-3 border border-sage-200 rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400 h-24 resize-none"
                   value={newAppointmentData.notes}
                   onChange={(e) => setNewAppointmentData({...newAppointmentData, notes: e.target.value})}
                   placeholder="Adicione anotações sobre a consulta..."
@@ -1058,9 +1021,9 @@ const Appointments: React.FC = () => {
             </div>
           )}
 
-          <div className="mt-6 flex justify-end space-x-2">
+          <div className="mt-6 flex justify-end space-x-2 pt-4 border-t border-sage-100">
             <Button
-              variant="danger"
+              variant="outline"
               onClick={() => {
                 if (newAppointmentStep === 1) {
                   setIsNewAppointmentModalOpen(false);
@@ -1068,6 +1031,7 @@ const Appointments: React.FC = () => {
                   handlePreviousStep();
                 }
               }}
+              className="border-sage-300 text-sage-700 hover:bg-sage-50"
             >
               {newAppointmentStep === 1 ? 'Cancelar' : 'Voltar'}
             </Button>
@@ -1077,6 +1041,7 @@ const Appointments: React.FC = () => {
                 variant="primary"
                 onClick={handleCreateAppointment}
                 disabled={!!validationErrors.date || !!validationErrors.time || availableTimesForSelectedDate.length === 0}
+                className="bg-sage-600 hover:bg-sage-700"
               >
                 Confirmar Agendamento
               </Button>
