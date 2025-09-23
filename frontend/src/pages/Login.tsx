@@ -4,10 +4,10 @@ import Input from '../components/Form/Input/Input';
 import Label from '../components/Form/Label/Label';
 import Anchor from '../components/Anchor/Anchor';
 import Modal from '../components/Modal/Modal';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/images/logo-psifacilita.png';
-import { FiMail, FiLock, FiArrowRight, FiHelpCircle } from 'react-icons/fi';
+import { FiMail, FiLock, FiArrowRight, FiHelpCircle, FiRefreshCw, FiShield } from 'react-icons/fi';
 
 const API_URL =
     (import.meta as any).env?.VITE_BACKEND_URL ||
@@ -17,29 +17,197 @@ const API_URL =
 const Login: () => JSX.Element = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+
     const [recoveryEmail, setRecoveryEmail] = useState('');
     const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
     const [recoverySubmitted, setRecoverySubmitted] = useState(false);
     const [recoveryLoading, setRecoveryLoading] = useState(false);
     const [recoveryMessage, setRecoveryMessage] = useState<string>('');
     const [recoveryError, setRecoveryError] = useState<string>('');
+
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const { login } = useAuth();
+    const [is2faOpen, setIs2faOpen] = useState(false);
+    const [challengeId, setChallengeId] = useState<string>('');
+    const [codeDigits, setCodeDigits] = useState<string[]>(['', '', '', '', '', '']);
+    const [codeError, setCodeError] = useState<string>('');
+    const [codeLoading, setCodeLoading] = useState<boolean>(false);
+    const [rememberDevice, setRememberDevice] = useState<boolean>(false);
+    const [resendLoading, setResendLoading] = useState<boolean>(false);
+    const [resendCooldown, setResendCooldown] = useState<number>(0);
+
+    const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
     const navigate = useNavigate();
+    const { login } = useAuth();
+
+    const codeValue = useMemo(() => codeDigits.join(''), [codeDigits]);
+
+    useEffect(() => {
+        let timer: number | undefined;
+        if (resendCooldown > 0) {
+            timer = window.setInterval(() => {
+                setResendCooldown((s) => (s > 0 ? s - 1 : 0));
+            }, 1000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [resendCooldown]);
+
+    const focusNext = (idx: number) => {
+        if (idx < 5) inputsRef.current[idx + 1]?.focus();
+    };
+
+    const focusPrev = (idx: number) => {
+        if (idx > 0) inputsRef.current[idx - 1]?.focus();
+    };
+
+    const handleDigitChange = (idx: number, val: string) => {
+        setCodeError('');
+        const cleaned = val.replace(/\D/g, '');
+        if (!cleaned) {
+            setCodeDigits((arr) => {
+                const a = [...arr];
+                a[idx] = '';
+                return a;
+            });
+            return;
+        }
+
+        if (cleaned.length > 1) {
+            const next = cleaned.slice(0, 6).split('');
+            const filled = Array(6).fill('');
+            for (let i = 0; i < next.length; i++) filled[i] = next[i];
+            setCodeDigits(filled as string[]);
+            const last = Math.min(next.length, 6) - 1;
+            inputsRef.current[last]?.focus();
+            return;
+        }
+
+        setCodeDigits((arr) => {
+            const a = [...arr];
+            a[idx] = cleaned;
+            return a;
+        });
+        if (cleaned) focusNext(idx);
+    };
+
+    const handleDigitKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && !codeDigits[idx]) {
+            e.preventDefault();
+            setCodeDigits((arr) => {
+                const a = [...arr];
+                a[idx] = '';
+                return a;
+            });
+            focusPrev(idx);
+        }
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            focusPrev(idx);
+        }
+        if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            focusNext(idx);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
+
         try {
+            const res = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email: email.trim(), password }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                throw new Error(data?.message || 'Falha no login.');
+            }
+
+            if (data?.requires_2fa && data?.challenge_id) {
+                setChallengeId(data.challenge_id);
+                setIs2faOpen(true);
+                setCodeDigits(['', '', '', '', '', '']);
+                setRememberDevice(false);
+                setResendCooldown(30);
+                return;
+            }
+
             const success = await login(email, password);
-            if (success) navigate('/dashboard', { replace: true });
+            if (success) navigate('/dashboard');
+            else throw new Error('Não foi possível autenticar.');
         } catch (err: any) {
             setError(err?.message || 'Ocorreu um erro durante o login');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleVerifyCode = async () => {
+        setCodeError('');
+        const code = codeValue.replace(/\D/g, '');
+        if (code.length !== 6) {
+            setCodeError('Informe os 6 dígitos.');
+            return;
+        }
+
+        setCodeLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/auth/2fa/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    challenge_id: challengeId,
+                    code,
+                    remember: rememberDevice,
+                }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || !data?.ok) {
+                throw new Error(data?.message || 'Código inválido.');
+            }
+
+            navigate('/dashboard', { replace: true });
+        } catch (err: any) {
+            setCodeError(err?.message || 'Falha ao validar o código.');
+        } finally {
+            setCodeLoading(false);
+        }
+    };
+
+    const handleResendCode = async () => {
+        if (resendCooldown > 0) return;
+        setResendLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/auth/2fa/resend`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data?.ok) {
+                throw new Error(data?.message || 'Não foi possível reenviar o código.');
+            }
+            setChallengeId(data.challenge_id);
+            setCodeDigits(['', '', '', '', '', '']);
+            setCodeError('');
+            setResendCooldown(30);
+        } catch (err: any) {
+            setCodeError(err?.message || 'Erro ao reenviar o código.');
+        } finally {
+            setResendLoading(false);
         }
     };
 
@@ -154,11 +322,11 @@ const Login: () => JSX.Element = () => {
                         </div>
 
                         <div>
-                            <Button 
-                                type="submit" 
-                                variant="primary" 
-                                fullWidth 
-                                loading={isLoading} 
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                fullWidth
+                                loading={isLoading}
                                 disabled={isLoading}
                                 className="bg-sage-600 hover:bg-sage-700 border-sage-600"
                                 icon={<FiArrowRight size={18} />}
@@ -221,19 +389,19 @@ const Login: () => JSX.Element = () => {
                         )}
 
                         <div className="flex justify-end space-x-2">
-                            <Button 
-                                variant="outline" 
-                                onClick={() => setIsRecoveryModalOpen(false)} 
-                                type="button" 
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsRecoveryModalOpen(false)}
+                                type="button"
                                 disabled={recoveryLoading}
                                 className="border-sage-300 text-sage-700 hover:bg-sage-50"
                             >
                                 Cancelar
                             </Button>
-                            <Button 
-                                variant="primary" 
-                                type="submit" 
-                                loading={recoveryLoading} 
+                            <Button
+                                variant="primary"
+                                type="submit"
+                                loading={recoveryLoading}
                                 disabled={recoveryLoading || !recoveryEmail}
                                 className="bg-sage-600 hover:bg-sage-700 border-sage-600"
                             >
@@ -247,8 +415,8 @@ const Login: () => JSX.Element = () => {
                             {recoveryMessage || 'Solicitação processada.'}
                         </p>
                         <div className="flex justify-end">
-                            <Button 
-                                variant="primary" 
+                            <Button
+                                variant="primary"
                                 onClick={() => setIsRecoveryModalOpen(false)}
                                 className="bg-sage-600 hover:bg-sage-700"
                             >
@@ -257,6 +425,76 @@ const Login: () => JSX.Element = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            <Modal
+                isOpen={is2faOpen}
+                onClose={() => setIs2faOpen(false)}
+                title="Verificação em duas etapas"
+                size="small"
+                confirmButtonText=""
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-sage-700">
+                        Enviamos um código de 6 dígitos para o seu e-mail cadastrado.
+                    </p>
+
+                    <div className="flex justify-center gap-2">
+                        {codeDigits.map((d, idx) => (
+                            <input
+                                key={idx}
+                                ref={(el) => (inputsRef.current[idx] = el)}
+                                inputMode="numeric"
+                                pattern="\d*"
+                                maxLength={1}
+                                value={d}
+                                onChange={(e) => handleDigitChange(idx, e.target.value)}
+                                onKeyDown={(e) => handleDigitKeyDown(idx, e)}
+                                className="w-10 h-12 text-center text-lg border border-sage-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sage-400"
+                            />
+                        ))}
+                    </div>
+
+                    <label className="flex items-center gap-2 text-sm text-sage-700">
+                        <input
+                            type="checkbox"
+                            checked={rememberDevice}
+                            onChange={(e) => setRememberDevice(e.target.checked)}
+                        />
+                        <span className="flex items-center gap-1">
+                            <FiShield /> Lembrar este dispositivo por 30 dias
+                        </span>
+                    </label>
+
+                    {codeError && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-3 text-sm text-red-700">
+                            {codeError}
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                        <Button
+                            variant="primary"
+                            onClick={handleVerifyCode}
+                            loading={codeLoading}
+                            disabled={codeLoading}
+                            className="bg-sage-600 hover:bg-sage-700 border-sage-600"
+                        >
+                            Validar código
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            onClick={handleResendCode}
+                            loading={resendLoading}
+                            disabled={resendLoading || resendCooldown > 0}
+                            icon={<FiRefreshCw />}
+                            className="text-sage-700 hover:bg-sage-50"
+                        >
+                            {resendCooldown > 0 ? `Reenviar (${resendCooldown}s)` : 'Reenviar código'}
+                        </Button>
+                    </div>
+                </div>
             </Modal>
         </div>
     );

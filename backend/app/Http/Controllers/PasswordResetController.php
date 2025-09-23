@@ -23,7 +23,6 @@ final class PasswordResetController extends Controller
     ) {
         $this->logger = $this->logger ?? new BaseLogger('PasswordResetController');
         $this->service = $this->service ?? new PasswordResetService(
-            mailer: $this->makeMailer(),
             appUrl: (string)($_ENV['FRONTEND_URL'] ?? $_SERVER['FRONTEND_URL'] ?? 'http://localhost:3000'),
             tokenTtlSeconds: 15 * 60
         );
