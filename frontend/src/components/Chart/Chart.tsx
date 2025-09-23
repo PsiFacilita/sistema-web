@@ -1,79 +1,145 @@
 import React from 'react';
-import { Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend,
+  Filler
 } from 'chart.js';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 interface ChartProps {
+  type?: 'line';
   data: {
     labels: string[];
     datasets: {
       label: string;
       data: number[];
-      backgroundColor: string;
+      borderColor: string;
+      backgroundColor?: string;
+      tension?: number;
+      fill?: boolean;
+      borderWidth?: number;
+      borderDash?: number[];
+      pointRadius?: number;
+      pointHoverRadius?: number;
+      pointBackgroundColor?: string;
+      pointBorderColor?: string;
+      pointBorderWidth?: number;
     }[];
   };
+  onLegendClick?: (datasetLabel: string) => void;
+  highlightState?: 'ativos' | 'inativos' | 'none';
 }
 
-const Chart: React.FC<ChartProps> = ({ data }) => {
+const Chart: React.FC<ChartProps> = ({ data, onLegendClick, highlightState }) => {
   const options = {
     responsive: true,
-    maintainAspectRatio: false, // Permite redimensionamento livre
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
         labels: {
-          boxWidth: 12, // Tamanho reduzido da legenda em mobile
+          color: '#6B7280',
+          usePointStyle: true,
+          padding: 20,
           font: {
-            size: window.innerWidth < 768 ? 10 : 12, // Fonte adaptável
+            size: 12,
+            family: 'system-ui'
           },
+          // Tornar a legenda clicável
+          generateLabels: (chart: any) => {
+            const original = ChartJS.defaults.plugins.legend.labels.generateLabels;
+            const labels = original.call(this, chart);
+            
+            return labels.map(label => {
+              // Adicionar estilo de destaque baseado no highlightState
+              const isHighlighted = 
+                (highlightState === 'ativos' && label.text === 'Pacientes Ativos') ||
+                (highlightState === 'inativos' && label.text === 'Pacientes Inativos');
+              
+              return {
+                ...label,
+                // Estilo para legenda destacada
+                font: {
+                  ...label.font,
+                  weight: isHighlighted ? 'bold' : 'normal'
+                },
+                // Adicionar indicador visual para legenda destacada
+                text: isHighlighted ? `★ ${label.text}` : label.text,
+                // Tornar clicável
+                onClick: (e: any) => {
+                  if (onLegendClick) {
+                    const type = label.text === 'Pacientes Ativos' ? 'ativos' : 
+                                label.text === 'Pacientes Inativos' ? 'inativos' : 'none';
+                    onLegendClick(type);
+                  }
+                }
+              };
+            });
+          }
         },
+        onClick: (e: any, legendItem: any, legend: any) => {
+          // Prevenir o comportamento padrão de mostrar/esconder dataset
+          e.stopPropagation();
+        }
       },
-      title: {
-        display: true,
-        text: 'Estatísticas de Pacientes',
-        font: {
-          size: window.innerWidth < 768 ? 14 : 16,
-        },
-      },
+      tooltip: {
+        backgroundColor: '#4B5563',
+        titleFont: { size: 12 },
+        bodyFont: { size: 12 },
+        padding: 10,
+        cornerRadius: 8
+      }
     },
     scales: {
       x: {
-        ticks: {
-          font: {
-            size: window.innerWidth < 768 ? 10 : 12,
-          },
-        },
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: { color: '#6B7280' }
       },
       y: {
-        ticks: {
-          font: {
-            size: window.innerWidth < 768 ? 10 : 12,
-          },
-        },
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: { color: '#6B7280' },
+        beginAtZero: true
       },
     },
+    elements: {
+      point: {
+        radius: 4,
+        hoverRadius: 6,
+        backgroundColor: '#fff',
+        borderWidth: 2
+      }
+    },
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
+    hover: {
+      mode: 'nearest' as const,
+      intersect: true
+    }
   };
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="min-w-[300px] h-64 md:h-80"> {/* Largura mínima + altura responsiva */}
-        <Bar options={options} data={data} />
+    <div className="w-full">
+      <div className="h-80">
+        <Line options={options} data={data} />
       </div>
     </div>
   );
