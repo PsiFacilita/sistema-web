@@ -157,45 +157,6 @@ final class PasswordResetController extends Controller
     }
 
     /**
-     * Instancia e configura PHPMailer para Mailpit/SMTP, com logs.
-     *
-     * @param BaseLogger $logger
-     * @return PHPMailer
-     */
-    private function makeMailer(): PHPMailer
-    {
-        $smtpHost = (string) ($_ENV['SMTP_HOST'] ?? 'mailpit');
-        $smtpPort = (int) ($_ENV['SMTP_PORT'] ?? 1025);
-        $smtpUser = (string) ($_ENV['SMTP_USERNAME'] ?? '');
-        $smtpPass = (string) ($_ENV['SMTP_PASSWORD'] ?? '');
-        $smtpEnc  = (string) ($_ENV['SMTP_ENCRYPTION'] ?? '');
-
-        $this->logger->info('Configuring mailer', [
-            'host' => $smtpHost,
-            'port' => $smtpPort,
-            'encryption' => $smtpEnc ?: '(none)',
-            'auth' => ($smtpUser !== '' || $smtpPass !== ''),
-        ]);
-
-        $m = new PHPMailer(true);
-        $m->isSMTP();
-        $m->Host = $smtpHost;
-        $m->Port = $smtpPort;
-        $m->SMTPAuth = $smtpUser !== '' || $smtpPass !== '';
-        if ($m->SMTPAuth) {
-            $m->Username = $smtpUser;
-            $m->Password = $smtpPass;
-        }
-        if ($smtpEnc !== '') {
-            $m->SMTPSecure = $smtpEnc;
-        }
-        $m->CharSet = 'UTF-8';
-        $m->setFrom('no-reply@sistema-web.local', 'Sistema Web');
-
-        return $m;
-    }
-
-    /**
      * Mascara e-mails para logs, preservando privacidade.
      *
      * @param string $email
