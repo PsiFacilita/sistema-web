@@ -306,4 +306,66 @@ final class LoginController extends Controller
 
         return $this->json($res, ['ok' => false], 401);
     }
+
+    public function logout(Request $request, Response $response): Response
+    {
+        $logger = new BaseLogger('auth');
+
+        try {
+            $appEnv = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'production';
+            $secure = $appEnv === 'production';
+
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                @session_start();
+            }
+
+            $userId = $_SESSION['user']['id'] ?? null;
+
+            $_SESSION = [];
+
+            if (ini_get('session.use_cookies')) {
+                $params = session_get_cookie_params();
+                setcookie(
+                    session_name(),
+                    '',
+                    time() - 42000,
+                    $params['path'] ?? '/',
+                    $params['domain'] ?? '',
+                    $secure,
+                    true
+                );
+            }
+
+            @session_destroy();
+
+            $expired = gmdate('D, d M Y H:i:s \G\M\T', time() - 3600);
+
+            $cookieFlags = '; Path=/; HttpOnly; SameSite=Lax' . ($secure ? '; Secure' : '');
+            $response = $response
+                ->withAddedHeader('Set-Cookie', "access_token=; Expires={$expired}{$cookieFlags}")
+                ->withAddedHeader('Set-Cookie', "lembrar_2fa=; Expires={$expired}{$cookieFlags}");
+
+            $logger->info('User logged out', [
+                'user_id' => $userId,
+                'ip'      => $request->getServerParams()['REMOTE_ADDR'] ?? null,
+                'ua'      => $request->getHeaderLine('User-Agent') ?: null,
+            ]);
+
+            return $this->json($response, [
+                'ok'      => true,
+                'message' => 'Logged out.',
+            ], 200);
+
+        } catch (Throwable $e) {
+            $logger->critical('Unexpected error during logout', [
+                'exception' => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
+
+            return $this->json($response, [
+                'ok'      => false,
+                'message' => 'Erro interno.',
+            ], 500);
+        }
+    }
 }

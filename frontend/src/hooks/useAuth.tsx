@@ -11,10 +11,11 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    ready: boolean;                         // <- novo: indica que o bootstrap terminou
+    ready: boolean;
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
     isAuthenticated: () => boolean;
+    completeLogin: (data: any) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,7 +43,7 @@ function normalizeUser(raw: any): User {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [ready, setReady] = useState(false);             // <- novo
+    const [ready, setReady] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem('auth.user');
@@ -71,13 +72,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         localStorage.setItem('auth.user', JSON.stringify(normalized));
                     }
                 }
-            } catch { /* silencia em dev */ }
+            } catch {}
             finally {
-                setReady(true);                                   // <- sinaliza fim do bootstrap
+                setReady(true);
             }
         };
         bootstrap();
     }, []);
+
+    const completeLogin = (data: any) => {
+        const normalizedUser = normalizeUser(data?.user ?? {});
+        if (data?.token) localStorage.setItem('auth.token', data.token);
+        localStorage.setItem('auth.user', JSON.stringify(normalizedUser));
+        setUser(normalizedUser);
+        setReady(true);
+    };
 
     const login = async (email: string, password: string): Promise<boolean> => {
         const response = await fetch(`${API_URL}/auth/login`, {
@@ -95,12 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             throw new Error(backendMsg);
         }
 
-        const normalizedUser = normalizeUser(data?.user ?? {});
-        if (data?.token) localStorage.setItem('auth.token', data.token);
-
-        localStorage.setItem('auth.user', JSON.stringify(normalizedUser));
-        setUser(normalizedUser);
-        setReady(true);                                       // já está autenticado
+        completeLogin(data);
         return true;
     };
 
@@ -127,7 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const isAuthenticated = (): boolean => Boolean(user);
 
-    const value: AuthContextType = { user, ready, login, logout, isAuthenticated };
+    const value: AuthContextType = { user, ready, login, logout, isAuthenticated, completeLogin };
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

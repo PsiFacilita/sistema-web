@@ -18,6 +18,7 @@ final class Routes
 
         $app->get('/auth/me', [LoginController::class, 'me']);
         $app->post('/auth/login', [LoginController::class, 'login']);
+        $app->post('/auth/logout', [LoginController::class, 'logout']);
         $app->post('/auth/2fa/verify', [LoginController::class, 'verify2fa']);
         $app->post('/auth/2fa/resend', [LoginController::class, 'resend2fa']);
 

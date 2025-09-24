@@ -22,7 +22,6 @@ class Model
     {
         try {
             $lastInsertId = $this->pdo->lastInsertId();
-            $this->logger->info("Último ID inserido: " . $lastInsertId);
             return $lastInsertId;
         } catch (PDOException $e) {
             $this->logger->error("Erro ao obter último ID inserido: " . $e->getMessage());
@@ -33,16 +32,13 @@ class Model
     protected function executeQuery(string $query, array $params): bool
     {
         try {
-            $this->logger->info("Executando query: " . $query);
             $stmt = $this->pdo->prepare($query);
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
             $success = $stmt->execute();
 
-            if ($success) {
-                $this->logger->info("Query executada com sucesso.");
-            } else {
+            if (!$success) {
                 $this->logger->error("Erro ao executar a query: " . $query);
             }
 
@@ -56,14 +52,12 @@ class Model
     protected function fetchColumn(string $query, array $params): mixed
     {
         try {
-            $this->logger->info("Buscando coluna com query: " . $query);
             $stmt = $this->pdo->prepare($query);
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
             $stmt->execute();
             $result = $stmt->fetchColumn();
-            $this->logger->info("Resultado da busca: " . $result);
             return $result;
         } catch (PDOException $e) {
             $this->logger->error("Erro ao buscar coluna: " . $e->getMessage());
@@ -74,18 +68,12 @@ class Model
     protected function fetchRow(string $query, array $params = []): ?array
     {
         try {
-            $this->logger->info("Buscando linha com query: " . $query);
             $stmt = $this->pdo->prepare($query);
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($result) {
-                $this->logger->info("Resultado da busca: " . json_encode($result));
-            } else {
-                $this->logger->warning("Nenhum resultado encontrado.");
-            }
             return $result ?: null;
         } catch (PDOException $e) {
             $this->logger->error("Erro ao buscar linha: " . $e->getMessage());
@@ -96,15 +84,12 @@ class Model
     protected function fetchAllRows(string $query, array $params = []): array
     {
         try {
-            $this->logger->info("Buscando todas as linhas com query: " . $query);
             $stmt = $this->pdo->prepare($query);
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
             $stmt->execute();
-            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $this->logger->info("Resultado da busca: " . json_encode($result));
-            return $result;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             $this->logger->error("Erro ao buscar todas as linhas: " . $e->getMessage());
             throw $e;
@@ -114,7 +99,6 @@ class Model
     protected function beginTransaction(): bool
     {
         try {
-            $this->logger->info("Iniciando transação.");
             return $this->pdo->beginTransaction();
         } catch (PDOException $e) {
             $this->logger->error("Erro ao iniciar transação: " . $e->getMessage());
