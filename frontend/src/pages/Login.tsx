@@ -39,7 +39,7 @@ const Login: () => JSX.Element = () => {
 
     const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { completeLogin } = useAuth();
 
     const codeValue = useMemo(() => codeDigits.join(''), [codeDigits]);
 
@@ -141,9 +141,8 @@ const Login: () => JSX.Element = () => {
                 return;
             }
 
-            const success = await login(email, password);
-            if (success) navigate('/dashboard');
-            else throw new Error('Não foi possível autenticar.');
+            completeLogin(data);
+            navigate('/dashboard', { replace: true });
         } catch (err: any) {
             setError(err?.message || 'Ocorreu um erro durante o login');
         } finally {
@@ -178,6 +177,8 @@ const Login: () => JSX.Element = () => {
                 throw new Error(data?.message || 'Código inválido.');
             }
 
+            completeLogin(data);
+            setIs2faOpen(false);
             navigate('/dashboard', { replace: true });
         } catch (err: any) {
             setCodeError(err?.message || 'Falha ao validar o código.');
