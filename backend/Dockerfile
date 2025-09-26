@@ -1,22 +1,40 @@
-# Usar a imagem base do Node.js
-FROM node:20-alpine AS build
-
-# Defina o diretório de trabalho no contêiner
+# ===== Stage 1: vendor (Composer) =====
+FROM composer:2.7 AS vendor
 WORKDIR /app
 
-# Copie o arquivo package.json e package-lock.json para o contêiner
-COPY package*.json ./
+# Copie apenas o que o Composer precisa primeiro (melhor cache)
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
 
-RUN apk add --no-cache python3 make g++ libtool
+# ===== Stage 2: runtime (php-fpm) =====
+FROM php:8.3-fpm-alpine
 
-# Instale as dependências
-RUN npm install
+# Instala extensões úteis para APIs (ajuste se precisar de mais)
+RUN set -eux; \
+    apk add --no-cache icu-dev tzdata oniguruma-dev; \
+    docker-php-ext-install -j$(nproc) pdo pdo_mysql intl opcache; \
+    rm -rf /var/cache/apk/*
 
-# Copie o código-fonte do backend
+# Timezone
+ENV TZ=America/Sao_Paulo
+
+# Diretório da aplicação
+WORKDIR /var/www/html
+
+# Copia o código da API
 COPY . .
 
-# Exponha a porta do servidor
-EXPOSE 5000
+# Copia dependências do Composer da stage vendor
+COPY --from=vendor /app/vendor /var/www/html/vendor
 
-# Execute o servidor TypeScript com ts-node e ESM
-CMD ["npm", "run", "dev"]
+# Configurações PHP
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/10-opcache.ini
+
+# Permissões (ajuste se usar storage/logs, cache, etc.)
+RUN addgroup -g 1000 app && adduser -D -G app -u 1000 app && \
+    chown -R app:app /var/www/html
+USER app
+
+EXPOSE 9000
+CMD ["php-fpm"]

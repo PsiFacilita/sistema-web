@@ -25,20 +25,13 @@ const Card: React.FC<CardProps> = ({
   };
 
   const cardClasses = [
-    'rounded-lg bg-white',
-    variant === 'outlined' ? 'border border-gray-200' : '',
-    variant === 'elevated' ? 'shadow-md' : 'shadow-sm',
-    size === 'compact' ? 'p-3' : size === 'medium' ? 'p-4 md:p-6' : 'p-6 md:p-8',
-    onClick ? 'cursor-pointer hover:shadow-lg transition-shadow duration-200' : '',
+    'rounded-xl bg-white',
+    variant === 'outlined' ? 'border border-sage-200' : 'border-0',
+    variant === 'elevated' ? 'shadow-lg' : '', // Só aplica shadow na variante elevated
+    size === 'compact' ? 'p-4' : size === 'medium' ? 'p-6' : 'p-8',
+    onClick ? 'cursor-pointer hover:shadow-xl transition-all duration-300' : '',
     className,
   ].filter(Boolean).join(' ');
-
-  const headerClasses = [
-    'flex justify-between items-start',
-    size === 'compact' ? 'mb-3' : size === 'medium' ? 'mb-4' : 'mb-6',
-  ].join(' ');
-
-  const contentClasses = size === 'compact' ? 'text-sm' : 'text-base';
 
   return (
     <div
@@ -50,26 +43,21 @@ const Card: React.FC<CardProps> = ({
       onKeyDown={onClick ? handleKeyDown : undefined}
     >
       {(title || headerActions) && (
-        <div className={headerClasses}>
+        <div className="flex justify-between items-start mb-4">
           <div>
-            {title && <h3 className="font-medium text-gray-700">{title}</h3>}
+            {title && <h3 className="font-medium text-sage-800 text-lg">{title}</h3>}
             {subtitle && (
-              <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+              <p className="text-sm text-sage-600 mt-1">{subtitle}</p>
             )}
           </div>
           {headerActions && <div>{headerActions}</div>}
         </div>
       )}
 
-      <div className={contentClasses}>{children}</div>
+      <div className="text-sage-700">{children}</div>
 
       {footerActions && (
-        <div
-          className={[
-            'flex justify-end',
-            size === 'compact' ? 'mt-3' : size === 'large' ? 'mt-6' : 'mt-4',
-          ].join(' ')}
-        >
+        <div className="flex justify-end mt-6">
           {footerActions}
         </div>
       )}

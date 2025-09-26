@@ -4,6 +4,7 @@ import PersonalDataSettings from '../components/PersonalDataSettings';
 import CollaboratorManager from '../components/CollaboratorManager';
 import WorkScheduleManager, { createDefaultWeeklySchedule, WeeklyScheduleConfig } from '../components/WorkScheduleManager/WorkScheduleManager';
 import MainLayout from '../components/layout/MainLayout/MainLayout';
+import Card from '../components/Card/Card';
 
 const Settings: React.FC = () => {
   const [userData] = useState({
@@ -34,33 +35,33 @@ const Settings: React.FC = () => {
   return (
     <MainLayout>
       <div className="pb-10">
-        <Title level={1}>Configurações</Title>
+        <Title level={1} className="text-sage-700 mb-8">Configurações</Title>
 
         {/* Layout em duas colunas para dados pessoais e colaboradores */}
-        <div className="flex flex-wrap justify-between mb-8 items-stretch">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
           {/* Coluna da esquerda - Dados Pessoais */}
-          <div className="w-full lg:w-[48%] bg-white p-6 rounded-lg shadow">
+          <Card variant="elevated" className="h-full">
             <PersonalDataSettings 
               initialData={userData}
               onSave={handlePersonalDataSave}
             />
-          </div>
+          </Card>
 
           {/* Coluna da direita - Gerenciador de Colaboradores */}
-          <div className="w-full lg:w-[48%]">
+          <Card variant="elevated" className="h-full">
             <CollaboratorManager
               onSave={handleCollaboratorsSave}
             />
-          </div>
+          </Card>
         </div>
 
         {/* Gerenciador de Horários abaixo, ocupando largura total */}
-        <div className="w-full">
+        <Card variant="elevated">
           <WorkScheduleManager
             initialConfig={workSchedules}
             onSave={handleScheduleSave}
           />
-        </div>
+        </Card>
       </div>
     </MainLayout>
   );

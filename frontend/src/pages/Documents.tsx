@@ -10,7 +10,7 @@ import DocumentCategoryDropdown from "../components/DocumentCategoryDropdown";
 import Icon from "../components/Icon/Icon";
 import Modal from "../components/Modal/Modal";
 import { Select } from "../components/Form/Select/Select";
-import { FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiEye, FiSearch, FiFileText, FiPlus } from "react-icons/fi";
 import Swal from "sweetalert2";
 
 export interface Document {
@@ -32,11 +32,18 @@ const handleDeleteDocument = (id: string) => {
     cancelButtonColor: '#aaa',
     confirmButtonText: 'Sim, deletar',
     cancelButtonText: 'Cancelar',
+    background: '#fff',
+    color: '#374151'
   }).then((result) => {
     if (result.isConfirmed) {
       console.log("Documento deletado:", id);
-      // Aqui você pode fazer a lógica real de exclusão (API, estado, etc.)
-      Swal.fire('Deletado!', 'O documento foi deletado.', 'success');
+      Swal.fire({
+        title: 'Deletado!',
+        text: 'O documento foi deletado.',
+        icon: 'success',
+        background: '#fff',
+        color: '#374151'
+      });
     }
   });
 };
@@ -53,15 +60,15 @@ const formatStatus = (status: Document["status"]) => {
 
 const StatusCell: React.FC<{ value: Document["status"] }> = ({ value }) => {
   const statusClasses = {
-    draft: "bg-yellow-100 text-yellow-800",
-    final: "bg-green-100 text-green-800",
-    archived: "bg-gray-100 text-gray-800",
-    pending_review: "bg-blue-100 text-blue-800",
+    draft: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+    final: "bg-green-100 text-green-800 border border-green-200",
+    archived: "bg-gray-100 text-gray-800 border border-gray-200",
+    pending_review: "bg-blue-100 text-blue-800 border border-blue-200",
   };
 
   return (
     <span
-      className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[value]}`}
+      className={`px-3 py-1 rounded-full text-xs font-medium ${statusClasses[value]}`}
     >
       {formatStatus(value)}
     </span>
@@ -73,32 +80,25 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
   
   return (
     <div className="flex space-x-2">
-      {/* Botão Visualizar */}
       <button
         onClick={() => console.log("Visualizar documento", value)}
-               className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-blue-700 hover:bg-blue-700  hover:text-white transition"
-      
-        >
-        
+        className="flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-sage-700 hover:bg-sage-200 hover:text-sage-800 transition-all duration-300"
+      >
         <FiEye size={16} />
         Visualizar
       </button>
 
-
-      {/* Botão Editar */}
       <button
         onClick={() => console.log("Edit document", value)}
-        className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-green-700 hover:bg-green-700  hover:text-white transition"
+        className="flex items-center gap-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-sage-600 hover:bg-sage-100 hover:text-sage-700 transition-all duration-300 border border-sage-200"
       >
         <Icon type="edit" size={16} />
         Editar
       </button>
 
-      {/* Botão Deletar */}
       <button
         onClick={() => handleDeleteDocument(value)}
-        className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-sm text-red-500 hover:bg-red-500 hover:text-white transition"
-
+        className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-300 border border-red-200"
       >
         <Icon type="trash" size={16} />
         Deletar
@@ -106,8 +106,6 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
     </div>
   );
 };
-
-
 
 const Documents: React.FC = () => {
   const [documents] = useState<Document[]>(
@@ -138,23 +136,6 @@ const Documents: React.FC = () => {
     patient: "",
   });
   const documentsPerPage = 11;
-
-  const documentCategories = [
-    {
-      name: "Prontuário",
-      documents: [
-        { id: "1", name: "Anamnese", route: "/documents/anamnese" },
-        { id: "2", name: "Evolução", route: "/documents/evolucao" },
-      ],
-    },
-    {
-      name: "Relatórios",
-      documents: [
-        { id: "3", name: "Relatório Psicológico", route: "/documents/relatorio" },
-        { id: "4", name: "Laudo", route: "/documents/laudo" },
-      ],
-    },
-  ];
 
   const filteredDocuments = documents.filter(
     (doc) =>
@@ -191,14 +172,25 @@ const Documents: React.FC = () => {
 
   const handleCreateDocument = () => {
     if (!newDocument.title || !newDocument.category || !newDocument.patient) {
-      Swal.fire('Erro', 'Preencha todos os campos obrigatórios', 'error');
+      Swal.fire({
+        title: 'Erro',
+        text: 'Preencha todos os campos obrigatórios',
+        icon: 'error',
+        background: '#fff',
+        color: '#374151'
+      });
       return;
     }
 
-    // Aqui você adicionaria a lógica para salvar o documento na API
     console.log("Criando documento:", newDocument);
     
-    Swal.fire('Sucesso!', 'Documento criado com sucesso!', 'success');
+    Swal.fire({
+      title: 'Sucesso!',
+      text: 'Documento criado com sucesso!',
+      icon: 'success',
+      background: '#fff',
+      color: '#374151'
+    });
     setIsModalOpen(false);
     setNewDocument({ title: "", category: "", patient: "" });
   };
@@ -209,6 +201,7 @@ const Documents: React.FC = () => {
       [field]: value
     }));
   };
+
   const categoryOptions = [
     { value: "Anamnese", label: "Anamnese" },
     { value: "Relatório", label: "Relatório" },
@@ -216,7 +209,6 @@ const Documents: React.FC = () => {
     { value: "Laudo", label: "Laudo" },
   ];
 
-  // Lista de pacientes 
   const patientOptions = [
     { value: "1", label: "Paciente 1" },
     { value: "2", label: "Paciente 2" },
@@ -225,138 +217,150 @@ const Documents: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="mb-6">
-        <Title level={1}>Documentos</Title>
+      <div className="mb-8">
+        <Title level={1} className="text-sage-700">Documentos</Title>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div className="w-full md:w-1/3">
-          <Input
-            id="search"
-            placeholder="Buscar documentos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: "100%" }}
-          />
-        </div>
+      {/* Header com busca e ações */}
+      <Card variant="elevated" className="mb-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div className="relative w-full lg:w-1/3">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400" size={20} />
+            <Input
+              id="search"
+              placeholder="Buscar documentos por título, paciente ou categoria..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-3 border-sage-200 focus:border-sage-400"
+            />
+          </div>
 
-        <div className="flex gap-2">          <Button
-            variant="primary"
-            icon={<Icon type="plus" size={16} />}
-            onClick={() => setIsModalOpen(true)}
-          >
-            Novo Documento
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="primary"
+              icon={<FiPlus size={18} />}
+              onClick={() => setIsModalOpen(true)}
+              className="bg-sage-600 hover:bg-sage-700 border-sage-600"
+            >
+              Novo Documento
+            </Button>
+          </div>
         </div>
-      </div>      
-       <Card>
+      </Card>
+
+      {/* Tabela de documentos */}
+      <Card variant="elevated" className="p-0 overflow-hidden">
         {currentDocuments.length > 0 ? (
           <>
+            <div className="p-6 border-b border-sage-100">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-sage-800">
+                <FiFileText size={20} />
+                Lista de Documentos
+                <span className="text-sage-600 font-normal ml-2">
+                  ({filteredDocuments.length} encontrados)
+                </span>
+              </h3>
+            </div>
+            
             <Table data={currentDocuments} columns={columns} />
-
+            
             {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4">
-                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div className="flex items-center justify-between border-t border-sage-100 bg-sage-50 px-6 py-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
                   <div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-sage-700">
                       Mostrando{" "}
-                      <span className="font-medium">{indexOfFirstDocument + 1}</span> a{" "}
-                      <span className="font-medium">
+                      <span className="font-semibold">{indexOfFirstDocument + 1}</span> a{" "}
+                      <span className="font-semibold">
                         {Math.min(indexOfLastDocument, filteredDocuments.length)}
                       </span>{" "}
-                      de{" "}
-                      <span className="font-medium">{filteredDocuments.length}</span>{" "}
-                      resultados
+                      de <span className="font-semibold">{filteredDocuments.length}</span> documentos
                     </p>
                   </div>
                   <div>
-                    <nav
-                      className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-                      aria-label="Pagination"
-                    >
+                    <nav className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => paginate(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 hover:bg-gray-50 focus:z-20"
+                        className="rounded-lg border-sage-300 text-sage-700 hover:bg-sage-50 disabled:opacity-50"
                       >
-                        <span className="sr-only">Anterior</span>
                         <FiChevronLeft size={16} />
                       </Button>
+                      
+                      <div className="flex gap-1">
+                        {(() => {
+                          const visiblePages = 5;
+                          const pages: number[] = [];
+                          let start = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                          let end = Math.min(totalPages, start + visiblePages - 1);
 
-                      {/* Exibir no máximo 5 páginas com elipses */}
-                      {(() => {
-                        const visiblePages = 5;
-                        const pages: number[] = [];
-                        let start = Math.max(1, currentPage - Math.floor(visiblePages / 2));
-                        let end = Math.min(totalPages, start + visiblePages - 1);
+                          if (end - start < visiblePages - 1) {
+                            start = Math.max(1, end - visiblePages + 1);
+                          }
 
-                        if (end - start < visiblePages - 1) {
-                          start = Math.max(1, end - visiblePages + 1);
-                        }
+                          for (let i = start; i <= end; i++) {
+                            pages.push(i);
+                          }
 
-                        for (let i = start; i <= end; i++) {
-                          pages.push(i);
-                        }
+                          return (
+                            <>
+                              {start > 1 && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => paginate(1)}
+                                    className="px-3 py-1 rounded-lg border-sage-300 text-sage-700 hover:bg-sage-50"
+                                  >
+                                    1
+                                  </Button>
+                                  <span className="px-2 py-1 text-sm text-sage-400">...</span>
+                                </>
+                              )}
 
-                        return (
-                          <>
-                            {start > 1 && (
-                              <>
+                              {pages.map((pageNumber) => (
                                 <Button
-                                  variant="outline"
+                                  key={pageNumber}
+                                  variant={pageNumber === currentPage ? "primary" : "outline"}
                                   size="sm"
-                                  onClick={() => paginate(1)}
-                                  className="px-3 py-1 text-sm"
+                                  onClick={() => paginate(pageNumber)}
+                                  className={`rounded-lg ${
+                                    pageNumber === currentPage 
+                                      ? 'bg-sage-600 border-sage-600 text-white' 
+                                      : 'border-sage-300 text-sage-700 hover:bg-sage-50'
+                                  }`}
                                 >
-                                  1
+                                  {pageNumber}
                                 </Button>
-                                <span className="px-2 py-1 text-sm text-gray-500">...</span>
-                              </>
-                            )}
+                              ))}
 
-                            {pages.map((pageNumber) => (
-                              <Button
-                                key={pageNumber}
-                                variant={pageNumber === currentPage ? "primary" : "outline"}
-                                size="sm"
-                                onClick={() => paginate(pageNumber)}
-                                className={`px-4 py-2 text-sm font-semibold ${
-                                  pageNumber === currentPage
-                                    ? "z-10 bg-primary-600 text-white"
-                                    : "text-gray-900 hover:bg-gray-50"
-                                }`}
-                              >
-                                {pageNumber}
-                              </Button>
-                            ))}
-
-                            {end < totalPages && (
-                              <>
-                                <span className="px-2 py-1 text-sm text-gray-500">...</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => paginate(totalPages)}
-                                  className="px-3 py-1 text-sm"
-                                >
-                                  {totalPages}
-                                </Button>
-                              </>
-                            )}
-                          </>
-                        );
-                      })()}
-
+                              {end < totalPages && (
+                                <>
+                                  <span className="px-2 py-1 text-sm text-sage-400">...</span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => paginate(totalPages)}
+                                    className="px-3 py-1 rounded-lg border-sage-300 text-sage-700 hover:bg-sage-50"
+                                  >
+                                    {totalPages}
+                                  </Button>
+                                </>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                      
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 hover:bg-gray-50 focus:z-20"
+                        className="rounded-lg border-sage-300 text-sage-700 hover:bg-sage-50 disabled:opacity-50"
                       >
-                        <span className="sr-only">Próximo</span>
                         <FiChevronRight size={16} />
                       </Button>
                     </nav>
@@ -366,8 +370,24 @@ const Documents: React.FC = () => {
             )}
           </>
         ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Nenhum documento encontrado.</p>
+          <div className="text-center py-12">
+            <div className="bg-sage-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <FiFileText size={32} className="text-sage-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-sage-700 mb-2">Nenhum documento encontrado</h3>
+            <p className="text-sage-600 mb-4">
+              {searchTerm ? "Tente ajustar os termos da busca." : "Comece criando seu primeiro documento."}
+            </p>
+            {!searchTerm && (
+              <Button
+                variant="primary"
+                icon={<FiPlus size={16} />}
+                onClick={() => setIsModalOpen(true)}
+                className="bg-sage-600 hover:bg-sage-700"
+              >
+                Criar Primeiro Documento
+              </Button>
+            )}
           </div>
         )}
       </Card>
@@ -380,57 +400,72 @@ const Documents: React.FC = () => {
         size="medium"
         showCloseButton={true}
       >
-        <div className="space-y-4 mt-4">
-          <div>
-            <label htmlFor="document-title" className="block text-sm font-medium text-gray-700 mb-1">
-              Título do Documento *
-            </label>
-            <Input
-              id="document-title"
-              type="text"
-              placeholder="Digite o título do documento"
-              value={newDocument.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              required
-            />
+        <div className="space-y-6 mt-4">
+          <div className="bg-sage-50 rounded-xl p-4">
+            <h3 className="flex items-center gap-2 text-sage-700 font-semibold mb-4">
+              <FiFileText size={18} />
+              Informações do Documento
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="document-title" className="block text-sm font-medium text-sage-700 mb-2">
+                  Título do Documento *
+                </label>
+                <Input
+                  id="document-title"
+                  type="text"
+                  placeholder="Digite o título do documento"
+                  value={newDocument.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  required
+                  className="border-sage-200 focus:border-sage-400"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="document-category" className="block text-sm font-medium text-sage-700 mb-2">
+                  Categoria *
+                </label>
+                <Select
+                  id="document-category"
+                  value={newDocument.category}
+                  onChange={(e) => handleInputChange("category", e.target.value)}
+                  options={categoryOptions}
+                  placeholder="Selecione uma categoria"
+                  required
+                  className="border-sage-200 focus:border-sage-400"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="document-patient" className="block text-sm font-medium text-sage-700 mb-2">
+                  Paciente *
+                </label>
+                <Select
+                  id="document-patient"
+                  value={newDocument.patient}
+                  onChange={(e) => handleInputChange("patient", e.target.value)}
+                  options={patientOptions}
+                  placeholder="Selecione um paciente"
+                  required
+                  className="border-sage-200 focus:border-sage-400"
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="document-category" className="block text-sm font-medium text-gray-700 mb-1">
-              Categoria *
-            </label>
-            <Select
-              id="document-category"
-              value={newDocument.category}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-              options={categoryOptions}
-              placeholder="Selecione uma categoria"
-              required
-            />
-          </div>          <div>
-            <label htmlFor="document-patient" className="block text-sm font-medium text-gray-700 mb-1">
-              Paciente *
-            </label>
-            <Select
-              id="document-patient"
-              value={newDocument.patient}
-              onChange={(e) => handleInputChange("patient", e.target.value)}
-              options={patientOptions}
-              placeholder="Selecione um paciente"
-              required
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4 border-t border-sage-100">
             <Button
               variant="outline"
               onClick={() => setIsModalOpen(false)}
+              className="border-sage-300 text-sage-700 hover:bg-sage-50"
             >
               Cancelar
             </Button>
             <Button
               variant="primary"
               onClick={handleCreateDocument}
+              className="bg-sage-600 hover:bg-sage-700 border-sage-600"
             >
               Criar Documento
             </Button>
