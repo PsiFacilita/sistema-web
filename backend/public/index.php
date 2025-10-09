@@ -25,7 +25,7 @@ $app->addErrorMiddleware(
 
 $app->add(new RateLimitMiddleware(
     maxAttempts: 5,
-    decaySeconds: 60,
+    decaySeconds: 1,
     storagePath: __DIR__ . '/../storage/rate_limit'
 ));
 

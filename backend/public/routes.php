@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Http\Controllers\AppointmentsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PatientsController;
@@ -30,6 +31,14 @@ final class Routes
             $group->get('/dashboard', [DashboardController::class, 'index']);
 
             $group->get('/patients', [PatientsController::class, 'getPatients']);
+
+            $group->get('/appointments/availability', [AppointmentsController::class, 'availability']);
+
+            $group->get('/appointments', [AppointmentsController::class, 'index']);
+            $group->get('/appointments/{id: [0-9]+}', [AppointmentsController::class, 'show']);
+            $group->post('/appointments', [AppointmentsController::class, 'create']);
+            $group->put('/appointments/{id}', [AppointmentsController::class, 'update']);
+            $group->delete('/appointments/{id}', [AppointmentsController::class, 'delete']);
         })->add(new AuthMiddleware());
     }
 }
