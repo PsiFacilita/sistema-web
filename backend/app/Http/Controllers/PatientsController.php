@@ -3,42 +3,146 @@
 namespace App\Http\Controllers;
 
 use App\Config\Controller;
-use App\Helpers\BaseLogger;
 use App\Models\Patient;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Throwable;
 
 final class PatientsController extends Controller
 {
-    public function __construct(
-        private ?Patient $patient = null
-    )
+    private Patient $patient;
+
+    public function __construct()
     {
-        $this->patient = $this->patient ?? new Patient();
+        $this->patient = new Patient();
     }
-    public function getPatients(Request $request, Response $response): Response
+
+    // 1. LISTAR todos os pacientes
+    public function listarPacientes(Request $request, Response $response): Response
     {
-        $logger = new BaseLogger('patients');
-
-        try {
-            $userId = $this->resolveAuthenticatedUserId($request);
-            if ($userId === null) {
-                return $this->json($response, ['ok' => false, 'message' => 'Unauthorized'], 401);
-            }
-
-            $patients = $this->patient->getPatientsByUserId($userId);
-
-            return $this->json($response, [
-                'ok' => true,
-                'patients' => $patients,
-            ], 200);
-        } catch (Throwable $e) {
-            $logger->error('Patients error', ['exception' => $e->getMessage()]);
-            return $this->json($response, [
-                'ok'    => false,
-                'error' => 'Failed to fetch patients data',
-            ], 500);
+        // Pega o ID do usuário logado
+        $userId = $this->resolveAuthenticatedUserId($request);
+        
+        if (!$userId) {
+            return $this->json($response, ['erro' => 'Usuário não logado'], 401);
         }
+
+        // Busca os pacientes no banco
+        $pacientes = $this->patient->buscarPorUsuario($userId);
+
+        return $this->json($response, [
+            'sucesso' => true,
+            'pacientes' => $pacientes
+        ]);
+    }
+
+    // 2. BUSCAR um paciente específico
+    public function buscarPaciente(Request $request, Response $response, array $args): Response
+    {
+        $userId = $this->resolveAuthenticatedUserId($request);
+        $pacienteId = (int)$args['id'];
+
+        if (!$userId) {
+            return $this->json($response, ['erro' => 'Usuário não logado'], 401);
+        }
+
+        $paciente = $this->patient->buscarPorId($pacienteId, $userId);
+
+        if (!$paciente) {
+            return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
+        }
+
+        return $this->json($response, [
+            'sucesso' => true,
+            'paciente' => $paciente
+        ]);
+    }
+
+    // 3. CRIAR novo paciente
+    public function criarPaciente(Request $request, Response $response): Response
+    {
+        $userId = $this->resolveAuthenticatedUserId($request);
+        $dados = $request->getParsedBody();
+
+        if (!$userId) {
+            return $this->json($response, ['erro' => 'Usuário não logado'], 401);
+        }
+
+        // Validação simples
+        if (empty($dados['nome']) || empty($dados['email'])) {
+            return $this->json($response, ['erro' => 'Nome e email são obrigatórios'], 400);
+        }
+
+        // Cria o paciente
+        $novoPacienteId = $this->patient->criar([
+            'nome' => $dados['nome'],
+            'email' => $dados['email'],
+            'telefone' => $dados['telefone'] ?? '',
+            'cpf' => $dados['cpf'] ?? null,
+            'rg' => $dados['rg'] ?? null,
+            'data_nascimento' => $dados['data_nascimento'] ?? null,
+            'usuario_id' => $userId
+        ]);
+
+        return $this->json($response, [
+            'sucesso' => true,
+            'mensagem' => 'Paciente criado com sucesso!',
+            'id' => $novoPacienteId
+        ]);
+    }
+
+    // 4. EDITAR paciente
+    public function editarPaciente(Request $request, Response $response, array $args): Response
+    {
+        $userId = $this->resolveAuthenticatedUserId($request);
+        $pacienteId = (int)$args['id'];
+        $dados = $request->getParsedBody();
+
+        if (!$userId) {
+            return $this->json($response, ['erro' => 'Usuário não logado'], 401);
+        }
+
+        // Verifica se o paciente existe e pertence ao usuário
+        if (!$this->patient->pertenceAoUsuario($pacienteId, $userId)) {
+            return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
+        }
+
+        // Atualiza apenas os campos enviados
+        $dadosParaAtualizar = [];
+        if (isset($dados['nome'])) $dadosParaAtualizar['nome'] = $dados['nome'];
+        if (isset($dados['email'])) $dadosParaAtualizar['email'] = $dados['email'];
+        if (isset($dados['telefone'])) $dadosParaAtualizar['telefone'] = $dados['telefone'];
+        if (isset($dados['cpf'])) $dadosParaAtualizar['cpf'] = $dados['cpf'];
+        if (isset($dados['rg'])) $dadosParaAtualizar['rg'] = $dados['rg'];
+        if (isset($dados['data_nascimento'])) $dadosParaAtualizar['data_nascimento'] = $dados['data_nascimento'];
+
+        $this->patient->atualizar($pacienteId, $dadosParaAtualizar);
+
+        return $this->json($response, [
+            'sucesso' => true,
+            'mensagem' => 'Paciente atualizado com sucesso!'
+        ]);
+    }
+
+    // 5. EXCLUIR paciente
+    public function excluirPaciente(Request $request, Response $response, array $args): Response
+    {
+        $userId = $this->resolveAuthenticatedUserId($request);
+        $pacienteId = (int)$args['id'];
+
+        if (!$userId) {
+            return $this->json($response, ['erro' => 'Usuário não logado'], 401);
+        }
+
+        // Verifica se o paciente existe e pertence ao usuário
+        if (!$this->patient->pertenceAoUsuario($pacienteId, $userId)) {
+            return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
+        }
+
+        $this->patient->excluir($pacienteId);
+
+        return $this->json($response, [
+            'sucesso' => true,
+            'mensagem' => 'Paciente excluído com sucesso!'
+        ]);
     }
 }
