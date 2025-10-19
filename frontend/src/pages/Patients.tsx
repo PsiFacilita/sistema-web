@@ -216,8 +216,9 @@ const Patients: React.FC = () => {
 
             {/* Header com busca e ações */}
             <Card variant="elevated" className="mb-6">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                    <div className="relative w-full lg:w-1/3">
+                <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between lg:items-center">
+                    {/* Campo de busca */}
+                    <div className="relative w-full lg:w-1/2 xl:w-1/3">
                         <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400" size={20} />
                         <Input
                             id="search"
@@ -231,21 +232,24 @@ const Patients: React.FC = () => {
                         />
                     </div>
 
-                    <div className="flex gap-3">
+                    {/* Botões de ação */}
+                    <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                         <Button
                             variant="outline"
                             onClick={() => navigate("/custom-fields")}
-                            className="border-sage-300 text-sage-700 hover:bg-sage-50"
+                            className="border-sage-300 text-sage-700 hover:bg-sage-50 w-full sm:w-auto"
                         >
-                            Campos Personalizados
+                            <span className="hidden sm:inline">Campos Personalizados</span>
+                            <span className="sm:hidden">Campos</span>
                         </Button>
                         <Button
                             variant="primary"
                             icon={<FiUserPlus size={18} />}
                             onClick={() => setIsPatientModalOpen(true)}
-                            className="bg-sage-600 hover:bg-sage-700 border-sage-600"
+                            className="bg-sage-600 hover:bg-sage-700 border-sage-600 w-full sm:w-auto"
                         >
-                            Novo Paciente
+                            <span className="hidden sm:inline">Novo Paciente</span>
+                            <span className="sm:hidden">Novo</span>
                         </Button>
                     </div>
                 </div>
@@ -272,20 +276,26 @@ const Patients: React.FC = () => {
                         <Table data={currentPatients} columns={columns} />
                         
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between border-t border-sage-100 bg-sage-50 px-6 py-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
-                                    <div>
+                            <div className="border-t border-sage-100 bg-sage-50 px-4 py-4 sm:px-6">
+                                <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                                    {/* Informações de paginação */}
+                                    <div className="text-center sm:text-left">
                                         <p className="text-sm text-sage-700">
-                                            Mostrando{" "}
-                                            <span className="font-semibold">{indexOfFirstPatient + 1}</span> a{" "}
-                                            <span className="font-semibold">
-                                                {Math.min(indexOfLastPatient, filteredPatients.length)}
-                                            </span>{" "}
-                                            de <span className="font-semibold">{filteredPatients.length}</span> pacientes
+                                            <span className="hidden sm:inline">
+                                                Mostrando{" "}
+                                                <span className="font-semibold">{indexOfFirstPatient + 1}</span> a{" "}
+                                                <span className="font-semibold">
+                                                    {Math.min(indexOfLastPatient, filteredPatients.length)}
+                                                </span>{" "}
+                                                de{" "}
+                                            </span>
+                                            <span className="font-semibold">{filteredPatients.length}</span> pacientes
                                         </p>
                                     </div>
-                                    <div>
-                                        <nav className="flex items-center gap-2">
+                                    
+                                    {/* Controles de navegação */}
+                                    <div className="flex justify-center sm:justify-end">
+                                        <nav className="flex items-center gap-1 sm:gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -294,24 +304,36 @@ const Patients: React.FC = () => {
                                                 className="rounded-lg border-sage-300 text-sage-700 hover:bg-sage-50 disabled:opacity-50"
                                             >
                                                 <FiChevronLeft size={16} />
+                                                <span className="hidden sm:inline ml-1">Anterior</span>
                                             </Button>
                                             
+                                            {/* Números das páginas - mostrar apenas algumas em mobile */}
                                             <div className="flex gap-1">
-                                                {Array.from({ length: totalPages }, (_, i) => (
-                                                    <Button
-                                                        key={i + 1}
-                                                        variant={i + 1 === currentPage ? "primary" : "outline"}
-                                                        size="sm"
-                                                        onClick={() => paginate(i + 1)}
-                                                        className={`rounded-lg ${
-                                                            i + 1 === currentPage 
-                                                                ? 'bg-sage-600 border-sage-600' 
-                                                                : 'border-sage-300 text-sage-700 hover:bg-sage-50'
-                                                        }`}
-                                                    >
-                                                        {i + 1}
-                                                    </Button>
-                                                ))}
+                                                {(() => {
+                                                    const maxVisible = window.innerWidth < 640 ? 3 : 5;
+                                                    const startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                                                    const endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                                                    
+                                                    const pages = [];
+                                                    for (let i = startPage; i <= endPage; i++) {
+                                                        pages.push(
+                                                            <Button
+                                                                key={i}
+                                                                variant={i === currentPage ? "primary" : "outline"}
+                                                                size="sm"
+                                                                onClick={() => paginate(i)}
+                                                                className={`rounded-lg ${
+                                                                    i === currentPage 
+                                                                        ? 'bg-sage-600 border-sage-600' 
+                                                                        : 'border-sage-300 text-sage-700 hover:bg-sage-50'
+                                                                }`}
+                                                            >
+                                                                {i}
+                                                            </Button>
+                                                        );
+                                                    }
+                                                    return pages;
+                                                })()}
                                             </div>
                                             
                                             <Button
@@ -321,6 +343,7 @@ const Patients: React.FC = () => {
                                                 disabled={currentPage === totalPages}
                                                 className="rounded-lg border-sage-300 text-sage-700 hover:bg-sage-50 disabled:opacity-50"
                                             >
+                                                <span className="hidden sm:inline mr-1">Próximo</span>
                                                 <FiChevronRight size={16} />
                                             </Button>
                                         </nav>
