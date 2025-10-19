@@ -263,14 +263,14 @@ const Login: () => JSX.Element = () => {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-sage-50 via-sage-25 to-sage-100">
-            <div className="flex justify-center w-full">
-                <img src={logo} alt="Logo Psifacilita" className="w-80 mb-1" />
+            <div className="flex justify-center w-full mb-4 sm:mb-6">
+                <img src={logo} alt="Logo Psifacilita" className="w-60 sm:w-72 lg:w-80 max-w-full h-auto" />
             </div>
 
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white rounded-lg shadow-lg p-8 sm:p-10 w-full max-w-md border border-sage-200">
-                    <h2 className="text-center text-2xl sm:text-3xl font-semibold text-sage-800 mb-6">
-                        Acesse sua conta
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 lg:p-10 w-full border border-sage-200">
+                    <h2 className="text-center text-xl sm:text-2xl lg:text-3xl font-semibold text-sage-800 mb-4 sm:mb-6">
+                        Entrar no Sistema
                     </h2>
 
                     {error && (
