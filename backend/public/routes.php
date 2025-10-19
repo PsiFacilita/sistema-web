@@ -29,7 +29,12 @@ final class Routes
         $app->group('/api', function (RouteCollectorProxy $group) {
             $group->get('/dashboard', [DashboardController::class, 'index']);
 
-            $group->get('/patients', [PatientsController::class, 'getPatients']);
+            // Rotas de pacientes
+            $group->get('/patients', [PatientsController::class, 'listarPacientes']);
+            $group->get('/patients/{id}', [PatientsController::class, 'buscarPaciente']);
+            $group->post('/patients', [PatientsController::class, 'criarPaciente']);
+            $group->put('/patients/{id}', [PatientsController::class, 'editarPaciente']);
+            $group->delete('/patients/{id}', [PatientsController::class, 'excluirPaciente']);
         })->add(new AuthMiddleware());
     }
 }

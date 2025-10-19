@@ -31,7 +31,7 @@ final class PatientsController extends Controller
 
         return $this->json($response, [
             'sucesso' => true,
-            'pacientes' => $pacientes
+            'patients' => $pacientes
         ]);
     }
 
@@ -83,10 +83,18 @@ final class PatientsController extends Controller
             'usuario_id' => $userId
         ]);
 
+        // Busca o paciente criado para retornar os dados completos
+        $pacienteCriado = $this->patient->buscarPorId($novoPacienteId, $userId);
+
         return $this->json($response, [
             'sucesso' => true,
             'mensagem' => 'Paciente criado com sucesso!',
-            'id' => $novoPacienteId
+            'id' => $novoPacienteId,
+            'nome' => $pacienteCriado['nome'],
+            'email' => $pacienteCriado['email'],
+            'telefone' => $pacienteCriado['telefone'],
+            'ativo' => $pacienteCriado['ativo'],
+            'criado_em' => $pacienteCriado['criado_em']
         ]);
     }
 
