@@ -95,6 +95,11 @@ const Patients: React.FC = () => {
         const fetchPatients = async () => {
             try {
                 const token = localStorage.getItem("auth.token");
+                console.log("Token encontrado:", token ? "Sim" : "Não");
+                
+                // Adicionando logs para debug
+                console.log("Fazendo requisição para:", `${API_URL}/api/patients`);
+                
                 const res = await axios.get(`${API_URL}/api/patients`, {
                     withCredentials: true,
                     headers: {
@@ -102,16 +107,31 @@ const Patients: React.FC = () => {
                         ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     },
                 });
+                
+                console.log("Resposta recebida:", res.status, res.data);
+                
                 const data = res.data;
                 const list = Array.isArray(data?.patients) ? data.patients : [];
+                console.log("Lista de pacientes:", list.length, list);
+                
                 setPatients(list as Patient[]);
             } catch (err: any) {
-                if (axios.isAxiosError(err) && err.response?.status === 401) {
-                    console.warn("Não autenticado — redirecionando para login.");
-                    window.location.href = "/login";
-                    return;
+                if (axios.isAxiosError(err)) {
+                    console.error("Erro na requisição:", {
+                        status: err.response?.status,
+                        data: err.response?.data,
+                        headers: err.response?.headers,
+                        message: err.message
+                    });
+                    
+                    if (err.response?.status === 401) {
+                        console.warn("Não autenticado — redirecionando para login.");
+                        window.location.href = "/login";
+                        return;
+                    }
+                } else {
+                    console.error("Erro desconhecido ao buscar pacientes:", err);
                 }
-                console.error("Erro ao buscar pacientes:", err);
             } finally {
                 setLoading(false);
             }
@@ -256,7 +276,7 @@ const Patients: React.FC = () => {
             </Card>
 
             {/* Tabela de pacientes */}
-            <Card variant="elevated" className="p-0 overflow-hidden">
+            <Card variant="elevated" className="p-0 overflow-x-auto">
                 {loading ? (
                     <div className="text-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage-600 mx-auto mb-4"></div>

@@ -62,14 +62,33 @@ const PatientModal: React.FC<PatientModalProps> = ({
 
   useEffect(() => {
     const loadFields = async () => {
-      if (initialData?.id) {
-        const res = await fetch(`http://localhost:5000/api/patients/${initialData.id}`);
-        const data = await res.json();
-        if (data.customFields) setCustomFields(data.customFields);
-      } else {
-        const res = await fetch("http://localhost:5000/api/fields?usuario_id=1");
-        const fields = await res.json();
-        setCustomFields(fields.map((f: any) => ({ ...f, value: "" })));
+      try {
+        console.log("PatientModal - Carregando campos");
+        if (initialData?.id) {
+          console.log(`PatientModal - Buscando dados do paciente ${initialData.id}`);
+          const res = await fetch(`http://localhost:5000/api/patients/${initialData.id}`);
+          if (!res.ok) {
+            throw new Error(`Erro ao carregar dados do paciente: ${res.status}`);
+          }
+          const data = await res.json();
+          console.log("PatientModal - Dados do paciente recebidos:", data);
+          if (data.customFields) setCustomFields(data.customFields);
+        } else {
+          console.log("PatientModal - Buscando campos personalizados");
+          const res = await fetch("http://localhost:5000/api/fields?usuario_id=1");
+          if (!res.ok) {
+            throw new Error(`Erro ao carregar campos personalizados: ${res.status}`);
+          }
+          const fields = await res.json();
+          console.log("PatientModal - Campos personalizados recebidos:", fields);
+          setCustomFields(fields.map((f: any) => ({ ...f, value: "" })));
+        }
+      } catch (error) {
+        console.error("PatientModal - Erro ao carregar campos:", error);
+        // Caso não consiga carregar campos personalizados, continua com uma lista vazia
+        if (!initialData?.id) {
+          setCustomFields([]);
+        }
       }
     };
 

@@ -16,7 +16,7 @@ const Table = <T extends object>({ data, columns }: TableProps<T>) => {
     <>
       {/* Versão desktop da tabela */}
       <div className="hidden lg:block overflow-x-auto w-full">
-        <table className="min-w-full divide-y divide-gray-200 table-fixed">
+        <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               {columns.map((column, index) => (
@@ -34,7 +34,7 @@ const Table = <T extends object>({ data, columns }: TableProps<T>) => {
             {data.map((row, rowIndex) => (
               <tr key={rowIndex} className="hover:bg-gray-50">
                 {columns.map((column, colIndex) => (
-                  <td key={colIndex} className="px-6 py-4 whitespace-nowrap">
+                  <td key={colIndex} className="px-6 py-4">
                     {column.Cell ? (
                       <column.Cell value={row[column.accessor]} />
                     ) : (
