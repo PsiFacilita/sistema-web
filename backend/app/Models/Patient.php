@@ -26,7 +26,7 @@ final class Patient extends Model
 
     public function buscarPorId(int $pacienteId, int $userId): ?array
     {
-        $query = "SELECT id, nome, email, telefone, 
+        $query = "SELECT id, nome, email, telefone, cpf, rg, data_nascimento, notas,
                   CASE WHEN ativo = 1 THEN 'active' ELSE 'inactive' END as ativo, 
                   criado_em
                   FROM paciente 

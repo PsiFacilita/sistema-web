@@ -51,10 +51,21 @@ final class PatientsController extends Controller
             return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
         }
 
-        return $this->json($response, [
-            'sucesso' => true,
-            'paciente' => $paciente
-        ]);
+        // Mapear para o formato esperado pelo frontend
+        $dadosPaciente = [
+            'id' => (string)$paciente['id'],
+            'name' => $paciente['nome'],
+            'cpf' => $paciente['cpf'] ?? '',
+            'rg' => $paciente['rg'] ?? '',
+            'birthDate' => $paciente['data_nascimento'] ?? '',
+            'email' => $paciente['email'] ?? '',
+            'phone' => $paciente['telefone'] ?? '',
+            'notes' => $paciente['notas'] ?? '',
+            'status' => $paciente['ativo'],
+            'customFields' => []
+        ];
+
+        return $this->json($response, $dadosPaciente);
     }
 
     // 3. CRIAR novo paciente
