@@ -120,16 +120,30 @@ const Patients: React.FC = () => {
         fetchPatients();
     }, []);
 
-    const handleAddPatient = async (newPatient: Omit<Patient, "id" | "criado_em">) => {
+    const handleAddPatient = async (modalData: {
+        name: string;
+        birthDate: string;
+        cpf: string;
+        rg?: string;
+        phone: string;
+        email?: string;
+        notes?: string;
+        status: "active" | "inactive";
+        customFields?: { id: number; value: string }[];
+    }) => {
         try {
             const token = localStorage.getItem("auth.token");
             const res = await axios.post(
                 `${API_URL}/api/patients`,
                 {
-                    nome: newPatient.nome,
-                    telefone: newPatient.telefone,
-                    email: newPatient.email,
-                    ativo: newPatient.ativo ?? "active",
+                    nome: modalData.name,
+                    telefone: modalData.phone,
+                    email: modalData.email,
+                    cpf: modalData.cpf,
+                    rg: modalData.rg,
+                    data_nascimento: modalData.birthDate,
+                    notas: modalData.notes,
+                    ativo: modalData.status === "active" ? "active" : "inactive",
                 },
                 {
                     withCredentials: true,
@@ -145,13 +159,17 @@ const Patients: React.FC = () => {
                 throw new Error("Erro ao criar paciente");
             }
 
-            const created: Patient = res.data;
-            const createdWithDate: Patient = {
-                ...created,
-                criado_em: created.criado_em || new Date().toISOString(),
+            const backendResponse = res.data;
+            const newPatient: Patient = {
+                id: backendResponse.id?.toString() || "",
+                nome: backendResponse.nome || modalData.name,
+                telefone: backendResponse.telefone || modalData.phone,
+                email: backendResponse.email || modalData.email || "",
+                ativo: backendResponse.ativo || modalData.status,
+                criado_em: backendResponse.criado_em || new Date().toISOString(),
             };
 
-            setPatients((prev) => [createdWithDate, ...prev]);
+            setPatients((prev) => [newPatient, ...prev]);
         } catch (error) {
             console.error("Erro ao adicionar paciente:", error);
             alert("Erro ao adicionar paciente");
