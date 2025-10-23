@@ -14,7 +14,8 @@ export type IconType =
   | 'check'
   | 'x'
   | 'info'
-  | 'alert-circle';
+  | 'alert-circle'
+  | 'eye';
 
 export interface IconProps extends React.SVGAttributes<SVGElement> {
   type: IconType;

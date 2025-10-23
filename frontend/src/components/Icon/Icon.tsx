@@ -28,6 +28,7 @@ const Icon: React.FC<IconProps> = ({
     x: FiIcons.FiX,
     'info': FiIcons.FiInfo,
     'alert-circle': FiIcons.FiAlertCircle,
+    eye: FiIcons.FiEye, // Adicionando o ícone do olho
   };
 
   const IconComponent = iconMap[type];

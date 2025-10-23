@@ -7,7 +7,7 @@ import Button from "../components/Button/Button";
 import Input from "../components/Form/Input/Input";
 import Table from "../components/Table/Table";
 import Icon from "../components/Icon/Icon";
-import { FiChevronLeft, FiChevronRight, FiEye, FiSearch, FiUserPlus } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiSearch, FiUserPlus } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import PatientModal from "../components/PatientModal/PatientModal";
 
@@ -46,21 +46,26 @@ const ActionsCell: React.FC<{ value: string; onEdit: (id: string) => void }> = (
     const navigate = useNavigate();
     return (
         <div className="flex space-x-2">
-            <button
+            <Button
+                variant="outline"
+                size="sm"
+                icon={<Icon type="eye" size={16} />}
                 onClick={() => navigate(`/patients/${value}`)}
                 className="flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-sage-700 hover:bg-sage-200 hover:text-sage-800 transition-all duration-300"
             >
-                <FiEye size={16} />
                 Visualizar
-            </button>
+            </Button>
 
-            <button
+            <Button
+                variant="outline"
+                size="sm"
+                icon={<Icon type="edit" size={16} />}
+                aria-label="Editar"
                 onClick={() => onEdit(value)}
                 className="flex items-center gap-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-sage-600 hover:bg-sage-100 hover:text-sage-700 transition-all duration-300 border border-sage-200"
             >
-                <Icon type="edit" size={16} />
                 Editar
-            </button>
+            </Button>
         </div>
     );
 };
@@ -164,6 +169,7 @@ const Patients: React.FC = () => {
         status: "active" | "inactive";
         customFields?: { id: number; value: string }[];
     }) => {
+        console.log("handleAddPatient chamado com dados:", modalData);
         try {
             const token = localStorage.getItem("auth.token");
             const res = await axios.post(
@@ -229,6 +235,9 @@ const Patients: React.FC = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem("auth.token");
+            
+            console.log(`Buscando dados do paciente ${patientId}...`);
+            
             const res = await axios.get(`${API_URL}/api/patients/${patientId}`, {
                 withCredentials: true,
                 headers: {
@@ -238,17 +247,78 @@ const Patients: React.FC = () => {
             });
             
             const data = res.data;
-            setCurrentPatient({
-                id: data.id,
-                name: data.nome,
-                phone: data.telefone,
-                email: data.email || "",
-                cpf: data.cpf || "",
-                rg: data.rg || "",
-                birthDate: data.data_nascimento || "",
-                notes: data.notas || "",
-                status: data.ativo === "active" ? "active" : "inactive",
-            });
+            console.log("Dados recebidos da API para o paciente:", JSON.stringify(data, null, 2));
+            
+            // Extrair paciente se estiver dentro de um objeto 'patient'
+            const patientData = data.patient || data;
+            console.log("Dados do paciente extraídos:", patientData);
+            
+            // Verificar todos os campos recebidos
+            console.log("Campos recebidos do backend:", Object.keys(patientData));
+            
+            // Mapeamento explícito com validações
+            // Garantir que o campo nome esteja preenchido corretamente
+            console.log("Campo 'nome' recebido:", patientData.nome);
+            console.log("Campo 'telefone' recebido:", patientData.telefone);
+            
+            // Verificar várias possibilidades para o campo nome
+            const possibleNameFields = ["nome", "name", "paciente_nome", "nomePaciente"];
+            let patientName = "";
+            
+            for (const field of possibleNameFields) {
+                if (patientData[field]) {
+                    patientName = patientData[field];
+                    console.log(`Campo nome encontrado em '${field}':`, patientName);
+                    break;
+                }
+            }
+            
+            // Se não encontrou, tenta outros campos ou mensagem de debug
+            if (!patientName) {
+                console.warn("Nome do paciente não encontrado nos campos esperados. Objeto completo:", patientData);
+            }
+            
+            // Verificar várias possibilidades para o campo telefone
+            const possiblePhoneFields = ["telefone", "phone", "paciente_telefone", "telemovel", "celular", "tel"];
+            let patientPhone = "";
+            
+            for (const field of possiblePhoneFields) {
+                if (patientData[field]) {
+                    patientPhone = patientData[field];
+                    console.log(`Campo telefone encontrado em '${field}':`, patientPhone);
+                    break;
+                }
+            }
+            
+            // Se não encontrou telefone, mensagem de debug
+            if (!patientPhone) {
+                console.warn("Telefone do paciente não encontrado nos campos esperados. Objeto completo:", patientData);
+            }
+            
+            // Verificações adicionais para o telefone 
+            console.log("Verificando campo telefone (original):", patientData.telefone);
+            
+            const mappedPatient = {
+                id: patientData.id,
+                name: patientName || "", // Nome pode estar vindo em outro formato
+                phone: patientPhone || patientData.telefone || "", // Usar o campo encontrado ou o campo padrão
+                email: patientData.email || "",
+                cpf: patientData.cpf || "",
+                rg: patientData.rg || "",
+                birthDate: patientData.data_nascimento || "",
+                notes: patientData.notas || "",
+                status: patientData.ativo === "active" ? "active" : "inactive",
+            };
+            
+            // Log adicional para diagnóstico do campo phone
+            console.log("Campo phone mapeado:", mappedPatient.phone);
+            
+            console.log("Paciente mapeado para edição:", mappedPatient);
+            
+            // Garantir que o objeto tenha todos os campos esperados
+            setCurrentPatient(mappedPatient);
+            
+            console.log("CurrentPatient configurado com nome:", mappedPatient.name);
             setIsPatientModalOpen(true);
         } catch (error) {
             console.error("Erro ao carregar dados do paciente:", error);
@@ -269,8 +339,12 @@ const Patients: React.FC = () => {
         status: "active" | "inactive";
         customFields?: { id: number; value: string }[];
     }) => {
+        console.log("handleUpdatePatient chamado com dados:", modalData);
         try {
-            if (!currentPatient?.id) return;
+            if (!currentPatient?.id) {
+                console.error("Tentativa de atualizar sem ID de paciente");
+                return;
+            }
             
             const token = localStorage.getItem("auth.token");
             const res = await axios.put(
@@ -381,7 +455,11 @@ const Patients: React.FC = () => {
                         <Button
                             variant="primary"
                             icon={<FiUserPlus size={18} />}
-                            onClick={() => setIsPatientModalOpen(true)}
+                            onClick={() => {
+                                console.log("Botão Novo Paciente clicado");
+                                setCurrentPatient(null);
+                                setIsPatientModalOpen(true);
+                            }}
                             className="bg-sage-600 hover:bg-sage-700 border-sage-600 w-full sm:w-auto"
                         >
                             <span className="hidden sm:inline">Novo Paciente</span>
@@ -501,7 +579,10 @@ const Patients: React.FC = () => {
                             <Button
                                 variant="primary"
                                 icon={<FiUserPlus size={16} />}
-                                onClick={() => setIsPatientModalOpen(true)}
+                                onClick={() => {
+                                    setCurrentPatient(null);
+                                    setIsPatientModalOpen(true);
+                                }}
                                 className="bg-sage-600 hover:bg-sage-700"
                             >
                                 Adicionar Primeiro Paciente
@@ -511,15 +592,56 @@ const Patients: React.FC = () => {
                 )}
             </Card>
 
+            {/* Log para debug antes de montar o PatientModal */}
+            {console.log("Renderizando PatientModal com dados:", {
+                isOpen: isPatientModalOpen,
+                currentPatient: currentPatient ? {
+                    ...currentPatient, 
+                    phone_check: currentPatient.phone,
+                    name_check: currentPatient.name
+                } : null,
+                key: currentPatient?.id || "new"
+            })}
+            
             <PatientModal
                 isOpen={isPatientModalOpen}
                 onClose={() => {
                     setIsPatientModalOpen(false);
                     setCurrentPatient(null);
+                    console.log("Modal fechado, currentPatient limpo");
                 }}
-                onSubmit={currentPatient ? handleUpdatePatient : handleAddPatient}
-                initialData={currentPatient || undefined}
-                title={currentPatient ? "Editar Paciente" : "Adicionar Novo Paciente"}
+                onSubmit={(data: {
+                    name: string;
+                    birthDate: string;
+                    cpf: string;
+                    rg?: string;
+                    phone: string;
+                    email?: string;
+                    notes?: string;
+                    status: "active" | "inactive";
+                    customFields?: { id: number; value: string }[];
+                }) => {
+                    console.log("onSubmit chamado no PatientModal", { currentPatient, data });
+                    if (currentPatient?.id) {
+                        handleUpdatePatient(data);
+                    } else {
+                        handleAddPatient(data);
+                    }
+                }}
+                key={currentPatient?.id || "new"} // Adicionar key para forçar recriação do componente
+                initialData={currentPatient ? {
+                    id: currentPatient.id,
+                    name: currentPatient.name || "",
+                    birthDate: currentPatient.birthDate || "",
+                    cpf: currentPatient.cpf || "",
+                    rg: currentPatient.rg || "",
+                    // Certifique-se que o telefone está sendo passado corretamente
+                    phone: currentPatient.phone || "", 
+                    email: currentPatient.email || "",
+                    notes: currentPatient.notes || "",
+                    status: currentPatient.status || "active"
+                } : undefined}
+                title={currentPatient ? `Editar Paciente: ${currentPatient.name || ""}` : "Adicionar Novo Paciente"}
                 submitLabel={currentPatient ? "Atualizar Paciente" : "Salvar Paciente"}
             />
         </MainLayout>
