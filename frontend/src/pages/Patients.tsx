@@ -42,7 +42,7 @@ const StatusCell: React.FC<{ value: Patient["ativo"] }> = ({ value }) => {
     );
 };
 
-const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
+const ActionsCell: React.FC<{ value: string; onEdit: (id: string) => void }> = ({ value, onEdit }) => {
     const navigate = useNavigate();
     return (
         <div className="flex space-x-2">
@@ -55,7 +55,7 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
             </button>
 
             <button
-                onClick={() => console.log("Editar paciente", value)}
+                onClick={() => onEdit(value)}
                 className="flex items-center gap-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-sage-600 hover:bg-sage-100 hover:text-sage-700 transition-all duration-300 border border-sage-200"
             >
                 <Icon type="edit" size={16} />
@@ -89,54 +89,67 @@ const Patients: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [currentPatient, setCurrentPatient] = useState<{
+        id?: string;
+        name?: string;
+        birthDate?: string;
+        cpf?: string;
+        rg?: string;
+        phone?: string;
+        email?: string;
+        notes?: string;
+        status?: "active" | "inactive";
+    } | null>(null);
     const patientsPerPage = 10;
 
-    useEffect(() => {
-        const fetchPatients = async () => {
-            try {
-                const token = localStorage.getItem("auth.token");
-                console.log("Token encontrado:", token ? "Sim" : "Não");
-                
-                // Adicionando logs para debug
-                console.log("Fazendo requisição para:", `${API_URL}/api/patients`);
-                
-                const res = await axios.get(`${API_URL}/api/patients`, {
-                    withCredentials: true,
-                    headers: {
-                        Accept: "application/json",
-                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    },
+    const fetchPatients = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("auth.token");
+            console.log("Token encontrado:", token ? "Sim" : "Não");
+            
+            // Adicionando logs para debug
+            console.log("Fazendo requisição para:", `${API_URL}/api/patients`);
+            
+            const res = await axios.get(`${API_URL}/api/patients`, {
+                withCredentials: true,
+                headers: {
+                    Accept: "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            
+            console.log("Resposta recebida:", res.status, res.data);
+            
+            const data = res.data;
+            const list = Array.isArray(data?.patients) ? data.patients : [];
+            console.log("Lista de pacientes:", list.length, list);
+            
+            setPatients(list as Patient[]);
+        } catch (err: any) {
+            if (axios.isAxiosError(err)) {
+                console.error("Erro na requisição:", {
+                    status: err.response?.status,
+                    data: err.response?.data,
+                    headers: err.response?.headers,
+                    message: err.message
                 });
                 
-                console.log("Resposta recebida:", res.status, res.data);
-                
-                const data = res.data;
-                const list = Array.isArray(data?.patients) ? data.patients : [];
-                console.log("Lista de pacientes:", list.length, list);
-                
-                setPatients(list as Patient[]);
-            } catch (err: any) {
-                if (axios.isAxiosError(err)) {
-                    console.error("Erro na requisição:", {
-                        status: err.response?.status,
-                        data: err.response?.data,
-                        headers: err.response?.headers,
-                        message: err.message
-                    });
-                    
-                    if (err.response?.status === 401) {
-                        console.warn("Não autenticado — redirecionando para login.");
-                        window.location.href = "/login";
-                        return;
-                    }
-                } else {
-                    console.error("Erro desconhecido ao buscar pacientes:", err);
+                if (err.response?.status === 401) {
+                    console.warn("Não autenticado — redirecionando para login.");
+                    window.location.href = "/login";
+                    return;
                 }
-            } finally {
-                setLoading(false);
+            } else {
+                console.error("Erro desconhecido ao buscar pacientes:", err);
             }
-        };
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchPatients();
     }, []);
 
@@ -189,7 +202,7 @@ const Patients: React.FC = () => {
                 criado_em: backendResponse.criado_em || new Date().toISOString(),
             };
 
-            setPatients((prev) => [newPatient, ...prev]);
+            setPatients((prev: Patient[]) => [newPatient, ...prev]);
         } catch (error) {
             console.error("Erro ao adicionar paciente:", error);
             alert("Erro ao adicionar paciente");
@@ -212,6 +225,103 @@ const Patients: React.FC = () => {
     const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
     const currentPatients = filteredPatients.slice(indexOfFirstPatient, indexOfLastPatient);
 
+    const handleEditPatient = async (patientId: string) => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("auth.token");
+            const res = await axios.get(`${API_URL}/api/patients/${patientId}`, {
+                withCredentials: true,
+                headers: {
+                    Accept: "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            
+            const data = res.data;
+            setCurrentPatient({
+                id: data.id,
+                name: data.nome,
+                phone: data.telefone,
+                email: data.email || "",
+                cpf: data.cpf || "",
+                rg: data.rg || "",
+                birthDate: data.data_nascimento || "",
+                notes: data.notas || "",
+                status: data.ativo === "active" ? "active" : "inactive",
+            });
+            setIsPatientModalOpen(true);
+        } catch (error) {
+            console.error("Erro ao carregar dados do paciente:", error);
+            alert("Erro ao carregar dados do paciente");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdatePatient = async (modalData: {
+        name: string;
+        birthDate: string;
+        cpf: string;
+        rg?: string;
+        phone: string;
+        email?: string;
+        notes?: string;
+        status: "active" | "inactive";
+        customFields?: { id: number; value: string }[];
+    }) => {
+        try {
+            if (!currentPatient?.id) return;
+            
+            const token = localStorage.getItem("auth.token");
+            const res = await axios.put(
+                `${API_URL}/api/patients/${currentPatient.id}`,
+                {
+                    nome: modalData.name,
+                    telefone: modalData.phone,
+                    email: modalData.email,
+                    cpf: modalData.cpf,
+                    rg: modalData.rg,
+                    data_nascimento: modalData.birthDate,
+                    notas: modalData.notes,
+                    ativo: modalData.status === "active" ? "active" : "inactive",
+                },
+                {
+                    withCredentials: true,
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                }
+            );
+
+            if (res.status < 200 || res.status >= 300) {
+                throw new Error("Erro ao atualizar paciente");
+            }
+
+            // Atualizar a lista de pacientes
+            const updatedPatients = patients.map((p: Patient) =>
+                p.id === currentPatient.id
+                    ? {
+                        ...p,
+                        nome: modalData.name,
+                        telefone: modalData.phone,
+                        email: modalData.email || "",
+                        ativo: modalData.status
+                    }
+                    : p
+            );            setPatients(updatedPatients);
+            setCurrentPatient(null);
+            setIsPatientModalOpen(false);
+            
+            // Recarregar a lista de pacientes para garantir dados atualizados
+            fetchPatients();
+        } catch (error) {
+            console.error("Erro ao atualizar paciente:", error);
+            alert("Erro ao atualizar paciente");
+        }
+    };
+
     const columns = [
         { header: "Nome", accessor: "nome" as keyof Patient },
         { header: "Telefone", accessor: "telefone" as keyof Patient },
@@ -222,7 +332,13 @@ const Patients: React.FC = () => {
             Cell: DateCell,
         },
         { header: "Status", accessor: "ativo" as keyof Patient, Cell: StatusCell },
-        { header: "Ações", accessor: "id" as keyof Patient, Cell: ActionsCell },
+        { 
+            header: "Ações", 
+            accessor: "id" as keyof Patient, 
+            Cell: ({ value }: { value: string }) => (
+                <ActionsCell value={value} onEdit={handleEditPatient} />
+            )
+        },
     ];
 
     const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
@@ -244,7 +360,7 @@ const Patients: React.FC = () => {
                             id="search"
                             placeholder="Buscar pacientes por nome, telefone ou email..."
                             value={searchTerm}
-                            onChange={(e) => {
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 setSearchTerm(e.target.value);
                                 setCurrentPage(1);
                             }}
@@ -397,8 +513,14 @@ const Patients: React.FC = () => {
 
             <PatientModal
                 isOpen={isPatientModalOpen}
-                onClose={() => setIsPatientModalOpen(false)}
-                onSubmit={handleAddPatient}
+                onClose={() => {
+                    setIsPatientModalOpen(false);
+                    setCurrentPatient(null);
+                }}
+                onSubmit={currentPatient ? handleUpdatePatient : handleAddPatient}
+                initialData={currentPatient || undefined}
+                title={currentPatient ? "Editar Paciente" : "Adicionar Novo Paciente"}
+                submitLabel={currentPatient ? "Atualizar Paciente" : "Salvar Paciente"}
             />
         </MainLayout>
     );
