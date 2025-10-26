@@ -39,8 +39,6 @@ final class Routes
         $app->group('/api', function (RouteCollectorProxy $group) {
             $group->get('/dashboard', [DashboardController::class, 'index']);
 
-            $group->get('/patients', [PatientsController::class, 'getPatients']);
-
             $group->get('/appointments/availability', [AppointmentsController::class, 'availability']);
 
             $group->get('/appointments', [AppointmentsController::class, 'index']);
