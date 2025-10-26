@@ -38,7 +38,13 @@ final class AppointmentsController extends Controller
 
             $data = $this->service->list($userId, $from, $to, $pid, $page, $per);
 
-            return $this->json($response, ['ok' => true] + $data, 200);
+            // Keep original shape and add an alias for chatbot compatibility
+            $resp = ['ok' => true] + $data;
+            if (!isset($resp['appointments']) && isset($data['items'])) {
+                $resp['appointments'] = $data['items'];
+            }
+
+            return $this->json($response, $resp, 200);
         } catch (Throwable $e) {
             $logger->error('Failed to list appointments', ['exception' => $e->getMessage()]);
             return $this->json($response, ['ok' => false, 'message' => 'Erro ao listar agendamentos'], 500);
@@ -66,7 +72,36 @@ final class AppointmentsController extends Controller
 
             $data = $this->service->availability($userId, $from, $to, $slot);
 
-            return $this->json($response, ['ok' => true, 'availability' => $data], 200);
+            // Build a flattened list of slots for chatbot compatibility
+            $availableSlots = [];
+            foreach ($data as $day) {
+                $date = $day['date'] ?? null;
+                $slots = $day['slots'] ?? [];
+                if (!$date || empty($slots)) {
+                    continue;
+                }
+                foreach ($slots as $hm) {
+                    // Ensure HH:MM:SS
+                    $time = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string)$hm) ? (string)$hm : ((string)$hm . ':00');
+                    try {
+                        $startDt = new \DateTimeImmutable($date . ' ' . $time);
+                        $endDt   = $startDt->add(new \DateInterval('PT' . (int)$slot . 'M'));
+                        // ISO8601 with offset (Python fromisoformat accepts offsets)
+                        $availableSlots[] = [
+                            'start' => $startDt->format(DATE_ATOM),
+                            'end'   => $endDt->format(DATE_ATOM),
+                        ];
+                    } catch (\Throwable $e) {
+                        // skip invalid entries
+                    }
+                }
+            }
+
+            return $this->json($response, [
+                'ok' => true,
+                'availability' => $data,
+                'available_slots' => $availableSlots,
+            ], 200);
         } catch (InvalidArgumentException $e) {
             return $this->json($response, ['ok' => false, 'message' => $e->getMessage()], 422);
         } catch (Throwable $e) {

@@ -165,4 +165,53 @@ final class PatientsController extends Controller
             'mensagem' => 'Paciente excluído com sucesso!'
         ]);
     }
+
+    public function findByPhone(Request $request, Response $response, array $args): Response
+    {
+        $logger = new BaseLogger('patients');
+
+        try {
+            $userId = $this->resolveAuthenticatedUserId($request);
+            if ($userId === null) {
+                return $this->json($response, ['ok' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            $phone = $args['phone'] ?? '';
+            if (empty($phone)) {
+                return $this->json($response, ['ok' => false, 'message' => 'Telefone é obrigatório'], 422);
+            }
+
+            // Normalizar telefone: remover caracteres especiais
+            $normalizedPhone = preg_replace('/[^0-9]/', '', $phone);
+
+            $logger->info('Searching patient by phone', [
+                'user_id' => $userId,
+                'original_phone' => $phone,
+                'normalized_phone' => $normalizedPhone
+            ]);
+
+            $patient = $this->patient->findByPhone($userId, $normalizedPhone);
+
+            if (!$patient) {
+                $logger->info('Patient not found by phone', ['phone' => $normalizedPhone]);
+                return $this->json($response, ['ok' => false, 'message' => 'Paciente não encontrado'], 404);
+            }
+
+            $logger->info('Patient found by phone', [
+                'patient_id' => $patient['id'],
+                'phone' => $normalizedPhone
+            ]);
+
+            return $this->json($response, [
+                'ok' => true,
+                'patient' => $patient,
+            ], 200);
+        } catch (Throwable $e) {
+            $logger->error('Find patient by phone error', ['exception' => $e->getMessage()]);
+            return $this->json($response, [
+                'ok'    => false,
+                'message' => 'Erro ao buscar paciente por telefone',
+            ], 500);
+        }
+    }
 }

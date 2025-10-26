@@ -39,14 +39,18 @@ final class Routes
         $app->group('/api', function (RouteCollectorProxy $group) {
             $group->get('/dashboard', [DashboardController::class, 'index']);
 
-            $group->get('/appointments/availability', [AppointmentsController::class, 'availability']);
+            // Rotas novas (para API/chatbot)
+            $group->get('/patients', [PatientsController::class, 'getPatients']);
+            $group->get('/patients/by-phone/{phone}', [PatientsController::class, 'findByPhone']);
 
+            $group->get('/appointments/availability', [AppointmentsController::class, 'availability']);
             $group->get('/appointments', [AppointmentsController::class, 'index']);
             $group->get('/appointments/{id: [0-9]+}', [AppointmentsController::class, 'show']);
             $group->post('/appointments', [AppointmentsController::class, 'create']);
             $group->put('/appointments/{id}', [AppointmentsController::class, 'update']);
             $group->delete('/appointments/{id}', [AppointmentsController::class, 'delete']);
             
+
             $group->get('/patients', [PatientsController::class, 'listarPacientes']);
             $group->get('/patients/{id}', [PatientsController::class, 'buscarPaciente']);
             $group->post('/patients', [PatientsController::class, 'criarPaciente']);
