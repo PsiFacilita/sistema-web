@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Http\Controllers\AppointmentsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PatientsController;
@@ -38,12 +39,20 @@ final class Routes
         $app->group('/api', function (RouteCollectorProxy $group) {
             $group->get('/dashboard', [DashboardController::class, 'index']);
 
-            // Rotas de pacientes
+            $group->get('/patients', [PatientsController::class, 'getPatients']);
+
+            $group->get('/appointments/availability', [AppointmentsController::class, 'availability']);
+
+            $group->get('/appointments', [AppointmentsController::class, 'index']);
+            $group->get('/appointments/{id: [0-9]+}', [AppointmentsController::class, 'show']);
+            $group->post('/appointments', [AppointmentsController::class, 'create']);
+            $group->put('/appointments/{id}', [AppointmentsController::class, 'update']);
+            $group->delete('/appointments/{id}', [AppointmentsController::class, 'delete']);
+            
             $group->get('/patients', [PatientsController::class, 'listarPacientes']);
             $group->get('/patients/{id}', [PatientsController::class, 'buscarPaciente']);
             $group->post('/patients', [PatientsController::class, 'criarPaciente']);
             $group->put('/patients/{id}', [PatientsController::class, 'editarPaciente']);
-            $group->delete('/patients/{id}', [PatientsController::class, 'excluirPaciente']);
         })->add(new AuthMiddleware());
     }
 }
