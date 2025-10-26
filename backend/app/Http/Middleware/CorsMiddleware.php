@@ -13,10 +13,16 @@ final class CorsMiddleware
 {
     public function __invoke(Request $request, Handler $handler): Response
     {
-        $originAllowed = trim((string)($_ENV['FRONTEND_URL'] ?? $_SERVER['FRONTEND_URL'] ?? ''));
+        $originAllowed = trim((string)($_ENV['FRONTEND_URL'] ?? $_SERVER['FRONTEND_URL'] ?? 'http://localhost:3000'));
 
-        if ($originAllowed === '' || $originAllowed === '*') {
-            throw new Exception('FRONTEND_URL environment variable is not set or invalid.');
+        // Log para debug
+        error_log("CorsMiddleware: FRONTEND_URL = '$originAllowed'");
+        error_log("CorsMiddleware: Request method = " . $request->getMethod());
+        error_log("CorsMiddleware: Request URI = " . $request->getUri());
+
+        if ($originAllowed === '') {
+            $originAllowed = 'http://localhost:3000'; // Fallback padrão
+            error_log("CorsMiddleware: Using fallback FRONTEND_URL");
         }
 
         if (strtoupper($request->getMethod()) === 'OPTIONS') {
@@ -24,8 +30,13 @@ final class CorsMiddleware
             return $this->withCors($response, $originAllowed);
         }
 
-        $response = $handler->handle($request);
-        return $this->withCors($response, $originAllowed);
+        try {
+            $response = $handler->handle($request);
+            return $this->withCors($response, $originAllowed);
+        } catch (Exception $e) {
+            error_log("CorsMiddleware: Exception in handler: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     private function withCors(Response $response, string $origin): Response
