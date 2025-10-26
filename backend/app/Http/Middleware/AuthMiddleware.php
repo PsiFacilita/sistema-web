@@ -27,7 +27,7 @@ final class AuthMiddleware implements MiddlewareInterface
                 'ok' => false,
                 'message' => 'Unauthorized',
             ], JSON_UNESCAPED_UNICODE));
-            return $res->withHeader('Content-Type', 'application/json; charset=utf-8');
+            return $res->withHeader('Content-Type', 'application/json; charset=utf-8');   
         }
 
         return $handler->handle($request);

@@ -148,30 +148,32 @@ const Dashboard: React.FC = () => {
         <MainLayout>
             <Title level={1} className="text-sage-700">Dashboard</Title>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {dashboardCards.map((card, i) => (
                     <Card 
                         key={i}
                         variant="elevated"
-                        className="h-full bg-white text-sage-800 border-0 hover:scale-105 transition-all duration-300"
+                        className="h-full bg-white text-sage-800 border-0 hover:scale-105 transition-all duration-300 p-4 sm:p-6"
                     >
-                        <p className="text-4xl font-light mb-2">{card.value}</p>
-                        <p className="text-sage-600 font-medium">{card.title}</p>
+                        <p className="text-2xl sm:text-3xl lg:text-4xl font-light mb-2">{card.value}</p>
+                        <p className="text-sage-600 font-medium text-sm sm:text-base">{card.title}</p>
                     </Card>
                 ))}
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-sage-100">
-                <Title level={2} className="text-sage-700 mb-4">Evolução de Pacientes</Title>
-                <Chart 
-                    type="line"
-                    data={{
-                        labels: grafico.map((g) => `Mês ${g.mes}`),
-                        datasets: getDatasetConfig(),
-                    }}
-                    onLegendClick={handleHighlight}
-                    highlightState={highlight}
-                />
+            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-sage-100">
+                <Title level={2} className="text-sage-700 mb-3 sm:mb-4 text-lg sm:text-xl">Evolução de Pacientes</Title>
+                <div className="overflow-x-auto">
+                    <Chart 
+                        type="line"
+                        data={{
+                            labels: grafico.map((g) => `Mês ${g.mes}`),
+                            datasets: getDatasetConfig(),
+                        }}
+                        onLegendClick={handleHighlight}
+                        highlightState={highlight}
+                    />
+                </div>
             </div>
         </MainLayout>
     );

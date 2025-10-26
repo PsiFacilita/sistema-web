@@ -74,7 +74,7 @@ final class User extends Model
         WHERE u.id = :id
         LIMIT 1
     ";
-        $row = $this->fetchRow($query, [':id' => $id]);
+        $row = $this->fetchRow($query, ['id' => $id]);
         return $row ? self::fromRow($row) : null;
     }
 

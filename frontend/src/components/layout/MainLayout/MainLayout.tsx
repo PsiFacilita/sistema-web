@@ -10,12 +10,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar - versão desktop (sempre visível) */}
-      <div className="hidden md:block fixed inset-y-0 z-30 w-64">
+      <div className="hidden md:block fixed inset-y-0 z-30 w-56">
         <Sidebar />
       </div>
 
       {/* Sidebar - versão mobile (controlada por estado) */}
-      <div className={`md:hidden fixed inset-y-0 z-40 w-64 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`md:hidden fixed inset-y-0 z-40 w-56 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
@@ -28,8 +28,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       )}
 
       {/* Conteúdo principal */}
-      <main className="flex-1 md:ml-64 min-h-screen overflow-y-auto">
-        <div className="p-4 md:p-8">
+      <main className="flex-1 md:ml-56 min-h-screen overflow-auto">
+        <div className="p-4 md:p-8 min-w-0">
           {/* Botão hamburger visível só em mobile */}
           <button
             className="md:hidden p-2 mb-4 rounded-md bg-white shadow"
