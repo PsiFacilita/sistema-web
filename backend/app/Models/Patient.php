@@ -101,4 +101,17 @@ final class Patient extends Model
         $query = "DELETE FROM paciente WHERE id = :id";
         return $this->executeQuery($query, ['id' => $pacienteId]);
     }
+
+    public function findByPhone(int $userId, string $phone): ?array
+    {
+        $query = "SELECT id, nome, email, telefone, ativo, criado_em
+                  FROM paciente 
+                  WHERE usuario_id = :uid 
+                  AND telefone = :phone
+                  LIMIT 1";
+
+        $rows = $this->fetchAllRows($query, ['uid' => $userId, 'phone' => $phone]);
+        
+        return !empty($rows) ? $rows[0] : null;
+    }
 }

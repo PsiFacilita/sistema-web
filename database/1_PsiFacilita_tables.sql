@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     crp                  VARCHAR(15) NULL UNIQUE,
     senha             VARCHAR(255) NOT NULL,
     telefone                VARCHAR(20) DEFAULT NULL,
-    cargo                 ENUM('psicologo', 'secretaria') DEFAULT 'psicologo' NOT NULL,
+    cargo                 ENUM('psicologo', 'secretaria', 'chatbot') DEFAULT 'psicologo' NOT NULL,
     criado_em           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em           TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );

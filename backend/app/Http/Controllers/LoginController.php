@@ -44,6 +44,38 @@ final class LoginController extends Controller
                 return $this->json($response, ['ok' => false, 'message' => 'Credenciais inválidas.'], 401);
             }
 
+            // Se for chatbot, pula 2FA completamente
+            if ($user->role === 'chatbot') {
+                $_SESSION['user'] = ['id' => $user->id];
+                $token = $auth->generateToken($user);
+                
+                $cookie = sprintf(
+                    'access_token=%s; Expires=%s; Path=/; HttpOnly; Secure; SameSite=Lax',
+                    rawurlencode($token),
+                    gmdate('D, d M Y H:i:s \G\M\T', time() + $auth->getTtlSeconds())
+                );
+                $response = $response->withAddedHeader('Set-Cookie', $cookie);
+                
+                $logger->info('Chatbot login successful - 2FA skipped', [
+                    'user_id' => $user->id, 
+                    'email' => $user->email
+                ]);
+
+                return $this->json($response, [
+                    'ok'         => true,
+                    'token'      => $token,
+                    'token_type' => 'Bearer',
+                    'expires_in' => $auth->getTtlSeconds(),
+                    'user'       => [
+                        'id' => $user->id, 
+                        'name' => $user->name, 
+                        'email' => $user->email, 
+                        'role' => $user->role
+                    ],
+                ], 200);
+            }
+
+
             $appEnv = $_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'production';
             $secure = $appEnv === 'production';
 
