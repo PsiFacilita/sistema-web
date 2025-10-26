@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AppointmentsController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentsController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PatientsController;
 use App\Http\Middleware\AuthMiddleware;
@@ -51,6 +52,13 @@ final class Routes
             $group->get('/patients/{id}', [PatientsController::class, 'buscarPaciente']);
             $group->post('/patients', [PatientsController::class, 'criarPaciente']);
             $group->put('/patients/{id}', [PatientsController::class, 'editarPaciente']);
+
+            // Rotas de Documentos
+            $group->get('/documents', [DocumentsController::class, 'index']);
+            $group->get('/documents/{id:[0-9]+}', [DocumentsController::class, 'show']);
+            $group->post('/documents', [DocumentsController::class, 'create']);
+            $group->put('/documents/{id:[0-9]+}', [DocumentsController::class, 'update']);
+            $group->delete('/documents/{id:[0-9]+}', [DocumentsController::class, 'delete']);
         })->add(new AuthMiddleware());
     }
 }
