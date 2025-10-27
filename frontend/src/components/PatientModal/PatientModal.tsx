@@ -59,6 +59,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     const loadFields = async () => {
@@ -179,8 +180,8 @@ const PatientModal: React.FC<PatientModalProps> = ({
     if (name.length < 3) {
       return "O nome deve ter no mínimo 3 caracteres";
     }
-    if (/\d/.test(name)) {
-      return "O nome não pode conter números";
+    if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(name)) {
+      return "O nome deve conter apenas letras e espaços";
     }
     return null;
   };
@@ -262,33 +263,45 @@ const PatientModal: React.FC<PatientModalProps> = ({
     // Validações
     const nameError = validateName(name.trim());
     if (nameError) {
-      alert(nameError);
+      setErrors({ name: nameError });
       return;
     }
+
+    setErrors({}); // Limpar erros se passou
+
+    setErrors({}); // Limpar erros se passou
 
     const birthDateError = validateBirthDate(birthDate);
     if (birthDateError) {
-      alert(birthDateError);
+      setErrors({ birthDate: birthDateError });
       return;
     }
+
+    setErrors({}); // Limpar erros se passou
 
     const emailError = validateEmail(email);
     if (emailError) {
-      alert(emailError);
+      setErrors({ email: emailError });
       return;
     }
+
+    setErrors({}); // Limpar erros se passou
 
     const phoneError = validatePhone(phone);
     if (phoneError) {
-      alert(phoneError);
+      setErrors({ phone: phoneError });
       return;
     }
 
+    setErrors({}); // Limpar erros se passou
+
     const cpfError = validateCPF(cpf);
     if (cpfError) {
-      alert(cpfError);
+      setErrors({ cpf: cpfError });
       return;
     }
+
+    setErrors({}); // Limpar erros se passou
 
     onSubmit({
       name: name.trim(),
@@ -333,10 +346,14 @@ const PatientModal: React.FC<PatientModalProps> = ({
                 id="name"
                 value={name}
                 placeholder="Digite o nome completo do paciente"
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setErrors(prev => ({ ...prev, name: "" }));
+                }}
                 required
                 className="border-sage-200 focus:border-sage-400 text-sm sm:text-base"
               />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </label>
 
             <label htmlFor="birthDate" className="block">
@@ -347,10 +364,14 @@ const PatientModal: React.FC<PatientModalProps> = ({
                   id="birthDate"
                   type="date"
                   value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
+                  onChange={(e) => {
+                    setBirthDate(e.target.value);
+                    setErrors(prev => ({ ...prev, birthDate: "" }));
+                  }}
                   className="pl-10 border-sage-200 focus:border-sage-400 text-sm sm:text-base"
                 />
               </div>
+              {errors.birthDate && <p className="text-red-500 text-sm mt-1">{errors.birthDate}</p>}
             </label>
           </div>
         </div>
@@ -368,11 +389,15 @@ const PatientModal: React.FC<PatientModalProps> = ({
                 id="cpf"
                 value={cpf}
                 placeholder="000.000.000-00"
-                onChange={(e) => setCpf(e.target.value)}
+                onChange={(e) => {
+                  setCpf(e.target.value);
+                  setErrors(prev => ({ ...prev, cpf: "" }));
+                }}
                 required
                 mask="999.999.999-99"
                 className="border-sage-200 focus:border-sage-400 text-sm sm:text-base"
               />
+              {errors.cpf && <p className="text-red-500 text-sm mt-1">{errors.cpf}</p>}
             </label>
 
             <label htmlFor="rg" className="block">
@@ -403,12 +428,16 @@ const PatientModal: React.FC<PatientModalProps> = ({
                   id="phone"
                   value={phone}
                   placeholder="(00) 00000-0000"
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setErrors(prev => ({ ...prev, phone: "" }));
+                  }}
                   required
                   mask="(99) 99999-9999"
                   className="pl-10 border-sage-200 focus:border-sage-400 text-sm sm:text-base"
                 />
               </div>
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
             </label>
 
             <label htmlFor="email" className="block">
@@ -420,10 +449,14 @@ const PatientModal: React.FC<PatientModalProps> = ({
                   type="email"
                   placeholder="email@exemplo.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrors(prev => ({ ...prev, email: "" }));
+                  }}
                   className="pl-10 border-sage-200 focus:border-sage-400 text-sm sm:text-base"
                 />
               </div>
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </label>
           </div>
         </div>
