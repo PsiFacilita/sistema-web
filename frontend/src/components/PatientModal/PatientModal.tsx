@@ -394,7 +394,6 @@ const PatientModal: React.FC<PatientModalProps> = ({
                   setErrors(prev => ({ ...prev, cpf: "" }));
                 }}
                 required
-                mask="999.999.999-99"
                 className="border-sage-200 focus:border-sage-400 text-sm sm:text-base"
               />
               {errors.cpf && <p className="text-red-500 text-sm mt-1">{errors.cpf}</p>}

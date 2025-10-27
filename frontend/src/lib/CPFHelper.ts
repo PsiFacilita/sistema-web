@@ -10,7 +10,7 @@ export class CPFHelper {
      */
     static validaCPF(cpf: string): boolean {
         // Extrai somente os números
-        cpf = cpf.replace(/[^0-9]/is, '');
+        cpf = cpf.replace(/[^0-9]/g, '');
          
         // Verifica se foi informado todos os digitos corretamente
         if (cpf.length != 11) {
