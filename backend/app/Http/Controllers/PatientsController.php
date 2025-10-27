@@ -133,6 +133,7 @@ final class PatientsController extends Controller
         if (isset($dados['cpf'])) $dadosParaAtualizar['cpf'] = $dados['cpf'];
         if (isset($dados['rg'])) $dadosParaAtualizar['rg'] = $dados['rg'];
         if (isset($dados['data_nascimento'])) $dadosParaAtualizar['data_nascimento'] = $dados['data_nascimento'];
+        if (isset($dados['notas'])) $dadosParaAtualizar['notas'] = $dados['notas'];
         if (isset($dados['ativo'])) $dadosParaAtualizar['ativo'] = $dados['ativo'] === 'active' ? 1 : 0;
 
         $this->patient->atualizar($pacienteId, $dadosParaAtualizar);

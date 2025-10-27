@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import MainLayout from "../components/layout/MainLayout/MainLayout";
 import Title from "../components/Title/Title";
 import Card from "../components/Card/Card";
@@ -32,6 +33,8 @@ const PatientView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const API_URL = (import.meta as any).env?.BACKEND_URL || "http://localhost:5000";
+
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -39,11 +42,16 @@ const PatientView: React.FC = () => {
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/patients/${id}`, {
-          credentials: "include",
+        const token = localStorage.getItem("auth.token");
+        const res = await axios.get(`${API_URL}/api/patients/${id}`, {
+          withCredentials: true,
+          headers: {
+            Accept: "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
         });
-        const data = await response.json();
-        setPatientData(data);
+        const data = res.data;
+        setPatientData(data as PatientData);
       } catch (error) {
         console.error("Erro ao buscar paciente:", error);
       } finally {

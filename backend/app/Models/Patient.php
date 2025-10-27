@@ -50,8 +50,8 @@ final class Patient extends Model
         // Converte o status ativo para o formato do banco - por padrão, pacientes são criados como ativos
         $ativo = isset($dados['ativo']) ? ($dados['ativo'] === 'active' ? 1 : 0) : 1;
         
-        $query = "INSERT INTO paciente (nome, email, telefone, cpf, rg, data_nascimento, usuario_id, ativo, criado_em) 
-                  VALUES (:nome, :email, :telefone, :cpf, :rg, :data_nascimento, :usuario_id, :ativo, NOW())";
+        $query = "INSERT INTO paciente (nome, email, telefone, cpf, rg, data_nascimento, notas, usuario_id, ativo, criado_em) 
+                  VALUES (:nome, :email, :telefone, :cpf, :rg, :data_nascimento, :notas, :usuario_id, :ativo, NOW())";
         
         $parametros = [
             'nome' => $dados['nome'],
@@ -60,6 +60,7 @@ final class Patient extends Model
             'cpf' => $dados['cpf'],
             'rg' => $dados['rg'],
             'data_nascimento' => $dados['data_nascimento'],
+            'notas' => $dados['notas'] ?? '',
             'usuario_id' => $dados['usuario_id'],
             'ativo' => $ativo
         ];
