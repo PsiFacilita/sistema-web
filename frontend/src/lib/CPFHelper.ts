@@ -13,7 +13,7 @@ export class CPFHelper {
         cpf = cpf.replace(/[^0-9]/g, '');
          
         // Verifica se foi informado todos os digitos corretamente
-        if (cpf.length != 11) {
+        if (cpf.length !== 11) {
             return false;
         }
 
@@ -29,7 +29,7 @@ export class CPFHelper {
                 d += parseInt(cpf[c]) * ((t + 1) - c);
             }
             d = ((10 * d) % 11) % 10;
-            if (parseInt(cpf[t]) != d) {
+            if (parseInt(cpf[t]) !== d) {
                 return false;
             }
         }
@@ -59,10 +59,10 @@ export class CPFHelper {
             return null;
         }
         
-        return cpf.substr(0, 3) + '.' + 
-               cpf.substr(3, 3) + '.' + 
-               cpf.substr(6, 3) + '-' + 
-               cpf.substr(9, 2);
+        return cpf.substring(0, 3) + '.' + 
+               cpf.substring(3, 6) + '.' + 
+               cpf.substring(6, 9) + '-' + 
+               cpf.substring(9, 11);
     }
 
     /**

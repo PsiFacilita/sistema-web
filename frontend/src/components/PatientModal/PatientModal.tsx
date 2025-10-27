@@ -260,48 +260,38 @@ const PatientModal: React.FC<PatientModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validações
+    // Coletar todos os erros de validação
+    const errors: { [key: string]: string } = {};
+
     const nameError = validateName(name.trim());
     if (nameError) {
-      setErrors({ name: nameError });
-      return;
+      errors.name = nameError;
     }
-
-    setErrors({}); // Limpar erros se passou
-
-    setErrors({}); // Limpar erros se passou
 
     const birthDateError = validateBirthDate(birthDate);
     if (birthDateError) {
-      setErrors({ birthDate: birthDateError });
-      return;
+      errors.birthDate = birthDateError;
     }
-
-    setErrors({}); // Limpar erros se passou
 
     const emailError = validateEmail(email);
     if (emailError) {
-      setErrors({ email: emailError });
-      return;
+      errors.email = emailError;
     }
-
-    setErrors({}); // Limpar erros se passou
 
     const phoneError = validatePhone(phone);
     if (phoneError) {
-      setErrors({ phone: phoneError });
-      return;
+      errors.phone = phoneError;
     }
-
-    setErrors({}); // Limpar erros se passou
 
     const cpfError = validateCPF(cpf);
     if (cpfError) {
-      setErrors({ cpf: cpfError });
-      return;
+      errors.cpf = cpfError;
     }
 
-    setErrors({}); // Limpar erros se passou
+    setErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
 
     onSubmit({
       name: name.trim(),
