@@ -30,14 +30,15 @@ const formatStatus = (status: Patient["ativo"]) => {
     return statusMap[status] ?? status;
 };
 
-const StatusCell: React.FC<{ value: Patient["ativo"] }> = ({ value }) => {
+const StatusCell: React.FC<{ value: string }> = ({ value }) => {
+    const status = value as Patient["ativo"];
     const statusClasses: Record<Patient["ativo"], string> = {
         active: "bg-green-100 text-green-800 border border-green-200",
         inactive: "bg-red-100 text-red-800 border border-red-200",
     };
     return (
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusClasses[value]}`}>
-            {formatStatus(value)}
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusClasses[status]}`}>
+            {formatStatus(status)}
         </span>
     );
 };
@@ -236,8 +237,6 @@ const Patients: React.FC = () => {
             setLoading(true);
             const token = localStorage.getItem("auth.token");
             
-            console.log(`Buscando dados do paciente ${patientId}...`);
-            
             const res = await axios.get(`${API_URL}/api/patients/${patientId}`, {
                 withCredentials: true,
                 headers: {
@@ -246,68 +245,37 @@ const Patients: React.FC = () => {
                 },
             });
             
-            const data = res.data;
-            console.log("Dados recebidos da API para o paciente:", JSON.stringify(data, null, 2));
+            const apiData = res.data as any;
+            const patientData = apiData.patient || apiData;
+
+            // Configurar o paciente atual com os dados recebidos
+            setCurrentPatient({
+                id: patientId,
+                name: patientData.nome || "",
+                birthDate: patientData.data_nascimento || "",
+                cpf: patientData.cpf || "",
+                rg: patientData.rg || "",
+                phone: patientData.telefone || "",
+                email: patientData.email || "",
+                notes: patientData.notas || "",
+                status: (patientData.ativo === "active" || patientData.ativo === "inactive") 
+                    ? patientData.ativo 
+                    : "active"
+            });
             
-            // Extrair paciente se estiver dentro de um objeto 'patient'
-            const patientData = data.patient || data;
-            console.log("Dados do paciente extraídos:", patientData);
-            
-            // Verificar todos os campos recebidos
-            console.log("Campos recebidos do backend:", Object.keys(patientData));
-            
-            // Mapeamento explícito com validações
-            // Garantir que o campo nome esteja preenchido corretamente
-            console.log("Campo 'nome' recebido:", patientData.nome);
-            console.log("Campo 'telefone' recebido:", patientData.telefone);
-            
-            // Verificar várias possibilidades para o campo nome
-            const possibleNameFields = ["nome", "name", "paciente_nome", "nomePaciente"];
-            let patientName = "";
-            
-            for (const field of possibleNameFields) {
-                if (patientData[field]) {
-                    patientName = patientData[field];
-                    console.log(`Campo nome encontrado em '${field}':`, patientName);
-                    break;
-                }
-            }
-            
-            // Se não encontrou, tenta outros campos ou mensagem de debug
-            if (!patientName) {
-                console.warn("Nome do paciente não encontrado nos campos esperados. Objeto completo:", patientData);
-            }
-            
-            // Verificar várias possibilidades para o campo telefone
-            const possiblePhoneFields = ["telefone", "phone", "paciente_telefone", "telemovel", "celular", "tel"];
-            let patientPhone = "";
-            
-            for (const field of possiblePhoneFields) {
-                if (patientData[field]) {
-                    patientPhone = patientData[field];
-                    console.log(`Campo telefone encontrado em '${field}':`, patientPhone);
-                    break;
-                }
-            }
-            
-            // Se não encontrou telefone, mensagem de debug
-            if (!patientPhone) {
-                console.warn("Telefone do paciente não encontrado nos campos esperados. Objeto completo:", patientData);
-            }
-            
-            // Verificações adicionais para o telefone 
-            console.log("Verificando campo telefone (original):", patientData.telefone);
+            // Abrir o modal de edição
+            setIsEditModalOpen(true);
             
             const mappedPatient = {
                 id: patientData.id,
-                name: patientName || "", // Nome pode estar vindo em outro formato
-                phone: patientPhone || patientData.telefone || "", // Usar o campo encontrado ou o campo padrão
+                name: patientData.nome || "",
+                phone: patientData.telefone || "",
                 email: patientData.email || "",
                 cpf: patientData.cpf || "",
                 rg: patientData.rg || "",
                 birthDate: patientData.data_nascimento || "",
                 notes: patientData.notas || "",
-                status: patientData.ativo === "active" ? "active" : "inactive",
+                status: (patientData.ativo === "active" ? "active" : "inactive") as "active" | "inactive",
             };
             
             // Log adicional para diagnóstico do campo phone

@@ -41,7 +41,6 @@ final class Routes
             $group->get('/dashboard', [DashboardController::class, 'index']);
 
             // Rotas novas (para API/chatbot)
-            $group->get('/patients', [PatientsController::class, 'getPatients']);
             $group->get('/patients/by-phone/{phone}', [PatientsController::class, 'findByPhone']);
 
             $group->get('/appointments/availability', [AppointmentsController::class, 'availability']);

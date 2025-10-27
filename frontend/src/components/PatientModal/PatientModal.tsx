@@ -174,18 +174,131 @@ const PatientModal: React.FC<PatientModalProps> = ({
     loadFields();
   }, [initialData, isOpen]);
 
+  // Funções de validação
+  const validateName = (name: string): string | null => {
+    if (name.length < 3) {
+      return "O nome deve ter no mínimo 3 caracteres";
+    }
+    if (/\d/.test(name)) {
+      return "O nome não pode conter números";
+    }
+    return null;
+  };
+
+  const validateEmail = (email: string): string | null => {
+    if (!email) return null; // Email é opcional
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Email inválido";
+    }
+    return null;
+  };
+
+  const validatePhone = (phone: string): string | null => {
+    const phoneRegex = /^\([1-9]{2}\) (?:[2-8]|9[1-9])[0-9]{3}\-[0-9]{4}$/;
+    if (!phoneRegex.test(phone)) {
+      return "Telefone inválido";
+    }
+    return null;
+  };
+
+  const validateCPF = (cpf: string): string | null => {
+    const cpfRegex = /^\d{3}\.\d{3}\.\d{3}\-\d{2}$/;
+    if (!cpfRegex.test(cpf)) {
+      return "CPF inválido";
+    }
+    return null;
+  };
+
+  const validateBirthDate = (dateString: string): string | null => {
+    if (!dateString) return null; // Data vazia é permitida
+
+    // Verificar formato básico YYYY-MM-DD
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateString)) {
+      return 'Formato de data inválido. Use o formato YYYY-MM-DD';
+    }
+
+    const [yearStr, monthStr, dayStr] = dateString.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
+
+    // Verificar se os valores estão no range válido
+    if (month < 1 || month > 12) {
+      return 'Mês deve estar entre 01 e 12';
+    }
+
+    if (day < 1 || day > 31) {
+      return 'Dia deve estar entre 01 e 31';
+    }
+
+    // Verificar se o ano é menor que 1900
+    if (year < 1900) {
+      return 'Ano deve ser maior ou igual a 1900';
+    }
+
+    // Criar data e verificar se é válida
+    const date = new Date(year, month - 1, day);
+    const today = new Date();
+
+    // Verificar se a data criada corresponde aos valores originais
+    // Isso detecta datas inválidas como 31 de fevereiro
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+      return 'Data inválida para o mês selecionado';
+    }
+
+    // Verificar se a data é no futuro
+    if (date > today) {
+      return 'Data de nascimento não pode ser no futuro';
+    }
+
+    return null; // Data válida
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validações
+    const nameError = validateName(name.trim());
+    if (nameError) {
+      alert(nameError);
+      return;
+    }
+
+    const birthDateError = validateBirthDate(birthDate);
+    if (birthDateError) {
+      alert(birthDateError);
+      return;
+    }
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+      alert(emailError);
+      return;
+    }
+
+    const phoneError = validatePhone(phone);
+    if (phoneError) {
+      alert(phoneError);
+      return;
+    }
+
+    const cpfError = validateCPF(cpf);
+    if (cpfError) {
+      alert(cpfError);
+      return;
+    }
+
     onSubmit({
-      name,
+      name: name.trim(),
       birthDate,
       cpf,
       rg: rg || undefined,
       phone,
       email: email || undefined,
       notes,
-      status,
+      status: initialData ? status : "active", // Define como "active" apenas na criação
       customFields: customFields.map(({ id, value }) => ({ id, value })),
     });
 
@@ -367,24 +480,26 @@ const PatientModal: React.FC<PatientModalProps> = ({
               />
             </label>
 
-            <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-sage-200">
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={status === "active"}
-                  onChange={() =>
-                    setStatus((prev) => (prev === "active" ? "inactive" : "active"))
-                  }
-                  className="w-4 h-4 text-sage-600 bg-sage-100 border-sage-300 rounded focus:ring-sage-500"
-                />
-              </div>
-              <div>
-                <span className="text-sm font-medium text-sage-700">Paciente Ativo</span>
-                <p className="text-xs text-sage-500">
-                  {status === "active" ? "Paciente está ativo no sistema" : "Paciente inativado"}
-                </p>
-              </div>
-            </label>
+            {initialData && (
+              <label className="flex items-center gap-3 p-3 bg-white rounded-lg border border-sage-200">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={status === "active"}
+                    onChange={() =>
+                      setStatus((prev) => (prev === "active" ? "inactive" : "active"))
+                    }
+                    className="w-4 h-4 text-sage-600 bg-sage-100 border-sage-300 rounded focus:ring-sage-500"
+                  />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-sage-700">Paciente Ativo</span>
+                  <p className="text-xs text-sage-500">
+                    {status === "active" ? "Paciente está ativo no sistema" : "Paciente inativado"}
+                  </p>
+                </div>
+              </label>
+            )}
           </div>
         </div>
 

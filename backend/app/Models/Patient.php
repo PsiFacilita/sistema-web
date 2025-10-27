@@ -47,8 +47,8 @@ final class Patient extends Model
             throw new \Exception('Data de nascimento é obrigatória');
         }
         
-        // Converte o status ativo para o formato do banco
-        $ativo = isset($dados['ativo']) && $dados['ativo'] === 'active' ? 1 : 0;
+        // Converte o status ativo para o formato do banco - por padrão, pacientes são criados como ativos
+        $ativo = isset($dados['ativo']) ? ($dados['ativo'] === 'active' ? 1 : 0) : 1;
         
         $query = "INSERT INTO paciente (nome, email, telefone, cpf, rg, data_nascimento, usuario_id, ativo, criado_em) 
                   VALUES (:nome, :email, :telefone, :cpf, :rg, :data_nascimento, :usuario_id, :ativo, NOW())";
