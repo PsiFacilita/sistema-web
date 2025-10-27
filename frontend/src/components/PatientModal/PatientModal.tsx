@@ -3,6 +3,7 @@ import Button from "../Button/Button";
 import Input from "../Form/Input/Input";
 import Modal from "../Modal/Modal";
 import { FiUser, FiCalendar, FiFileText, FiPhone, FiMail, FiEdit3 } from "react-icons/fi";
+import { CPFHelper } from "../../lib/CPFHelper";
 
 interface CustomField {
   id: number;
@@ -204,8 +205,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
   };
 
   const validateCPF = (cpf: string): string | null => {
-    const cpfRegex = /^\d{3}\.\d{3}\.\d{3}\-\d{2}$/;
-    if (!cpfRegex.test(cpf)) {
+    if (!CPFHelper.validaCPF(cpf)) {
       return "CPF inválido";
     }
     return null;
