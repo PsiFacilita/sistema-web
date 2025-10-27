@@ -95,7 +95,6 @@ const Patients: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentPatient, setCurrentPatient] = useState<{
         id?: string;
         name?: string;
@@ -251,31 +250,31 @@ const Patients: React.FC = () => {
             // Configurar o paciente atual com os dados recebidos
             setCurrentPatient({
                 id: patientId,
-                name: patientData.nome || "",
-                birthDate: patientData.data_nascimento || "",
+                name: patientData.name || patientData.nome || "",
+                birthDate: patientData.birthDate || patientData.data_nascimento || "",
                 cpf: patientData.cpf || "",
                 rg: patientData.rg || "",
-                phone: patientData.telefone || "",
+                phone: patientData.phone || patientData.telefone || "",
                 email: patientData.email || "",
-                notes: patientData.notas || "",
-                status: (patientData.ativo === "active" || patientData.ativo === "inactive") 
-                    ? patientData.ativo 
+                notes: patientData.notes || patientData.notas || "",
+                status: (patientData.status || patientData.ativo === "active" || patientData.ativo === "inactive") 
+                    ? (patientData.status || patientData.ativo) 
                     : "active"
             });
             
             // Abrir o modal de edição
-            setIsEditModalOpen(true);
+            setIsPatientModalOpen(true);
             
             const mappedPatient = {
                 id: patientData.id,
-                name: patientData.nome || "",
-                phone: patientData.telefone || "",
+                name: patientData.name || patientData.nome || "",
+                phone: patientData.phone || patientData.telefone || "",
                 email: patientData.email || "",
                 cpf: patientData.cpf || "",
                 rg: patientData.rg || "",
-                birthDate: patientData.data_nascimento || "",
-                notes: patientData.notas || "",
-                status: (patientData.ativo === "active" ? "active" : "inactive") as "active" | "inactive",
+                birthDate: patientData.birthDate || patientData.data_nascimento || "",
+                notes: patientData.notes || patientData.notas || "",
+                status: ((patientData.status || patientData.ativo) === "active" ? "active" : "inactive") as "active" | "inactive",
             };
             
             // Log adicional para diagnóstico do campo phone
