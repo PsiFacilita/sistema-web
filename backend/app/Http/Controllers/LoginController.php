@@ -97,7 +97,7 @@ final class LoginController extends Controller
 
             $lembrarCookie = $_COOKIE['lembrar_2fa'] ?? null;
 
-            $appName = $_ENV['APP_NAME'] ?? $_SERVER['APP_NAME'] ?? 'MinhaApp';
+            $appName = $_ENV['APP_NAME'] ?? $_SERVER['APP_NAME'] ?? 'PsiFacilita';
             $otp     = new OtpService(appName: $appName); // helper cuida do e-mail
 
             // Se dispositivo confiável, pula 2FA
@@ -162,7 +162,7 @@ final class LoginController extends Controller
                 return $this->json($response, ['ok' => false, 'message' => 'Código inválido.'], 422);
             }
 
-            $appName = $_ENV['APP_NAME'] ?? $_SERVER['APP_NAME'] ?? 'MinhaApp';
+            $appName = $_ENV['APP_NAME'] ?? $_SERVER['APP_NAME'] ?? 'PsiFacilita';
             $otp     = new OtpService(appName: $appName); // não envia e-mail aqui
 
             $usuarioId = $otp->verificar($desafioId, $codigo, 5);
@@ -249,7 +249,7 @@ final class LoginController extends Controller
                 return $this->json($response, ['ok' => false, 'message' => 'Sessão expirada.'], 401);
             }
 
-            $appName     = $_ENV['APP_NAME'] ?? $_SERVER['APP_NAME'] ?? 'MinhaApp';
+            $appName     = $_ENV['APP_NAME'] ?? $_SERVER['APP_NAME'] ?? 'PsiFacilita';
             $otp         = new OtpService(appName: $appName);
             $challengeId = $otp->enviarCodigo((int)$usuarioId, 10);
 
