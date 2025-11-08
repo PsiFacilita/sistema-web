@@ -2,9 +2,6 @@ import axios from 'axios';
 
 const API_URL = (import.meta as any).env?.BACKEND_URL || 'http://localhost:5000';
 
-// Adicionando log para verificar a URL da API
-console.log("API_URL configurada como:", API_URL);
-
 const api = axios.create({
     baseURL: API_URL,
     withCredentials: true,
@@ -29,11 +26,6 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
     (res) => {
-        console.log("API Response:", {
-            url: res.config.url,
-            status: res.status,
-            dataReceived: !!res.data
-        });
         return res;
     },
     (err) => {
