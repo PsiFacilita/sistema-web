@@ -19,15 +19,13 @@ final class Routes
     {
         $app->get('/hello-world', [HomeController::class, 'index']);
 
-        // Aplicando rate limiting apenas em rotas de autenticação
         $rateLimitMiddleware = new RateLimitMiddleware(
             maxAttempts: 5,
             decaySeconds: 60,
             storagePath: __DIR__ . '/../storage/rate_limit'
         );
-        
-        // Rotas de autenticação com rate limiting
-        $app->get('/auth/me', [LoginController::class, 'me'])->add($rateLimitMiddleware);
+
+        $app->get('/auth/me', [LoginController::class, 'me']);
         $app->post('/auth/login', [LoginController::class, 'login'])->add($rateLimitMiddleware);
         $app->post('/auth/logout', [LoginController::class, 'logout']);
         $app->post('/auth/2fa/verify', [LoginController::class, 'verify2fa'])->add($rateLimitMiddleware);
@@ -40,7 +38,6 @@ final class Routes
         $app->group('/api', function (RouteCollectorProxy $group) {
             $group->get('/dashboard', [DashboardController::class, 'index']);
 
-            // Rotas novas (para API/chatbot)
             $group->get('/patients/by-phone/{phone}', [PatientsController::class, 'findByPhone']);
 
             $group->get('/appointments/availability', [AppointmentsController::class, 'availability']);
@@ -56,7 +53,6 @@ final class Routes
             $group->post('/patients', [PatientsController::class, 'criarPaciente']);
             $group->put('/patients/{id}', [PatientsController::class, 'editarPaciente']);
 
-            // Rotas de Documentos
             $group->get('/documents', [DocumentsController::class, 'index']);
             $group->get('/documents/{id:[0-9]+}', [DocumentsController::class, 'show']);
             $group->post('/documents', [DocumentsController::class, 'create']);
