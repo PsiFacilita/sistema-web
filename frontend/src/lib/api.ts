@@ -49,8 +49,4 @@ api.interceptors.response.use(
     }
 );
 
-// Verificação do token no carregamento
-const token = localStorage.getItem('auth.token');
-console.log("Token disponível no carregamento:", token ? "Sim (inicia com " + token.substring(0, 10) + "...)" : "Não");
-
 export default api;
