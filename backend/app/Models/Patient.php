@@ -3,116 +3,125 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use PDOException;
-
 final class Patient extends Model
 {
     public function getPatientsByUserId(int $userId): array
     {
-        $query = "SELECT id, nome, email, telefone, 
-                  CASE WHEN ativo = 1 THEN 'active' ELSE 'inactive' END as ativo, 
-                  criado_em
-                  FROM paciente 
-                  WHERE usuario_id = :uid 
-                  ORDER BY criado_em DESC";
-
-        return $this->fetchAllRows($query, ['uid' => $userId]);
-    }
-
-    public function buscarPorUsuario(int $userId): array
-    {
-        return $this->getPatientsByUserId($userId);
+        $q = "SELECT id, nome, email, telefone, CASE WHEN ativo = 1 THEN 'active' ELSE 'inactive' END as ativo, criado_em FROM paciente WHERE usuario_id = :uid ORDER BY criado_em DESC";
+        $rows = $this->fetchAllRows($q, ['uid' => $userId]) ?? [];
+        foreach ($rows as &$r) {
+            $r['nome'] = $this->dec($r['nome'], "nome:$userId") ?? '';
+            $r['email'] = $this->dec($r['email'], "email:$userId") ?? '';
+            $r['telefone'] = $this->dec($r['telefone'], "telefone:$userId") ?? '';
+        }
+        return $rows;
     }
 
     public function buscarPorId(int $pacienteId, int $userId): ?array
     {
-        $query = "SELECT id, nome, email, telefone, cpf, rg, data_nascimento, notas,
-                  CASE WHEN ativo = 1 THEN 'active' ELSE 'inactive' END as ativo, 
-                  criado_em
-                  FROM paciente 
-                  WHERE id = :id AND usuario_id = :uid";
-        return $this->fetchRow($query, ['id' => $pacienteId, 'uid' => $userId]);
+        $q = "SELECT id, nome, email, telefone, cpf, rg, data_nascimento, notas, CASE WHEN ativo = 1 THEN 'active' ELSE 'inactive' END as ativo, criado_em FROM paciente WHERE id = :id AND usuario_id = :uid";
+        $row = $this->fetchRow($q, ['id' => $pacienteId, 'uid' => $userId]);
+        if (!$row) return null;
+        $row['nome'] = $this->dec($row['nome'], "nome:$userId") ?? '';
+        $row['email'] = $this->dec($row['email'], "email:$userId") ?? '';
+        $row['telefone'] = $this->dec($row['telefone'], "telefone:$userId") ?? '';
+        $row['cpf'] = $this->dec($row['cpf'], "cpf:$userId") ?? '';
+        $row['rg'] = $this->dec($row['rg'], "rg:$userId") ?? '';
+        $row['data_nascimento'] = $this->dec($row['data_nascimento'], "data_nascimento:$userId") ?? '';
+        $row['notas'] = $this->dec($row['notas'], "notas:$userId") ?? '';
+        return $row;
     }
 
     public function criar(array $dados): int
     {
-        // Validação dos campos obrigatórios
-        if (empty($dados['cpf'])) {
-            throw new \Exception('CPF é obrigatório');
-        }
-        if (empty($dados['rg'])) {
-            throw new \Exception('RG é obrigatório');
-        }
-        if (empty($dados['data_nascimento'])) {
-            throw new \Exception('Data de nascimento é obrigatória');
-        }
-        
-        // Converte o status ativo para o formato do banco - por padrão, pacientes são criados como ativos
+        if (empty($dados['cpf'])) throw new \Exception('CPF é obrigatório');
+        if (empty($dados['rg'])) throw new \Exception('RG é obrigatório');
+        if (empty($dados['data_nascimento'])) throw new \Exception('Data de nascimento é obrigatória');
+
         $ativo = isset($dados['ativo']) ? ($dados['ativo'] === 'active' ? 1 : 0) : 1;
-        
-        $query = "INSERT INTO paciente (nome, email, telefone, cpf, rg, data_nascimento, notas, usuario_id, ativo, criado_em) 
-                  VALUES (:nome, :email, :telefone, :cpf, :rg, :data_nascimento, :notas, :usuario_id, :ativo, NOW())";
-        
-        $parametros = [
-            'nome' => $dados['nome'],
-            'email' => $dados['email'],
-            'telefone' => $dados['telefone'] ?? '',
-            'cpf' => $dados['cpf'],
-            'rg' => $dados['rg'],
-            'data_nascimento' => $dados['data_nascimento'],
-            'notas' => $dados['notas'] ?? '',
-            'usuario_id' => $dados['usuario_id'],
+
+        $q = "INSERT INTO paciente (nome, email, telefone, cpf, rg, data_nascimento, notas, usuario_id, ativo, criado_em) 
+              VALUES (:nome, :email, :telefone, :cpf, :rg, :data_nascimento, :notas, :usuario_id, :ativo, NOW())";
+
+        $uid = (int)$dados['usuario_id'];
+
+        $p = [
+            'nome' => $this->enc($dados['nome'] ?? '', "nome:$uid"),
+            'email' => $this->enc($dados['email'] ?? '', "email:$uid"),
+            'telefone' => $this->enc($dados['telefone'] ?? '', "telefone:$uid"),
+            'cpf' => $this->enc($dados['cpf'], "cpf:$uid"),
+            'rg' => $this->enc($dados['rg'], "rg:$uid"),
+            'data_nascimento' => $this->enc($dados['data_nascimento'], "data_nascimento:$uid"),
+            'notas' => $this->enc($dados['notas'] ?? '', "notas:$uid"),
+            'usuario_id' => $uid,
             'ativo' => $ativo
         ];
-        
-        if ($this->executeQuery($query, $parametros)) {
-            return (int) $this->lastInsertId();
-        }
-        
+
+        if ($this->executeQuery($q, $p)) return (int)$this->lastInsertId();
         throw new \Exception('Erro ao criar paciente');
     }
 
     public function atualizar(int $pacienteId, array $dados): bool
     {
+        $uid = isset($dados['usuario_id']) ? (int)$dados['usuario_id'] : null;
+        $map = [
+            'nome' => "nome",
+            'email' => "email",
+            'telefone' => "telefone",
+            'cpf' => "cpf",
+            'rg' => "rg",
+            'data_nascimento' => "data_nascimento",
+            'notas' => "notas",
+        ];
+
         $campos = [];
-        $parametros = ['id' => $pacienteId];
-        
+        $params = ['id' => $pacienteId];
+
         foreach ($dados as $campo => $valor) {
-            $campos[] = "{$campo} = :{$campo}";
-            $parametros[$campo] = $valor;
+            if ($campo === 'ativo') {
+                $campos[] = "ativo = :ativo";
+                $params['ativo'] = ($valor === 'active' || $valor === 1) ? 1 : 0;
+                continue;
+            }
+            if (array_key_exists($campo, $map)) {
+                $aad = $uid ? "{$campo}:{$uid}" : $campo;
+                $campos[] = "{$campo} = :{$campo}";
+                $params[$campo] = $this->enc((string)$valor, $aad);
+            } else {
+                $campos[] = "{$campo} = :{$campo}";
+                $params[$campo] = $valor;
+            }
         }
-        
-        if (empty($campos)) {
-            return false;
-        }
-        
-        $query = "UPDATE paciente SET " . implode(', ', $campos) . " WHERE id = :id";
-        return $this->executeQuery($query, $parametros);
+
+        if (!$campos) return false;
+        $q = "UPDATE paciente SET " . implode(', ', $campos) . " WHERE id = :id";
+        return $this->executeQuery($q, $params);
     }
 
     public function pertenceAoUsuario(int $pacienteId, int $userId): bool
     {
-        $query = "SELECT COUNT(*) as count FROM paciente WHERE id = :id AND usuario_id = :uid";
-        $result = $this->fetchRow($query, ['id' => $pacienteId, 'uid' => $userId]);
-        return $result && $result['count'] > 0;
+        $q = "SELECT COUNT(*) as count FROM paciente WHERE id = :id AND usuario_id = :uid";
+        $r = $this->fetchRow($q, ['id' => $pacienteId, 'uid' => $userId]);
+        return $r && (int)$r['count'] > 0;
     }
 
     public function excluir(int $pacienteId): bool
     {
-        $query = "DELETE FROM paciente WHERE id = :id";
-        return $this->executeQuery($query, ['id' => $pacienteId]);
+        $q = "DELETE FROM paciente WHERE id = :id";
+        return $this->executeQuery($q, ['id' => $pacienteId]);
     }
 
     public function findByPhone(int $userId, string $phone): ?array
     {
-        $query = "SELECT id, nome, email, telefone, ativo, criado_em
-                  FROM paciente 
-                  WHERE usuario_id = :uid 
-                  AND telefone = :phone
-                  LIMIT 1";
-
-        $rows = $this->fetchAllRows($query, ['uid' => $userId, 'phone' => $phone]);
-        
-        return !empty($rows) ? $rows[0] : null;
+        $q = "SELECT id, nome, email, telefone, CASE WHEN ativo = 1 THEN 'active' ELSE 'inactive' END as ativo, criado_em
+              FROM paciente WHERE usuario_id = :uid ORDER BY criado_em DESC";
+        $rows = $this->fetchAllRows($q, ['uid' => $userId]) ?? [];
+        foreach ($rows as &$r) {
+            $r['nome'] = $this->dec($r['nome'], "nome:$userId") ?? '';
+            $r['email'] = $this->dec($r['email'], "email:$userId") ?? '';
+            $r['telefone'] = $this->dec($r['telefone'], "telefone:$userId") ?? '';
+            if ($r['telefone'] === $phone) return $r;
+        }
+        return null;
     }
 }

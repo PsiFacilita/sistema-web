@@ -127,4 +127,34 @@ class Model
             throw $e;
         }
     }
+
+    protected function key(): string
+    {
+        $k = getenv('CRYPTO_MASTER_KEY') ?: '';
+        if (str_starts_with($k, 'base64:')) $k = base64_decode(substr($k, 7));
+        $len = SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES;
+        if (strlen($k) < $len) $k = str_pad($k, $len, "\0");
+        return substr($k, 0, $len);
+    }
+
+    protected function enc(?string $v, string $aad = ''): ?string
+    {
+        if ($v === null) return null;
+        $nonce = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
+        $ct = sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($v, $aad, $nonce, $this->key());
+        return base64_encode($nonce . $ct);
+    }
+
+    protected function dec(?string $v, string $aad = ''): ?string
+    {
+        if ($v === null || $v === '') return $v;
+        $raw = base64_decode($v, true);
+        if ($raw === false) return $v;
+        $nlen = SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES;
+        if (strlen($raw) <= $nlen) return $v;
+        $nonce = substr($raw, 0, $nlen);
+        $ct = substr($raw, $nlen);
+        $pt = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($ct, $aad, $nonce, $this->key());
+        return $pt === false ? $v : $pt;
+    }
 }
