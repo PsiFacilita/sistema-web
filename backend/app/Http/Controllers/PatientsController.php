@@ -27,7 +27,7 @@ final class PatientsController extends Controller
         }
 
         // Busca os pacientes no banco
-        $pacientes = $this->patient->buscarPorUsuario($userId);
+        $pacientes = $this->patient->getPatientsByUserId($userId);
 
         return $this->json($response, [
             'sucesso' => true,
