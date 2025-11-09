@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use PDOException;
-
 final class Document extends Model
 {
     /**
@@ -22,7 +20,14 @@ final class Document extends Model
                   WHERE d.usuario_id = :uid 
                   ORDER BY d.atualizado_em DESC";
 
-        return $this->fetchAllRows($query, ['uid' => $userId]);
+        $rows = $this->fetchAllRows($query, ['uid' => $userId]);
+        foreach ($rows as &$r) {
+            if (isset($r['paciente_nome']) && $r['paciente_nome'] !== '') {
+                $dec = $this->dec((string)$r['paciente_nome'], 'paciente.nome');
+                if ($dec !== null) $r['paciente_nome'] = $dec;
+            }
+        }
+        return $rows;
     }
 
     /**
@@ -38,8 +43,20 @@ final class Document extends Model
                   INNER JOIN paciente p ON d.paciente_id = p.id
                   INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id
                   WHERE d.id = :id AND d.usuario_id = :uid";
-        
-        return $this->fetchRow($query, ['id' => $docId, 'uid' => $userId]);
+
+        $row = $this->fetchRow($query, ['id' => $docId, 'uid' => $userId]);
+        if (!$row) return null;
+
+        if (isset($row['conteudo']) && $row['conteudo'] !== '') {
+            $dec = $this->dec((string)$row['conteudo'], 'documentos.conteudo');
+            if ($dec !== null) $row['conteudo'] = $dec;
+        }
+        if (isset($row['paciente_nome']) && $row['paciente_nome'] !== '') {
+            $dec = $this->dec((string)$row['paciente_nome'], 'paciente.nome');
+            if ($dec !== null) $row['paciente_nome'] = $dec;
+        }
+
+        return $row;
     }
 
     /**
@@ -47,44 +64,33 @@ final class Document extends Model
      */
     public function create(array $data): int
     {
-        // Validate required fields
-        if (empty($data['paciente_id'])) {
-            throw new \Exception('Patient ID is required');
-        }
-        if (empty($data['tipo_documento_id'])) {
-            throw new \Exception('Document type is required');
-        }
-        if (empty($data['conteudo'])) {
-            throw new \Exception('Content is required');
-        }
-        if (empty($data['usuario_id'])) {
-            throw new \Exception('User ID is required');
-        }
+        if (empty($data['paciente_id'])) throw new \Exception('Patient ID is required');
+        if (empty($data['tipo_documento_id'])) throw new \Exception('Document type is required');
+        if (empty($data['conteudo'])) throw new \Exception('Content is required');
+        if (empty($data['usuario_id'])) throw new \Exception('User ID is required');
 
-        // Set default status if not provided
         $status = $data['status'] ?? 'rascunho';
-        
-        // Validate status
         $validStatuses = ['rascunho', 'final', 'arquivado', 'revisao_pendente'];
-        if (!in_array($status, $validStatuses)) {
-            throw new \Exception('Invalid status');
-        }
+        if (!in_array($status, $validStatuses, true)) throw new \Exception('Invalid status');
+
+        $encryptedContent = $this->enc((string)$data['conteudo'], 'documentos.conteudo');
+        if ($encryptedContent === null) throw new \Exception('Encryption error');
 
         $query = "INSERT INTO documentos (usuario_id, paciente_id, tipo_documento_id, conteudo, status, criado_em) 
                   VALUES (:usuario_id, :paciente_id, :tipo_documento_id, :conteudo, :status, NOW())";
-        
+
         $params = [
-            'usuario_id' => $data['usuario_id'],
-            'paciente_id' => $data['paciente_id'],
-            'tipo_documento_id' => $data['tipo_documento_id'],
-            'conteudo' => $data['conteudo'],
+            'usuario_id' => (int)$data['usuario_id'],
+            'paciente_id' => (int)$data['paciente_id'],
+            'tipo_documento_id' => (int)$data['tipo_documento_id'],
+            'conteudo' => $encryptedContent,
             'status' => $status
         ];
-        
+
         if ($this->executeQuery($query, $params)) {
-            return (int) $this->lastInsertId();
+            return (int)$this->lastInsertId();
         }
-        
+
         throw new \Exception('Error creating document');
     }
 
@@ -93,39 +99,51 @@ final class Document extends Model
      */
     public function update(int $docId, int $userId, array $data): bool
     {
-        // First check if document belongs to user
         if (!$this->belongsToUser($docId, $userId)) {
             throw new \Exception('Document not found or does not belong to user');
         }
 
+        $allowedFields = ['paciente_id', 'tipo_documento_id', 'conteudo', 'status'];
         $fields = [];
         $params = ['id' => $docId, 'usuario_id' => $userId];
-        
-        // Allowed fields for update
-        $allowedFields = ['paciente_id', 'tipo_documento_id', 'conteudo', 'status'];
-        
+
         foreach ($data as $field => $value) {
-            if (in_array($field, $allowedFields)) {
-                // Special validation for status
-                if ($field === 'status') {
-                    $validStatuses = ['rascunho', 'final', 'arquivado', 'revisao_pendente'];
-                    if (!in_array($value, $validStatuses)) {
-                        throw new \Exception('Invalid status');
-                    }
-                }
-                
-                $fields[] = "{$field} = :{$field}";
-                $params[$field] = $value;
+            if (!in_array($field, $allowedFields, true)) continue;
+
+            if ($field === 'status') {
+                $validStatuses = ['rascunho', 'final', 'arquivado', 'revisao_pendente'];
+                if (!in_array($value, $validStatuses, true)) throw new \Exception('Invalid status');
+                $fields[] = "status = :status";
+                $params['status'] = (string)$value;
+                continue;
+            }
+
+            if ($field === 'conteudo') {
+                $enc = $this->enc((string)$value, 'documentos.conteudo');
+                if ($enc === null) throw new \Exception('Encryption error');
+                $fields[] = "conteudo = :conteudo";
+                $params['conteudo'] = $enc;
+                continue;
+            }
+
+            if ($field === 'paciente_id') {
+                $fields[] = "paciente_id = :paciente_id";
+                $params['paciente_id'] = (int)$value;
+                continue;
+            }
+
+            if ($field === 'tipo_documento_id') {
+                $fields[] = "tipo_documento_id = :tipo_documento_id";
+                $params['tipo_documento_id'] = (int)$value;
+                continue;
             }
         }
-        
-        if (empty($fields)) {
-            return false;
-        }
-        
+
+        if (empty($fields)) return false;
+
         $query = "UPDATE documentos SET " . implode(', ', $fields) . ", atualizado_em = NOW() 
                   WHERE id = :id AND usuario_id = :usuario_id";
-        
+
         return $this->executeQuery($query, $params);
     }
 
@@ -134,7 +152,6 @@ final class Document extends Model
      */
     public function delete(int $docId, int $userId): bool
     {
-        // Check if document belongs to user
         if (!$this->belongsToUser($docId, $userId)) {
             throw new \Exception('Document not found or does not belong to user');
         }
@@ -158,7 +175,14 @@ final class Document extends Model
                   WHERE d.paciente_id = :paciente_id AND d.usuario_id = :uid 
                   ORDER BY d.atualizado_em DESC";
 
-        return $this->fetchAllRows($query, ['paciente_id' => $patientId, 'uid' => $userId]);
+        $rows = $this->fetchAllRows($query, ['paciente_id' => $patientId, 'uid' => $userId]);
+        foreach ($rows as &$r) {
+            if (isset($r['paciente_nome']) && $r['paciente_nome'] !== '') {
+                $dec = $this->dec((string)$r['paciente_nome'], 'paciente.nome');
+                if ($dec !== null) $r['paciente_nome'] = $dec;
+            }
+        }
+        return $rows;
     }
 
     /**
@@ -168,16 +192,13 @@ final class Document extends Model
     {
         $query = "SELECT COUNT(*) as count FROM documentos WHERE id = :id AND usuario_id = :uid";
         $result = $this->fetchRow($query, ['id' => $docId, 'uid' => $userId]);
-        return $result && $result['count'] > 0;
+        return $result && (int)$result['count'] > 0;
     }
 
-    /**
-     * Check if a patient belongs to a user (for validation)
-     */
     public function patientBelongsToUser(int $patientId, int $userId): bool
     {
         $query = "SELECT COUNT(*) as count FROM paciente WHERE id = :id AND usuario_id = :uid";
         $result = $this->fetchRow($query, ['id' => $patientId, 'uid' => $userId]);
-        return $result && $result['count'] > 0;
+        return $result && (int)$result['count'] > 0;
     }
 }
