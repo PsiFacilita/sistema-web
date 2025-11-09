@@ -8,6 +8,8 @@ import Button from "../components/Button/Button";
 import Icon from "../components/Icon/Icon";
 import { Select } from "../components/Form/Select/Select";
 import Swal from "sweetalert2";
+import DocumentHtmlViewer from "../components/document-html-viewer";
+import { Editor } from "@tinymce/tinymce-react";
 
 const API_URL = (import.meta as any).env?.BACKEND_URL || "http://localhost:5000";
 
@@ -247,18 +249,26 @@ const DocumentViewer: React.FC = () => {
             </div>
 
             <Card>
-                <div className="prose max-w-none">
+                <div className="max-w-none">
                     {isEditing ? (
-                        <textarea
-                            className="w-full h-96 p-4 border border-gray-300 rounded-md resize-y focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        <Editor
                             value={document.content}
-                            onChange={(e) => setDocument({ ...document, content: e.target.value })}
-                            placeholder="Conteúdo do documento..."
+                            onEditorChange={(v) => setDocument({ ...document, content: v })}
+                            apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                            init={{
+                                height: 420,
+                                menubar: false,
+                                plugins: "lists link table code codesample advlist autoresize",
+                                toolbar:
+                                    "undo redo | bold italic underline | alignleft aligncenter alignright | bullist numlist outdent indent | link table | removeformat | code",
+                                branding: false,
+                                statusbar: false,
+                                content_style:
+                                    "body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px}",
+                            }}
                         />
                     ) : (
-                        <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
-                            {document.content}
-                        </div>
+                        <DocumentHtmlViewer html={document.content} />
                     )}
                 </div>
             </Card>
