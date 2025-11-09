@@ -69,10 +69,10 @@ const PatientModal: React.FC<PatientModalProps> = ({
         if (initialData?.id) {
           console.log(`PatientModal - Usando dados do paciente ${initialData.id} recebidos via props:`);
           console.log(JSON.stringify(initialData, null, 2));
-          
+
           // Verificações específicas para phone/telefone
           console.log("PatientModal - Campo telefone:", initialData.phone);
-          
+
           // Em vez de buscar novamente, usamos os dados já recebidos via props
           // Se houver campos personalizados, os utilizamos
           if (initialData.customFields) {
@@ -116,28 +116,28 @@ const PatientModal: React.FC<PatientModalProps> = ({
     if (isOpen) {
       if (initialData) {
         console.log("PatientModal - Configurando dados iniciais:", JSON.stringify(initialData, null, 2));
-        
+
         // Nome é o campo mais importante, garantir que seja preenchido corretamente
         const nameValue = initialData.name || "";
         console.log("PatientModal - Nome do paciente:", nameValue);
-        
+
         // Verificações detalhadas para garantir dados corretos
         if (!nameValue) {
-          console.warn("PatientModal - Nome do paciente está vazio! Detalhes do objeto initialData:", 
+          console.warn("PatientModal - Nome do paciente está vazio! Detalhes do objeto initialData:",
             Object.keys(initialData).map(key => `${key}: ${initialData[key]}`).join(", ")
           );
         }
-        
+
         // Verificação específica para o campo de telefone
         const phoneValue = initialData.phone || "";
         console.log("PatientModal - Telefone do paciente:", phoneValue);
-        
+
         if (!phoneValue) {
           console.warn("PatientModal - Telefone do paciente está vazio!");
         }
-        
+
         setName(nameValue);
-        
+
         // Verifica e define cada campo, garantindo valores padrão apropriados
         setBirthDate(initialData.birthDate || "");
         setCpf(initialData.cpf || "");
@@ -146,7 +146,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
         setEmail(initialData.email || "");
         setNotes(initialData.notes || "");
         setStatus(initialData.status || "active");
-        
+
         console.log("PatientModal - Campos configurados:", {
           name: nameValue,
           birthDate: initialData.birthDate || "",
@@ -171,7 +171,7 @@ const PatientModal: React.FC<PatientModalProps> = ({
     } else {
       console.log("PatientModal - Modal fechado, não resetando campos");
     }
-    
+
     // Carrega os campos personalizados depois de configurar os dados básicos
     loadFields();
   }, [initialData, isOpen]);
@@ -196,13 +196,13 @@ const PatientModal: React.FC<PatientModalProps> = ({
     return null;
   };
 
-  const validatePhone = (phone: string): string | null => {
-    const phoneRegex = /^\([1-9]{2}\) (?:[2-8]|9[1-9])[0-9]{3}\-[0-9]{4}$/;
-    if (!phoneRegex.test(phone)) {
-      return "Telefone inválido";
-    }
-    return null;
-  };
+    const validatePhone = (phone: string): string | null => {
+        const phoneRegex = /^(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}-?\d{4}$/;
+        if (!phoneRegex.test(phone.trim())) {
+            return "Telefone inválido";
+        }
+        return null;
+    };
 
   const validateCPF = (cpf: string): string | null => {
     if (!CPFHelper.validaCPF(cpf)) {
@@ -527,16 +527,16 @@ const PatientModal: React.FC<PatientModalProps> = ({
 
         {/* Ações */}
         <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-sage-100">
-          <Button 
-            variant="outline" 
-            type="button" 
+          <Button
+            variant="outline"
+            type="button"
             onClick={onClose}
             className="border-sage-300 text-sage-700 hover:bg-sage-50 w-full sm:w-auto order-2 sm:order-1"
           >
             Cancelar
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             type="submit"
             className="bg-sage-600 hover:bg-sage-700 border-sage-600 w-full sm:w-auto order-1 sm:order-2"
           >
