@@ -37,11 +37,9 @@ api.interceptors.response.use(
         });
         
         if (err?.response?.status === 401) {
-            // zera o estado local do cliente
             console.warn("Erro 401 detectado, limpando dados de autenticação");
             localStorage.removeItem('auth.token');
             localStorage.removeItem('auth.user');
-            // volta para a tela de login (no seu app é "/")
             window.location.href = '/';
             return;
         }

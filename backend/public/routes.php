@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentsController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PatientsController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\RateLimitMiddleware;
 use Slim\App;
@@ -59,6 +60,15 @@ final class Routes
             $group->post('/documents', [DocumentsController::class, 'create']);
             $group->put('/documents/{id:[0-9]+}', [DocumentsController::class, 'update']);
             $group->delete('/documents/{id:[0-9]+}', [DocumentsController::class, 'delete']);
+
+            $group->get('/settings/profile', [SettingsController::class, 'index']);
+            $group->put('/settings/profile', [SettingsController::class, 'updateProfile']);
+            $group->get('/settings/collaborators', [SettingsController::class, 'listCollaborators']);
+            $group->post('/settings/collaborators', [SettingsController::class, 'addCollaborator']);
+            $group->put('/settings/collaborators/{id}', [SettingsController::class, 'updateCollaborator']);
+            $group->delete('/settings/collaborators/{id}', [SettingsController::class, 'removeCollaborator']);
+            $group->get('/settings/schedule', [SettingsController::class, 'getSchedule']);
+            $group->put('/settings/schedule', [SettingsController::class, 'saveSchedule']);
         })->add(new AuthMiddleware());
     }
 }
