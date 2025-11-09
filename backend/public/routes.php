@@ -52,6 +52,7 @@ final class Routes
             $group->get('/patients/{id}', [PatientsController::class, 'buscarPaciente']);
             $group->post('/patients', [PatientsController::class, 'criarPaciente']);
             $group->put('/patients/{id}', [PatientsController::class, 'editarPaciente']);
+            $group->get('/patients/{id}/documents', [DocumentsController::class, 'byPatient']);
 
             $group->get('/documents', [DocumentsController::class, 'index']);
             $group->get('/documents/{id:[0-9]+}', [DocumentsController::class, 'show']);

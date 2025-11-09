@@ -129,7 +129,7 @@ const PatientView: React.FC = () => {
         <div className="flex gap-4">
           <Button
             variant="primary"
-            onClick={() => navigate(`/record/${id}`)}
+            onClick={() => navigate(`/records/${id}`)}
           >
             <div className="flex items-center">
               <Icon type="folder" className="mr-2" /> Prontuário

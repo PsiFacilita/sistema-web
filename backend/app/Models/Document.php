@@ -165,23 +165,29 @@ final class Document extends Model
      */
     public function findByPatientId(int $patientId, int $userId): array
     {
-        $query = "SELECT d.id, d.usuario_id, d.paciente_id, d.tipo_documento_id, 
-                  d.status, d.criado_em, d.atualizado_em,
+        $query = "SELECT d.id, d.usuario_id, d.paciente_id, d.tipo_documento_id,
+                  d.conteudo, d.status, d.criado_em, d.atualizado_em,
                   p.nome as paciente_nome,
                   td.name as tipo_documento_nome
                   FROM documentos d
                   INNER JOIN paciente p ON d.paciente_id = p.id
                   INNER JOIN tipo_documento td ON d.tipo_documento_id = td.id
-                  WHERE d.paciente_id = :paciente_id AND d.usuario_id = :uid 
+                  WHERE d.paciente_id = :paciente_id AND d.usuario_id = :uid
                   ORDER BY d.atualizado_em DESC";
 
         $rows = $this->fetchAllRows($query, ['paciente_id' => $patientId, 'uid' => $userId]);
+
         foreach ($rows as &$r) {
             if (isset($r['paciente_nome']) && $r['paciente_nome'] !== '') {
                 $dec = $this->dec((string)$r['paciente_nome'], 'paciente.nome');
                 if ($dec !== null) $r['paciente_nome'] = $dec;
             }
+            if (isset($r['conteudo']) && $r['conteudo'] !== '') {
+                $dec = $this->dec((string)$r['conteudo'], 'documentos.conteudo');
+                if ($dec !== null) $r['conteudo'] = $dec;
+            }
         }
+
         return $rows;
     }
 
