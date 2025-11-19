@@ -6,6 +6,7 @@ use App\Config\Controller;
 use App\Models\Patient;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Throwable;
 
 final class PatientsController extends Controller
 {
@@ -16,17 +17,14 @@ final class PatientsController extends Controller
         $this->patient = new Patient();
     }
 
-    // 1. LISTAR todos os pacientes
     public function listarPacientes(Request $request, Response $response): Response
     {
-        // Pega o ID do usuário logado
         $userId = $this->resolveAuthenticatedUserId($request);
-        
+
         if (!$userId) {
             return $this->json($response, ['erro' => 'Usuário não logado'], 401);
         }
 
-        // Busca os pacientes no banco
         $pacientes = $this->patient->getPatientsByUserId($userId);
 
         return $this->json($response, [
@@ -35,7 +33,6 @@ final class PatientsController extends Controller
         ]);
     }
 
-    // 2. BUSCAR um paciente específico
     public function buscarPaciente(Request $request, Response $response, array $args): Response
     {
         $userId = $this->resolveAuthenticatedUserId($request);
@@ -51,7 +48,17 @@ final class PatientsController extends Controller
             return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
         }
 
-        // Mapear para o formato esperado pelo frontend
+        $customFieldsRows = $this->patient->getCustomFieldsForPatient($pacienteId, $userId);
+        $customFields = array_map(function (array $row): array {
+            return [
+                'id' => (int)$row['id'],
+                'name' => $row['nome_campo'],
+                'type' => $row['tipo_campo'],
+                'required' => (bool)$row['obrigatorio'],
+                'value' => $row['value'] ?? '',
+            ];
+        }, $customFieldsRows);
+
         $dadosPaciente = [
             'id' => (string)$paciente['id'],
             'name' => $paciente['nome'],
@@ -62,13 +69,12 @@ final class PatientsController extends Controller
             'phone' => $paciente['telefone'] ?? '',
             'notes' => $paciente['notas'] ?? '',
             'status' => $paciente['ativo'],
-            'customFields' => []
+            'customFields' => $customFields,
         ];
 
         return $this->json($response, $dadosPaciente);
     }
 
-    // 3. CRIAR novo paciente
     public function criarPaciente(Request $request, Response $response): Response
     {
         $userId = $this->resolveAuthenticatedUserId($request);
@@ -78,12 +84,10 @@ final class PatientsController extends Controller
             return $this->json($response, ['erro' => 'Usuário não logado'], 401);
         }
 
-        // Validação simples
         if (empty($dados['nome']) || empty($dados['email'])) {
             return $this->json($response, ['erro' => 'Nome e email são obrigatórios'], 400);
         }
 
-        // Cria o paciente
         $novoPacienteId = $this->patient->criar([
             'nome' => $dados['nome'],
             'email' => $dados['email'],
@@ -91,10 +95,14 @@ final class PatientsController extends Controller
             'cpf' => $dados['cpf'] ?? null,
             'rg' => $dados['rg'] ?? null,
             'data_nascimento' => $dados['data_nascimento'] ?? null,
+            'notas' => $dados['notas'] ?? null,
             'usuario_id' => $userId
         ]);
 
-        // Busca o paciente criado para retornar os dados completos
+        if (!empty($dados['customFields']) && is_array($dados['customFields'])) {
+            $this->patient->saveCustomFieldValues($novoPacienteId, $dados['customFields']);
+        }
+
         $pacienteCriado = $this->patient->buscarPorId($novoPacienteId, $userId);
 
         return $this->json($response, [
@@ -109,7 +117,6 @@ final class PatientsController extends Controller
         ]);
     }
 
-    // 4. EDITAR paciente
     public function editarPaciente(Request $request, Response $response, array $args): Response
     {
         $userId = $this->resolveAuthenticatedUserId($request);
@@ -120,12 +127,10 @@ final class PatientsController extends Controller
             return $this->json($response, ['erro' => 'Usuário não logado'], 401);
         }
 
-        // Verifica se o paciente existe e pertence ao usuário
         if (!$this->patient->pertenceAoUsuario($pacienteId, $userId)) {
             return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
         }
 
-        // Atualiza apenas os campos enviados
         $dadosParaAtualizar = [];
         if (isset($dados['nome'])) $dadosParaAtualizar['nome'] = $dados['nome'];
         if (isset($dados['email'])) $dadosParaAtualizar['email'] = $dados['email'];
@@ -135,8 +140,15 @@ final class PatientsController extends Controller
         if (isset($dados['data_nascimento'])) $dadosParaAtualizar['data_nascimento'] = $dados['data_nascimento'];
         if (isset($dados['notas'])) $dadosParaAtualizar['notas'] = $dados['notas'];
         if (isset($dados['ativo'])) $dadosParaAtualizar['ativo'] = $dados['ativo'] === 'active' ? 1 : 0;
+        $dadosParaAtualizar['usuario_id'] = $userId;
 
-        $this->patient->atualizar($pacienteId, $dadosParaAtualizar);
+        if ($dadosParaAtualizar) {
+            $this->patient->atualizar($pacienteId, $dadosParaAtualizar);
+        }
+
+        if (!empty($dados['customFields']) && is_array($dados['customFields'])) {
+            $this->patient->saveCustomFieldValues($pacienteId, $dados['customFields']);
+        }
 
         return $this->json($response, [
             'sucesso' => true,
@@ -144,7 +156,6 @@ final class PatientsController extends Controller
         ]);
     }
 
-    // 5. EXCLUIR paciente
     public function excluirPaciente(Request $request, Response $response, array $args): Response
     {
         $userId = $this->resolveAuthenticatedUserId($request);
@@ -154,7 +165,6 @@ final class PatientsController extends Controller
             return $this->json($response, ['erro' => 'Usuário não logado'], 401);
         }
 
-        // Verifica se o paciente existe e pertence ao usuário
         if (!$this->patient->pertenceAoUsuario($pacienteId, $userId)) {
             return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
         }
@@ -182,7 +192,6 @@ final class PatientsController extends Controller
                 return $this->json($response, ['ok' => false, 'message' => 'Telefone é obrigatório'], 422);
             }
 
-            // Normalizar telefone: remover caracteres especiais
             $normalizedPhone = preg_replace('/[^0-9]/', '', $phone);
 
             $logger->info('Searching patient by phone', [

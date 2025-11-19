@@ -112,7 +112,6 @@ const Patients: React.FC = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem("auth.token");
-            
             const res = await axios.get(`${API_URL}/api/patients`, {
                 withCredentials: true,
                 headers: {
@@ -120,10 +119,8 @@ const Patients: React.FC = () => {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
             });
-            
             const data = res.data;
             const list = Array.isArray(data?.patients) ? data.patients : [];
-            
             setPatients(list as Patient[]);
         } catch (err: any) {
             if (axios.isAxiosError(err)) {
@@ -133,9 +130,7 @@ const Patients: React.FC = () => {
                     headers: err.response?.headers,
                     message: err.message
                 });
-                
                 if (err.response?.status === 401) {
-                    console.warn("Não autenticado — redirecionando para login.");
                     window.location.href = "/login";
                     return;
                 }
@@ -175,6 +170,7 @@ const Patients: React.FC = () => {
                     data_nascimento: modalData.birthDate,
                     notas: modalData.notes,
                     ativo: modalData.status === "active" ? "active" : "inactive",
+                    customFields: modalData.customFields ?? [],
                 },
                 {
                     withCredentials: true,
@@ -227,7 +223,6 @@ const Patients: React.FC = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem("auth.token");
-            
             const res = await axios.get(`${API_URL}/api/patients/${patientId}`, {
                 withCredentials: true,
                 headers: {
@@ -235,30 +230,12 @@ const Patients: React.FC = () => {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
             });
-            
+
             const apiData = res.data as any;
             const patientData = apiData.patient || apiData;
 
-            // Configurar o paciente atual com os dados recebidos
-            setCurrentPatient({
-                id: patientId,
-                name: patientData.name || patientData.nome || "",
-                birthDate: patientData.birthDate || patientData.data_nascimento || "",
-                cpf: patientData.cpf || "",
-                rg: patientData.rg || "",
-                phone: patientData.phone || patientData.telefone || "",
-                email: patientData.email || "",
-                notes: patientData.notes || patientData.notas || "",
-                status: (patientData.status || patientData.ativo === "active" || patientData.ativo === "inactive") 
-                    ? (patientData.status || patientData.ativo) 
-                    : "active"
-            });
-            
-            // Abrir o modal de edição
-            setIsPatientModalOpen(true);
-            
             const mappedPatient = {
-                id: patientData.id,
+                id: patientData.id?.toString() ?? patientId,
                 name: patientData.name || patientData.nome || "",
                 phone: patientData.phone || patientData.telefone || "",
                 email: patientData.email || "",
@@ -270,7 +247,6 @@ const Patients: React.FC = () => {
             };
 
             setCurrentPatient(mappedPatient);
-
             setIsPatientModalOpen(true);
         } catch (error) {
             console.error("Erro ao carregar dados do paciente:", error);
@@ -296,7 +272,7 @@ const Patients: React.FC = () => {
                 console.error("Tentativa de atualizar sem ID de paciente");
                 return;
             }
-            
+
             const token = localStorage.getItem("auth.token");
             const res = await axios.put(
                 `${API_URL}/api/patients/${currentPatient.id}`,
@@ -309,6 +285,7 @@ const Patients: React.FC = () => {
                     data_nascimento: modalData.birthDate,
                     notas: modalData.notes,
                     ativo: modalData.status === "active" ? "active" : "inactive",
+                    customFields: modalData.customFields ?? [],
                 },
                 {
                     withCredentials: true,
@@ -324,7 +301,6 @@ const Patients: React.FC = () => {
                 throw new Error("Erro ao atualizar paciente");
             }
 
-            // Atualizar a lista de pacientes
             const updatedPatients = patients.map((p: Patient) =>
                 p.id === currentPatient.id
                     ? {
@@ -335,11 +311,11 @@ const Patients: React.FC = () => {
                         ativo: modalData.status
                     }
                     : p
-            );            setPatients(updatedPatients);
+            );
+
+            setPatients(updatedPatients);
             setCurrentPatient(null);
             setIsPatientModalOpen(false);
-            
-            // Recarregar a lista de pacientes para garantir dados atualizados
             fetchPatients();
         } catch (error) {
             console.error("Erro ao atualizar paciente:", error);
@@ -357,9 +333,9 @@ const Patients: React.FC = () => {
             Cell: DateCell,
         },
         { header: "Status", accessor: "ativo" as keyof Patient, Cell: StatusCell },
-        { 
-            header: "Ações", 
-            accessor: "id" as keyof Patient, 
+        {
+            header: "Ações",
+            accessor: "id" as keyof Patient,
             Cell: ({ value }: { value: string }) => (
                 <ActionsCell value={value} onEdit={handleEditPatient} />
             )
@@ -375,10 +351,8 @@ const Patients: React.FC = () => {
                 <Title level={1} className="text-sage-700">Pacientes</Title>
             </div>
 
-            {/* Header com busca e ações */}
             <Card variant="elevated" className="mb-6">
                 <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between lg:items-center">
-                    {/* Campo de busca */}
                     <div className="relative w-full lg:w-1/2 xl:w-1/3">
                         <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400" size={20} />
                         <Input
@@ -393,7 +367,6 @@ const Patients: React.FC = () => {
                         />
                     </div>
 
-                    {/* Botões de ação */}
                     <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                         <Button
                             variant="outline"
@@ -419,7 +392,6 @@ const Patients: React.FC = () => {
                 </div>
             </Card>
 
-            {/* Tabela de pacientes */}
             <Card variant="elevated" className="p-0 overflow-x-auto">
                 {loading ? (
                     <div className="text-center py-12">
@@ -436,13 +408,12 @@ const Patients: React.FC = () => {
                                 </span>
                             </h3>
                         </div>
-                        
+
                         <Table data={currentPatients} columns={columns} />
-                        
+
                         {totalPages > 1 && (
                             <div className="border-t border-sage-100 bg-sage-50 px-4 py-4 sm:px-6">
                                 <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-                                    {/* Informações de paginação */}
                                     <div className="text-center sm:text-left">
                                         <p className="text-sm text-sage-700">
                                             <span className="hidden sm:inline">
@@ -456,8 +427,7 @@ const Patients: React.FC = () => {
                                             <span className="font-semibold">{filteredPatients.length}</span> pacientes
                                         </p>
                                     </div>
-                                    
-                                    {/* Controles de navegação */}
+
                                     <div className="flex justify-center sm:justify-end">
                                         <nav className="flex items-center gap-1 sm:gap-2">
                                             <Button
@@ -470,14 +440,13 @@ const Patients: React.FC = () => {
                                                 <FiChevronLeft size={16} />
                                                 <span className="hidden sm:inline ml-1">Anterior</span>
                                             </Button>
-                                            
-                                            {/* Números das páginas - mostrar apenas algumas em mobile */}
+
                                             <div className="flex gap-1">
                                                 {(() => {
                                                     const maxVisible = window.innerWidth < 640 ? 3 : 5;
                                                     const startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
                                                     const endPage = Math.min(totalPages, startPage + maxVisible - 1);
-                                                    
+
                                                     const pages = [];
                                                     for (let i = startPage; i <= endPage; i++) {
                                                         pages.push(
@@ -487,9 +456,9 @@ const Patients: React.FC = () => {
                                                                 size="sm"
                                                                 onClick={() => paginate(i)}
                                                                 className={`rounded-lg ${
-                                                                    i === currentPage 
-                                                                        ? 'bg-sage-600 border-sage-600' 
-                                                                        : 'border-sage-300 text-sage-700 hover:bg-sage-50'
+                                                                    i === currentPage
+                                                                        ? "bg-sage-600 border-sage-600"
+                                                                        : "border-sage-300 text-sage-700 hover:bg-sage-50"
                                                                 }`}
                                                             >
                                                                 {i}
@@ -499,7 +468,7 @@ const Patients: React.FC = () => {
                                                     return pages;
                                                 })()}
                                             </div>
-                                            
+
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -541,24 +510,14 @@ const Patients: React.FC = () => {
                     </div>
                 )}
             </Card>
-            
+
             <PatientModal
                 isOpen={isPatientModalOpen}
                 onClose={() => {
                     setIsPatientModalOpen(false);
                     setCurrentPatient(null);
                 }}
-                onSubmit={(data: {
-                    name: string;
-                    birthDate: string;
-                    cpf: string;
-                    rg?: string;
-                    phone: string;
-                    email?: string;
-                    notes?: string;
-                    status: "active" | "inactive";
-                    customFields?: { id: number; value: string }[];
-                }) => {
+                onSubmit={data => {
                     if (currentPatient?.id) {
                         handleUpdatePatient(data);
                     } else {
@@ -572,7 +531,7 @@ const Patients: React.FC = () => {
                     birthDate: currentPatient.birthDate || "",
                     cpf: currentPatient.cpf || "",
                     rg: currentPatient.rg || "",
-                    phone: currentPatient.phone || "", 
+                    phone: currentPatient.phone || "",
                     email: currentPatient.email || "",
                     notes: currentPatient.notes || "",
                     status: currentPatient.status || "active"

@@ -124,4 +124,48 @@ final class Patient extends Model
         }
         return null;
     }
+
+    public function getCustomFieldsForPatient(int $patientId, int $userId): array
+    {
+        $q = "SELECT 
+                f.id,
+                f.nome_campo,
+                f.tipo_campo,
+                f.obrigatorio,
+                cpp.value
+              FROM campos_personalizados f
+              LEFT JOIN campo_personalizado_pacientes cpp
+                ON cpp.campo_personalizado_id = f.id
+               AND cpp.paciente_id = :pid
+              WHERE f.usuario_id = :uid
+              ORDER BY f.id";
+        $rows = $this->fetchAllRows($q, ['pid' => $patientId, 'uid' => $userId]) ?? [];
+        foreach ($rows as &$row) {
+            $row['obrigatorio'] = (int)$row['obrigatorio'];
+        }
+        return $rows;
+    }
+
+    public function saveCustomFieldValues(int $patientId, array $fields): void
+    {
+        foreach ($fields as $field) {
+            if (!isset($field['id'])) {
+                continue;
+            }
+            $fieldId = (int)$field['id'];
+            $value = $field['value'] ?? '';
+
+            $this->executeQuery(
+                "INSERT INTO campo_personalizado_pacientes (paciente_id, campo_personalizado_id, value)
+                 VALUES (:pid, :fid, :val)
+                 ON DUPLICATE KEY UPDATE value = :val2",
+                [
+                    'pid' => $patientId,
+                    'fid' => $fieldId,
+                    'val' => $value,
+                    'val2' => $value,
+                ]
+            );
+        }
+    }
 }
