@@ -10,12 +10,6 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('auth.token');
-    console.log("API Request:", {
-        url: config.url,
-        method: config.method,
-        hasToken: !!token,
-        tokenStart: token ? token.substring(0, 10) + '...' : 'none'
-    });
     
     if (token) {
         config.headers = config.headers ?? {};

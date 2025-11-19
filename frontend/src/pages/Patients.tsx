@@ -112,10 +112,6 @@ const Patients: React.FC = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem("auth.token");
-            console.log("Token encontrado:", token ? "Sim" : "Não");
-            
-            // Adicionando logs para debug
-            console.log("Fazendo requisição para:", `${API_URL}/api/patients`);
             
             const res = await axios.get(`${API_URL}/api/patients`, {
                 withCredentials: true,
@@ -125,11 +121,8 @@ const Patients: React.FC = () => {
                 },
             });
             
-            console.log("Resposta recebida:", res.status, res.data);
-            
             const data = res.data;
             const list = Array.isArray(data?.patients) ? data.patients : [];
-            console.log("Lista de pacientes:", list.length, list);
             
             setPatients(list as Patient[]);
         } catch (err: any) {
@@ -169,7 +162,6 @@ const Patients: React.FC = () => {
         status: "active" | "inactive";
         customFields?: { id: number; value: string }[];
     }) => {
-        console.log("handleAddPatient chamado com dados:", modalData);
         try {
             const token = localStorage.getItem("auth.token");
             const res = await axios.post(
@@ -276,16 +268,9 @@ const Patients: React.FC = () => {
                 notes: patientData.notes || patientData.notas || "",
                 status: ((patientData.status || patientData.ativo) === "active" ? "active" : "inactive") as "active" | "inactive",
             };
-            
-            // Log adicional para diagnóstico do campo phone
-            console.log("Campo phone mapeado:", mappedPatient.phone);
-            
-            console.log("Paciente mapeado para edição:", mappedPatient);
-            
-            // Garantir que o objeto tenha todos os campos esperados
+
             setCurrentPatient(mappedPatient);
-            
-            console.log("CurrentPatient configurado com nome:", mappedPatient.name);
+
             setIsPatientModalOpen(true);
         } catch (error) {
             console.error("Erro ao carregar dados do paciente:", error);
@@ -306,7 +291,6 @@ const Patients: React.FC = () => {
         status: "active" | "inactive";
         customFields?: { id: number; value: string }[];
     }) => {
-        console.log("handleUpdatePatient chamado com dados:", modalData);
         try {
             if (!currentPatient?.id) {
                 console.error("Tentativa de atualizar sem ID de paciente");
@@ -423,7 +407,6 @@ const Patients: React.FC = () => {
                             variant="primary"
                             icon={<FiUserPlus size={18} />}
                             onClick={() => {
-                                console.log("Botão Novo Paciente clicado");
                                 setCurrentPatient(null);
                                 setIsPatientModalOpen(true);
                             }}
@@ -558,24 +541,12 @@ const Patients: React.FC = () => {
                     </div>
                 )}
             </Card>
-
-            {/* Log para debug antes de montar o PatientModal */}
-            {console.log("Renderizando PatientModal com dados:", {
-                isOpen: isPatientModalOpen,
-                currentPatient: currentPatient ? {
-                    ...currentPatient, 
-                    phone_check: currentPatient.phone,
-                    name_check: currentPatient.name
-                } : null,
-                key: currentPatient?.id || "new"
-            })}
             
             <PatientModal
                 isOpen={isPatientModalOpen}
                 onClose={() => {
                     setIsPatientModalOpen(false);
                     setCurrentPatient(null);
-                    console.log("Modal fechado, currentPatient limpo");
                 }}
                 onSubmit={(data: {
                     name: string;
@@ -588,21 +559,19 @@ const Patients: React.FC = () => {
                     status: "active" | "inactive";
                     customFields?: { id: number; value: string }[];
                 }) => {
-                    console.log("onSubmit chamado no PatientModal", { currentPatient, data });
                     if (currentPatient?.id) {
                         handleUpdatePatient(data);
                     } else {
                         handleAddPatient(data);
                     }
                 }}
-                key={currentPatient?.id || "new"} // Adicionar key para forçar recriação do componente
+                key={currentPatient?.id || "new"}
                 initialData={currentPatient ? {
                     id: currentPatient.id,
                     name: currentPatient.name || "",
                     birthDate: currentPatient.birthDate || "",
                     cpf: currentPatient.cpf || "",
                     rg: currentPatient.rg || "",
-                    // Certifique-se que o telefone está sendo passado corretamente
                     phone: currentPatient.phone || "", 
                     email: currentPatient.email || "",
                     notes: currentPatient.notes || "",

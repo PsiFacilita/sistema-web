@@ -68,7 +68,6 @@ const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
         <div className="flex space-x-2">
             <Button variant="outline" size="sm" icon={<Icon type="edit" size={16} />} onClick={() => window.location.assign(`/documents/${value}`)} />
             <Button variant="outline" size="sm" icon={<Icon type="folder" size={16} />} onClick={() => window.location.assign(`/documents/${value}`)} />
-            <Button variant="danger" size="sm" icon={<Icon type="trash" size={16} />} onClick={() => console.log("Excluir", value)} />
         </div>
     );
 };

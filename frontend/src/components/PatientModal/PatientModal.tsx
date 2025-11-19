@@ -65,27 +65,14 @@ const PatientModal: React.FC<PatientModalProps> = ({
   useEffect(() => {
     const loadFields = async () => {
       try {
-        console.log("PatientModal - Carregando campos");
         if (initialData?.id) {
-          console.log(`PatientModal - Usando dados do paciente ${initialData.id} recebidos via props:`);
-          console.log(JSON.stringify(initialData, null, 2));
-
-          // Verificações específicas para phone/telefone
-          console.log("PatientModal - Campo telefone:", initialData.phone);
-
-          // Em vez de buscar novamente, usamos os dados já recebidos via props
-          // Se houver campos personalizados, os utilizamos
           if (initialData.customFields) {
-            console.log("PatientModal - Usando campos personalizados das props:", initialData.customFields);
             setCustomFields(initialData.customFields);
           } else {
-            // Se não houver campos personalizados, buscamos apenas os campos (sem sobrescrever os dados do paciente)
-            console.log("PatientModal - Buscando apenas campos personalizados para o paciente existente");
             try {
               const res = await fetch("http://localhost:5000/api/fields?usuario_id=1");
               if (res.ok) {
                 const fields = await res.json();
-                console.log("PatientModal - Campos personalizados recebidos:", fields);
                 setCustomFields(fields.map((f: any) => ({ ...f, value: "" })));
               }
             } catch (fieldError) {
@@ -94,43 +81,31 @@ const PatientModal: React.FC<PatientModalProps> = ({
             }
           }
         } else {
-          console.log("PatientModal - Buscando campos personalizados para novo paciente");
           const res = await fetch("http://localhost:5000/api/fields?usuario_id=1");
           if (!res.ok) {
             throw new Error(`Erro ao carregar campos personalizados: ${res.status}`);
           }
           const fields = await res.json();
-          console.log("PatientModal - Campos personalizados recebidos:", fields);
           setCustomFields(fields.map((f: any) => ({ ...f, value: "" })));
         }
       } catch (error) {
         console.error("PatientModal - Erro ao carregar campos:", error);
-        // Caso não consiga carregar campos personalizados, continua com uma lista vazia
         if (!initialData?.id) {
           setCustomFields([]);
         }
       }
     };
 
-    // Resetar os campos quando o modal é aberto/fechado ou os dados iniciais mudam
     if (isOpen) {
       if (initialData) {
-        console.log("PatientModal - Configurando dados iniciais:", JSON.stringify(initialData, null, 2));
-
-        // Nome é o campo mais importante, garantir que seja preenchido corretamente
         const nameValue = initialData.name || "";
-        console.log("PatientModal - Nome do paciente:", nameValue);
-
-        // Verificações detalhadas para garantir dados corretos
         if (!nameValue) {
           console.warn("PatientModal - Nome do paciente está vazio! Detalhes do objeto initialData:",
             Object.keys(initialData).map(key => `${key}: ${initialData[key]}`).join(", ")
           );
         }
 
-        // Verificação específica para o campo de telefone
         const phoneValue = initialData.phone || "";
-        console.log("PatientModal - Telefone do paciente:", phoneValue);
 
         if (!phoneValue) {
           console.warn("PatientModal - Telefone do paciente está vazio!");
@@ -146,33 +121,9 @@ const PatientModal: React.FC<PatientModalProps> = ({
         setEmail(initialData.email || "");
         setNotes(initialData.notes || "");
         setStatus(initialData.status || "active");
-
-        console.log("PatientModal - Campos configurados:", {
-          name: nameValue,
-          birthDate: initialData.birthDate || "",
-          cpf: initialData.cpf || "",
-          rg: initialData.rg || "",
-          phone: initialData.phone || "",
-          email: initialData.email || "",
-          notes: initialData.notes || "",
-          status: initialData.status || "active"
-        });
-      } else {
-        console.log("PatientModal - Resetando campos para novo paciente");
-        setName("");
-        setBirthDate("");
-        setCpf("");
-        setRg("");
-        setPhone("");
-        setEmail("");
-        setNotes("");
-        setStatus("active");
       }
-    } else {
-      console.log("PatientModal - Modal fechado, não resetando campos");
     }
 
-    // Carrega os campos personalizados depois de configurar os dados básicos
     loadFields();
   }, [initialData, isOpen]);
 

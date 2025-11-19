@@ -91,7 +91,6 @@ const PatientView: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('Paciente atualizado:', data);
     } catch (err) {
       console.error(err);
     }
