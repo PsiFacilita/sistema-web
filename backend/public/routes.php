@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AppointmentsController;
+use App\Http\Controllers\CustomFieldsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentsController;
 use App\Http\Controllers\PasswordResetController;
@@ -54,6 +55,12 @@ final class Routes
             $group->post('/patients', [PatientsController::class, 'criarPaciente']);
             $group->put('/patients/{id}', [PatientsController::class, 'editarPaciente']);
             $group->get('/patients/{id}/documents', [DocumentsController::class, 'byPatient']);
+
+            $group->get('/custom-fields', [CustomFieldsController::class, 'index']);
+            $group->get('/custom-fields/{id:[0-9]+}', [CustomFieldsController::class, 'show']);
+            $group->post('/custom-fields', [CustomFieldsController::class, 'store']);
+            $group->put('/custom-fields/{id:[0-9]+}', [CustomFieldsController::class, 'update']);
+            $group->delete('/custom-fields/{id:[0-9]+}', [CustomFieldsController::class, 'destroy']);
 
             $group->get('/documents', [DocumentsController::class, 'index']);
             $group->get('/documents/{id:[0-9]+}', [DocumentsController::class, 'show']);

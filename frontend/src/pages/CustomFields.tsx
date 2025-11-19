@@ -49,14 +49,23 @@ const CustomFields: React.FC = () => {
             });
             const data = await res.json();
 
-            const fields = (data.fields || []).map((f: any) => ({
-                id: String(f.id),
-                name: f.name || f.nome,
-                type: f.type || f.tipo,
-                required: f.is_required ?? f.obrigatorio === 1,
-                createdAt: f.created_at || f.criado_em || "",
-                status: f.status,
-            }));
+            const fields = (data.fields || []).map((f: any) => {
+                const rawRequired =
+                    typeof f.is_required !== "undefined" ? f.is_required : f.obrigatorio;
+                const normalizedRequired =
+                    rawRequired === true ||
+                    rawRequired === 1 ||
+                    rawRequired === "1";
+
+                return {
+                    id: String(f.id),
+                    name: f.name || f.nome,
+                    type: f.type || f.tipo,
+                    required: normalizedRequired,
+                    createdAt: f.created_at || f.criado_em || "",
+                    status: f.status,
+                } as CustomField;
+            });
 
             setCustomFields(fields);
         } catch (err) {
@@ -156,17 +165,31 @@ const CustomFields: React.FC = () => {
         {
             header: "Obrigatório",
             accessor: "required" as keyof CustomField,
-            Cell: ({ value }: any) => (
-                <span
-                    className={`px-2 py-1 rounded-md text-sm font-medium ${
-                        value ? "bg-primary text-white" : "bg-danger text-white"
-                    }`}
-                >
-          {value ? "Sim" : "Não"}
-        </span>
-            ),
+            Cell: ({ value }: any) => {
+                const isRequired =
+                    value === true ||
+                    value === 1 ||
+                    value === "1" ||
+                    value === "Sim";
+
+                const base =
+                    "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold";
+
+                return (
+                    <span
+                        className={
+                            isRequired
+                                ? `${base} bg-green-100 text-green-800`
+                                : `${base} bg-red-100 text-red-800`
+                        }
+                    >
+        {isRequired ? "Sim" : "Não"}
+      </span>
+                );
+            },
         },
-        { header: "Data de Criação", accessor: "createdAt" as keyof CustomField },
+
+        //{ header: "Data de Criação", accessor: "createdAt" as keyof CustomField },
         {
             header: "Ações",
             accessor: "id" as keyof CustomField,
