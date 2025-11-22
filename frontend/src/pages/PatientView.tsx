@@ -200,7 +200,7 @@ const handleUpdate = async (formData: {
         } catch (err) {
             console.error(err);
             alert("Erro ao salvar alterações do paciente");
-        }  
+        }
     };
 
   if (loading) {
