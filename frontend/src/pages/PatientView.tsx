@@ -48,7 +48,7 @@ const PatientView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
  
-    const API_URL = (import.meta as any).env?.BACKEND_URL || "http://localhost:5000";
+  const API_URL = (import.meta as any).env?.BACKEND_URL || "http://localhost:5000";
 
 
   const [patientData, setPatientData] = useState<PatientData | null>(null);
@@ -200,7 +200,7 @@ const handleUpdate = async (formData: {
         } catch (err) {
             console.error(err);
             alert("Erro ao salvar alterações do paciente");
-        }  
+        }
     };
 
   if (loading) {
