@@ -48,7 +48,7 @@ const PatientView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
  
-    const API_URL = (import.meta as any).env?.BACKEND_URL || "http://localhost:5000";
+  const API_URL = (import.meta as any).env?.BACKEND_URL || "http://localhost:5000";
 
 
   const [patientData, setPatientData] = useState<PatientData | null>(null);
