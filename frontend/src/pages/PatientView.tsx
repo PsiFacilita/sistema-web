@@ -29,11 +29,27 @@ interface PatientData {
   customFields?: CustomField[];
 }
 
+const StatusBadge: React.FC<{ status: "active" | "inactive" }> = ({ status }) => {
+  const statusClasses: Record<"active" | "inactive", string> = {
+    active: "bg-green-100 text-green-800 border border-green-200",
+    inactive: "bg-red-100 text-red-800 border border-red-200",
+  };
+  
+  const statusText = status === "active" ? "Ativo" : "Inativo";
+  
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusClasses[status]}`}>
+      {statusText}
+    </span>
+  );
+};
+
 const PatientView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
+ 
   const API_URL = (import.meta as any).env?.BACKEND_URL || "http://localhost:5000";
+
 
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,15 +59,37 @@ const PatientView: React.FC = () => {
     const fetchPatient = async () => {
       try {
         const token = localStorage.getItem("auth.token");
-        const res = await axios.get(`${API_URL}/api/patients/${id}`, {
-          withCredentials: true,
-          headers: {
-            Accept: "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        const data = res.data;
-        setPatientData(data as PatientData);
+                const res = await axios.get(`${API_URL}/api/patients/${id}`, {
+                    withCredentials: true,
+                    headers: {
+                        Accept: "application/json",
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                });
+                const data = res.data as any;
+
+                const mapped: PatientData = {
+                    id: data.id?.toString() ?? id ?? "",
+                    name: data.name || data.nome || "",
+                    cpf: data.cpf || "",
+                    rg: data.rg || "",
+                    birthDate: data.birthDate || data.data_nascimento || "",
+                    email: data.email || "",
+                    phone: data.phone || data.telefone || "",
+                    notes: data.notes || data.notas || "",
+                    status: ((data.status || data.ativo) === "inactive" ? "inactive" : "active") as "active" | "inactive",
+                    customFields: Array.isArray(data.customFields)
+                        ? data.customFields.map((f: any) => ({
+                            id: Number(f.id),
+                            name: f.name ?? f.nome_campo,
+                            type: f.type ?? f.tipo_campo,
+                            required: !!f.required,
+                            value: f.value ?? "",
+                        }))
+                        : undefined,
+                };
+
+                setPatientData(mapped);
       } catch (error) {
         console.error("Erro ao buscar paciente:", error);
       } finally {
@@ -78,30 +116,92 @@ const PatientView: React.FC = () => {
     </div>
   );
 
-  const handleUpdate = async (updatedPatient: Partial<PatientData>) => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/patient/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedPatient),
-      });
+const handleUpdate = async (formData: {
+        name: string;
+        birthDate: string;
+        cpf: string;
+        rg?: string;
+        phone: string;
+        email?: string;
+        notes?: string;
+        status: "active" | "inactive";
+        customFields?: { id: number; value: string }[];
+    }) => {
+        if (!id) return;
 
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar paciente');
-      }
+        const token = localStorage.getItem("auth.token");
 
-      const data = await response.json();
-      console.log('Paciente atualizado:', data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+        const body = {
+            name: formData.name,
+            birthDate: formData.birthDate,
+            cpf: formData.cpf,
+            rg: formData.rg,
+            phone: formData.phone,
+            email: formData.email,
+            notes: formData.notes,
+            status: formData.status,
+            customFields: formData.customFields ?? [],
+        };
 
-  const handleModalSubmit = async (updated: Partial<PatientData>) => {
-    await handleUpdate(updated);
-    setPatientData({ ...patientData!, ...updated });
-    setShowEditModal(false);
-  };
+        const res = await axios.put(`${API_URL}/api/patients/${id}`, body, {
+            withCredentials: true,
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+        });
+
+        if (res.status < 200 || res.status >= 300) {
+            throw new Error("Falha ao atualizar paciente");
+        }
+    };
+
+    const handleModalSubmit = async (updated: {
+        name: string;
+        birthDate: string;
+        cpf: string;
+        rg?: string;
+        phone: string;
+        email?: string;
+        notes?: string;
+        status: "active" | "inactive";
+        customFields?: { id: number; value: string }[];
+    }) => {
+        try {
+            await handleUpdate(updated);
+
+            setPatientData(prev => {
+                if (!prev) return prev;
+
+                const updatedCustomFields = prev.customFields
+                    ? prev.customFields.map(f => {
+                        const match = updated.customFields?.find(cf => cf.id === f.id);
+                        if (!match) return f;
+                        return { ...f, value: match.value };
+                    })
+                    : prev.customFields;
+
+                return {
+                    ...prev,
+                    name: updated.name,
+                    cpf: updated.cpf,
+                    rg: updated.rg ?? "",
+                    birthDate: updated.birthDate,
+                    email: updated.email ?? "",
+                    phone: updated.phone,
+                    notes: updated.notes ?? "",
+                    status: updated.status,
+                    customFields: updatedCustomFields,
+                };
+            });
+
+            setShowEditModal(false);
+        } catch (err) {
+            console.error(err);
+            alert("Erro ao salvar alterações do paciente");
+        }
+    };
 
   if (loading) {
     return (
@@ -120,7 +220,7 @@ const PatientView: React.FC = () => {
   }
 
   return (
-    <MainLayout sidebarOpen={false} setSidebarOpen={() => { }}>
+    <MainLayout sidebarOpen={false} setSidebarOpen={() => {}}>
       <div className="flex justify-between items-center mb-6">
         <div>
           <Title level={1}>Dados de {patientData.name}</Title>
@@ -129,7 +229,7 @@ const PatientView: React.FC = () => {
         <div className="flex gap-4">
           <Button
             variant="primary"
-            onClick={() => navigate(`/record/${id}`)}
+            onClick={() => navigate(`/records/${id}`)}
           >
             <div className="flex items-center">
               <Icon type="folder" className="mr-2" /> Prontuário
@@ -162,7 +262,13 @@ const PatientView: React.FC = () => {
           {renderField("Data de Nascimento", patientData.birthDate, "birthDate")}
           {renderField("E-mail", patientData.email, "email")}
           {renderField("Telefone", patientData.phone, "phone")}
-          {renderField("Status", patientData.status === "active" ? "Ativo" : "Inativo", "status")}
+          {/* Status field with colored badge */}
+          <div className="border border-gray-100 rounded-xl p-4 bg-white">
+            <div className="flex justify-between items-start">
+              <p className="text-gray-500 text-sm">Status</p>
+            </div>
+            <StatusBadge status={patientData.status} />
+          </div>
 
           {patientData.customFields?.map((field) => (
             <div

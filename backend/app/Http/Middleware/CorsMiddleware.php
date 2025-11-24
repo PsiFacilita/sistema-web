@@ -15,11 +15,6 @@ final class CorsMiddleware
     {
         $originAllowed = trim((string)($_ENV['FRONTEND_URL'] ?? $_SERVER['FRONTEND_URL'] ?? 'http://localhost:3000'));
 
-        // Log para debug
-        error_log("CorsMiddleware: FRONTEND_URL = '$originAllowed'");
-        error_log("CorsMiddleware: Request method = " . $request->getMethod());
-        error_log("CorsMiddleware: Request URI = " . $request->getUri());
-
         if ($originAllowed === '') {
             $originAllowed = 'http://localhost:3000'; // Fallback padrão
             error_log("CorsMiddleware: Using fallback FRONTEND_URL");

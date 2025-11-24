@@ -6,6 +6,7 @@ use App\Config\Controller;
 use App\Models\Document;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Throwable;
 
 final class DocumentsController extends Controller
 {
@@ -226,6 +227,27 @@ final class DocumentsController extends Controller
             return $this->json($response, [
                 'erro' => 'Erro ao excluir documento: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function byPatient(Request $request, Response $response, array $args): Response
+    {
+        $userId = $this->resolveAuthenticatedUserId($request);
+        $patientId = (int)$args['id'];
+
+        if (!$userId) {
+            return $this->json($response, ['erro' => 'Usuário não autenticado'], 401);
+        }
+
+        if (!$this->document->patientBelongsToUser($patientId, $userId)) {
+            return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
+        }
+
+        try {
+            $docs = $this->document->findByPatientId($patientId, $userId);
+            return $this->json($response, ['sucesso' => true, 'documents' => $docs]);
+        } catch (Throwable $e) {
+            return $this->json($response, ['erro' => 'Erro ao buscar documentos: '.$e->getMessage()], 500);
         }
     }
 }
