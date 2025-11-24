@@ -181,7 +181,7 @@ final class AppointmentsService
 
                 $subject = sprintf('Novo agendamento: %s — %s', $patientName, substr($inicio, 0, 16));
 
-                $html = '<p>Olá ' . htmlspecialchars($owner->name, ENT_QUOTES, 'UTF-8') . ',</p>'
+                $html = '<p>Olá ' . htmlspecialchars($owner->name ?? 'Psicologo', ENT_QUOTES, 'UTF-8') . ',</p>'
                     . '<p>Um novo agendamento foi criado:</p>'
                     . '<ul>'
                     . '<li><strong>Paciente:</strong> ' . htmlspecialchars($patientName, ENT_QUOTES, 'UTF-8') . '</li>'
@@ -191,7 +191,7 @@ final class AppointmentsService
                     . '</ul>'
                     . '<p>Atenciosamente,<br/>Sistema PsiFacilita</p>';
 
-                MailHelper::send($owner->email, $owner->name, $subject, $html);
+                MailHelper::send($owner->email, $owner->name ?? 'Psicologo', $subject, $html);
             }
         } catch (\Exception $e) {
             // Não interrompe a criação caso o envio falhe — apenas registra no log.
