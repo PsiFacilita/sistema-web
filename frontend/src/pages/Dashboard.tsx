@@ -129,6 +129,11 @@ const Dashboard: React.FC = () => {
         }
     };
 
+    const monthNames = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+
     const dashboardCards = [
         { 
             title: 'Pacientes Ativos', 
@@ -167,7 +172,7 @@ const Dashboard: React.FC = () => {
                     <Chart 
                         type="line"
                         data={{
-                            labels: grafico.map((g) => `Mês ${g.mes}`),
+                            labels: grafico.map((g) => monthNames[Math.max(0, Math.min(11, (Number(g.mes || 1) - 1)))]),
                             datasets: getDatasetConfig(),
                         }}
                         onLegendClick={handleHighlight}
