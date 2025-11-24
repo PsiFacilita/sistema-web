@@ -156,27 +156,6 @@ final class PatientsController extends Controller
         ]);
     }
 
-    public function excluirPaciente(Request $request, Response $response, array $args): Response
-    {
-        $userId = $this->resolveAuthenticatedUserId($request);
-        $pacienteId = (int)$args['id'];
-
-        if (!$userId) {
-            return $this->json($response, ['erro' => 'Usuário não logado'], 401);
-        }
-
-        if (!$this->patient->pertenceAoUsuario($pacienteId, $userId)) {
-            return $this->json($response, ['erro' => 'Paciente não encontrado'], 404);
-        }
-
-        $this->patient->excluir($pacienteId);
-
-        return $this->json($response, [
-            'sucesso' => true,
-            'mensagem' => 'Paciente excluído com sucesso!'
-        ]);
-    }
-
     public function findByPhone(Request $request, Response $response, array $args): Response
     {
         $logger = new BaseLogger('patients');

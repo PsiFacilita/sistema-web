@@ -270,7 +270,7 @@ const Login: () => JSX.Element = () => {
             <div className="w-full max-w-md mx-auto">
                 <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 lg:p-10 w-full border border-sage-200">
                     <h2 className="text-center text-xl sm:text-2xl lg:text-3xl font-semibold text-sage-800 mb-4 sm:mb-6">
-                        Entrar no Sistema
+                        Login
                     </h2>
 
                     {error && (

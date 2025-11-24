@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\BaseLogger;
+use App\Helpers\MailHelper;
 use App\Models\Appointments;
+use App\Models\Patient;
+use App\Models\User;
 use DateInterval;
 use DatePeriod;
 use DateTimeImmutable;
@@ -160,7 +164,50 @@ final class AppointmentsService
             throw new InvalidArgumentException('Conflito de horário com outro agendamento.');
         }
 
-        return $this->model->create($userId, $patientId, $inicio, $fim, $status);
+        $id = $this->model->create($userId, $patientId, $inicio, $fim, $status);
+
+        // Tenta notificar por e-mail o psicólogo proprietário do agendamento.
+        try {
+            $ownerId = $this->model->resolveOwnerId($userId);
+
+            $userModel = new User();
+            $owner = $userModel->findById($ownerId);
+
+            if ($owner && !empty($owner->email)) {
+                $patientModel = new Patient();
+                $patient = $patientModel->buscarPorId($patientId, $ownerId);
+
+                $patientName = $patient['nome'] ?? 'Paciente';
+
+                $subject = sprintf('Novo agendamento: %s — %s', $patientName, substr($inicio, 0, 16));
+
+                $html = '<p>Olá ' . htmlspecialchars($owner->name ?? 'Psicologo', ENT_QUOTES, 'UTF-8') . ',</p>'
+                    . '<p>Um novo agendamento foi criado:</p>'
+                    . '<ul>'
+                    . '<li><strong>Paciente:</strong> ' . htmlspecialchars($patientName, ENT_QUOTES, 'UTF-8') . '</li>'
+                    . '<li><strong>Início:</strong> ' . htmlspecialchars($inicio, ENT_QUOTES, 'UTF-8') . '</li>'
+                    . '<li><strong>Fim:</strong> ' . htmlspecialchars($fim, ENT_QUOTES, 'UTF-8') . '</li>'
+                    . '<li><strong>Status:</strong> ' . htmlspecialchars($status, ENT_QUOTES, 'UTF-8') . '</li>'
+                    . '</ul>'
+                    . '<p>Atenciosamente,<br/>Sistema PsiFacilita</p>';
+
+                MailHelper::send($owner->email, $owner->name ?? 'Psicologo', $subject, $html);
+            }
+        } catch (\Exception $e) {
+            // Não interrompe a criação caso o envio falhe — apenas registra no log.
+            try {
+                $logger = new BaseLogger('appointments');
+                $logger->error('Falha ao enviar e-mail de notificação de agendamento', [
+                    'error' => $e->getMessage(),
+                    'userId' => $userId,
+                    'patientId' => $patientId,
+                ]);
+            } catch (\Exception $inner) {
+                // se o logger falhar, não há muito o que fazer aqui
+            }
+        }
+
+        return $id;
     }
 
     public function update(int $userId, int $id, array $payload): bool
