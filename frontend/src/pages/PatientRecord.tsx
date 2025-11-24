@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Title from "../components/Title/Title";
 import MainLayout from "../components/layout/MainLayout/MainLayout";
 import Card from "../components/Card/Card";
@@ -72,76 +72,82 @@ const StatusCell: React.FC<{ value: UiStatus }> = ({ value }) => {
 };
 
 const Prontuarios: React.FC = () => {
+    const navigate = useNavigate();
     const params = useParams();
     const pid = (params.patientId as string) ?? (params.id as string) ?? "";
+
     const [patientName, setPatientName] = useState<string>("Paciente");
     const [records, setRecords] = useState<PatientRecord[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
     const [showCreateRecordModal, setShowCreateRecordModal] = useState(false);
     const [showEditRecordModal, setShowEditRecordModal] = useState(false);
     const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+
     const [newRecord, setNewRecord] = useState({
         tipo_documento_id: "",
         conteudo: "",
         status: "rascunho",
     });
+
     const [editRecord, setEditRecord] = useState({
         tipo_documento_id: "",
         conteudo: "",
         status: "rascunho",
     });
+
     const recordsPerPage = 11;
 
-    useEffect(() => {
-        const run = async () => {
-            if (!pid) return;
-            setLoading(true);
-            setErrorMsg(null);
+    const fetchRecords = async () => {
+        if (!pid) return;
+        setLoading(true);
+        setErrorMsg(null);
 
-            try {
-                const token = localStorage.getItem("auth.token");
+        try {
+            const token = localStorage.getItem("auth.token");
 
-                const res = await axios.get(`${API_URL}/api/patients/${pid}/documents`, {
-                    withCredentials: true,
-                    headers: {
-                        Accept: "application/json",
-                        ...(token ? { Authorization: `Bearer ${token}` } : {})
-                    },
-                });
+            const res = await axios.get(`${API_URL}/api/patients/${pid}/documents`, {
+                withCredentials: true,
+                headers: {
+                    Accept: "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
+            });
 
-                const list: ApiRow[] = Array.isArray(res.data?.documents)
-                    ? res.data.documents
-                    : [];
+            const list: ApiRow[] = Array.isArray(res.data?.documents)
+                ? res.data.documents
+                : [];
 
-                if (list.length && list[0]?.paciente_nome) {
-                    setPatientName(list[0].paciente_nome);
-                }
-
-                const mapped = list.map((r) => ({
-                    id: String(r.id),
-                    description:
-                        r.conteudo?.trim()
-                            ? r.conteudo.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120)
-                            : r.tipo_documento_nome || "Documento",
-                    recordType: r.tipo_documento_nome || "Documento",
-                    createdAt: r.criado_em ? new Date(r.criado_em).toLocaleDateString("pt-BR") : "",
-                    status: mapStatus(r.status),
-                }));
-
-                setRecords(mapped);
-            } catch (e: any) {
-                const msg = e?.response?.data?.erro || "Falha ao carregar documentos";
-                setErrorMsg(msg);
-                setRecords([]);
-            } finally {
-                setLoading(false);
+            if (list.length && list[0]?.paciente_nome) {
+                setPatientName(list[0].paciente_nome);
             }
-        };
 
-        run();
+            const mapped = list.map((r) => ({
+                id: String(r.id),
+                description:
+                    r.conteudo?.trim()
+                        ? r.conteudo.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120)
+                        : r.tipo_documento_nome || "Documento",
+                recordType: r.tipo_documento_nome || "Documento",
+                createdAt: r.criado_em ? new Date(r.criado_em).toLocaleDateString("pt-BR") : "",
+                status: mapStatus(r.status),
+            }));
+
+            setRecords(mapped);
+        } catch (e: any) {
+            const msg = e?.response?.data?.erro || "Falha ao carregar documentos";
+            setErrorMsg(msg);
+            setRecords([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchRecords();
     }, [pid]);
 
     const filtered = useMemo(() => {
@@ -200,7 +206,7 @@ const Prontuarios: React.FC = () => {
 
             setShowCreateRecordModal(false);
             setNewRecord({ tipo_documento_id: "", conteudo: "", status: "rascunho" });
-            window.location.reload();
+            fetchRecords();
         } catch (error: any) {
             const mensagemErro = error.response?.data?.erro || "Não foi possível criar o prontuário.";
             Swal.fire({
@@ -224,14 +230,16 @@ const Prontuarios: React.FC = () => {
                 },
             });
 
+            const doc = res.data?.document;
+
             setEditRecord({
-                tipo_documento_id: res.data.tipo_documento_id?.toString() || "",
-                conteudo: res.data.conteudo || "",
-                status: res.data.status || "rascunho",
+                tipo_documento_id: doc?.tipo_documento_id?.toString() || "",
+                conteudo: doc?.conteudo || "",
+                status: doc?.status || "rascunho",
             });
             setEditingRecordId(id);
             setShowEditRecordModal(true);
-        } catch (error: any) {
+        } catch {
             Swal.fire({
                 title: "Erro",
                 text: "Não foi possível carregar o prontuário.",
@@ -256,7 +264,14 @@ const Prontuarios: React.FC = () => {
 
         try {
             const token = localStorage.getItem("auth.token");
-            await axios.put(`${API_URL}/api/documents/${editingRecordId}`, editRecord, {
+
+            const payload = {
+                tipo_documento_id: parseInt(editRecord.tipo_documento_id),
+                conteudo: editRecord.conteudo,
+                status: editRecord.status,
+            };
+
+            await axios.put(`${API_URL}/api/documents/${editingRecordId}`, payload, {
                 withCredentials: true,
                 headers: {
                     "Content-Type": "application/json",
@@ -275,7 +290,7 @@ const Prontuarios: React.FC = () => {
 
             setShowEditRecordModal(false);
             setEditingRecordId(null);
-            window.location.reload();
+            fetchRecords();
         } catch (error: any) {
             const msg = error.response?.data?.erro || "Não foi possível atualizar o prontuário.";
             Swal.fire({
@@ -288,13 +303,57 @@ const Prontuarios: React.FC = () => {
         }
     };
 
+    const handleDeleteDocument = async (id: string) => {
+        Swal.fire({
+            title: "Tem certeza?",
+            text: "Essa ação não poderá ser desfeita!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#aaa",
+            confirmButtonText: "Sim, deletar",
+            cancelButtonText: "Cancelar",
+            background: "#fff",
+            color: "#374151"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const token = localStorage.getItem("auth.token");
+                    await axios.delete(`${API_URL}/api/documents/${id}`, {
+                        withCredentials: true,
+                        headers: {
+                            Accept: "application/json",
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        },
+                    });
+                    Swal.fire({
+                        title: "Deletado!",
+                        text: "O documento foi deletado.",
+                        icon: "success",
+                        background: "#fff",
+                        color: "#374151"
+                    });
+                    fetchRecords();
+                } catch (error: any) {
+                    const mensagemErro = error.response?.data?.erro || "Não foi possível deletar o documento.";
+                    Swal.fire({
+                        title: "Erro!",
+                        text: mensagemErro,
+                        icon: "error",
+                        background: "#fff",
+                        color: "#374151"
+                    });
+                }
+            }
+        });
+    };
+
     const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
         return (
             <div className="flex space-x-2">
                 <button
-                    onClick={() => window.location.assign(`/documents/${value}`)}
-                    className="flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-sage-700 
-                    hover:bg-sage-200 hover:text-sage-800 transition-all duration-300"
+                    onClick={() => navigate(`/documents/${value}`)}
+                    className="flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-sage-700 hover:bg-sage-200 hover:text-sage-800 transition-all duration-300"
                 >
                     <FiEye size={16} />
                     Visualizar
@@ -302,11 +361,18 @@ const Prontuarios: React.FC = () => {
 
                 <button
                     onClick={() => handleEditRecord(value)}
-                    className="flex items-center gap-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-sage-600 
-                    hover:bg-sage-100 hover:text-sage-700 transition-all duration-300 border border-sage-200"
+                    className="flex items-center gap-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-sage-600 hover:bg-sage-100 hover:text-sage-700 transition-all duration-300 border border-sage-200"
                 >
                     <Icon type="edit" size={16} />
                     Editar
+                </button>
+
+                <button
+                    onClick={() => handleDeleteDocument(value)}
+                    className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 hover:bg-red-100 hover:text-red-700 transition-all duration-300 border border-red-200"
+                >
+                    <Icon type="trash" size={16} />
+                    Deletar
                 </button>
             </div>
         );
@@ -321,14 +387,12 @@ const Prontuarios: React.FC = () => {
 
     return (
         <MainLayout>
-            {/* Título */}
             <div className="mb-8">
                 <Title level={1} className="text-sage-700">
                     Prontuários de {patientName}
                 </Title>
             </div>
 
-            {/* Barra de busca + botão */}
             <Card variant="elevated" className="mb-6">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div className="relative w-full lg:w-1/3">
@@ -359,7 +423,6 @@ const Prontuarios: React.FC = () => {
                 </div>
             </Card>
 
-            {/* Lista */}
             <Card variant="elevated" className="p-0 overflow-hidden">
                 {loading ? (
                     <div className="text-center py-12 text-sage-600">Carregando...</div>
@@ -367,7 +430,6 @@ const Prontuarios: React.FC = () => {
                     <div className="text-center py-12 text-red-600">{errorMsg}</div>
                 ) : current.length > 0 ? (
                     <>
-                        {/* Header da tabela */}
                         <div className="p-6 border-b border-sage-100">
                             <h3 className="flex items-center gap-2 text-lg font-semibold text-sage-800">
                                 <FiFileText size={20} />
@@ -380,7 +442,6 @@ const Prontuarios: React.FC = () => {
 
                         <Table data={current} columns={columns} />
 
-                        {/* Paginação */}
                         {totalPages > 1 && (
                             <div className="flex items-center justify-between border-t border-sage-100 bg-sage-50 px-6 py-4">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
@@ -517,7 +578,6 @@ const Prontuarios: React.FC = () => {
                 )}
             </Card>
 
-            {/* Modal para criar novo prontuário */}
             <Modal
                 isOpen={showCreateRecordModal}
                 onClose={() => setShowCreateRecordModal(false)}
@@ -621,7 +681,6 @@ const Prontuarios: React.FC = () => {
                 </div>
             </Modal>
 
-            {/* Modal para editar prontuário */}
             <Modal
                 isOpen={showEditRecordModal}
                 onClose={() => setShowEditRecordModal(false)}
