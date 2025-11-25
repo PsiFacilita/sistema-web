@@ -39,6 +39,14 @@ interface DocumentType {
     name: string;
 }
 
+interface Template {
+    id: number;
+    tipo_documento_id: number;
+    tipo_documento_nome: string;
+    conteudo: string;
+    criado_em: string;
+}
+
 const formatStatus = (status: Document["status"]) => {
     const statusMap = {
         rascunho: "Rascunho",
@@ -71,6 +79,7 @@ const Documents: React.FC = () => {
     const [documents, setDocuments] = useState<Document[]>([]);
     const [patients, setPatients] = useState<Patient[]>([]);
     const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+    const [templates, setTemplates] = useState<Template[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -134,10 +143,28 @@ const Documents: React.FC = () => {
         ]);
     };
 
+    const fetchTemplates = async () => {
+        try {
+            const token = localStorage.getItem("auth.token");
+            const res = await axios.get(`${API_URL}/api/document-templates`, {
+                withCredentials: true,
+                headers: {
+                    Accept: "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            const data = res.data;
+            if (data.templates) setTemplates(data.templates);
+        } catch (err) {
+            console.error("Erro ao buscar modelos:", err);
+        }
+    };
+
     useEffect(() => {
         fetchDocuments();
         fetchPatients();
         fetchDocumentTypes();
+        fetchTemplates();
     }, []);
 
     const handleCreateDocument = async () => {
@@ -334,6 +361,24 @@ const Documents: React.FC = () => {
         }));
     };
 
+    const handleTemplateChange = (templateId: string) => {
+        const template = templates.find((t: Template) => t.id === Number(templateId));
+        if (template) {
+            let content = template.conteudo;
+            if (newDocument.paciente_id) {
+                const patient = patients.find((p: Patient) => p.id === Number(newDocument.paciente_id));
+                if (patient) {
+                    content = content.replace(/#nome/g, patient.nome);
+                }
+            }
+            setNewDocument((prev: any) => ({
+                ...prev,
+                conteudo: content,
+                tipo_documento_id: String(template.tipo_documento_id),
+            }));
+        }
+    };
+
     const filteredDocuments = useMemo(() => {
         const q = searchTerm.toLowerCase();
         return documents.filter(
@@ -445,6 +490,13 @@ const Documents: React.FC = () => {
                     </div>
 
                     <div className="flex gap-3">
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate("/document-templates")}
+                            className="border-sage-300 text-sage-700 hover:bg-sage-50"
+                        >
+                            Modelos de Documentos
+                        </Button>
                         <Button
                             variant="primary"
                             icon={<FiPlus size={18} />}
@@ -640,6 +692,22 @@ const Documents: React.FC = () => {
                                     options={documentTypeOptions}
                                     placeholder="Selecione um tipo"
                                     required
+                                    className="border-sage-200 focus:border-sage-400"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-sage-700 mb-2">
+                                    Carregar Modelo (Opcional)
+                                </label>
+                                <Select
+                                    value=""
+                                    onChange={(e: any) => handleTemplateChange(e.target.value)}
+                                    options={templates.map((t: Template) => ({
+                                        value: String(t.id),
+                                        label: t.tipo_documento_nome + " - " + new Date(t.criado_em).toLocaleDateString(),
+                                    }))}
+                                    placeholder="Selecione um modelo para carregar..."
                                     className="border-sage-200 focus:border-sage-400"
                                 />
                             </div>

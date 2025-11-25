@@ -5,6 +5,7 @@ use App\Http\Controllers\AppointmentsController;
 use App\Http\Controllers\CustomFieldsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentsController;
+use App\Http\Controllers\DocumentTemplatesController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PatientsController;
 use App\Http\Controllers\SettingsController;
@@ -67,6 +68,12 @@ final class Routes
             $group->post('/documents', [DocumentsController::class, 'create']);
             $group->put('/documents/{id:[0-9]+}', [DocumentsController::class, 'update']);
             $group->delete('/documents/{id:[0-9]+}', [DocumentsController::class, 'delete']);
+
+            $group->get('/document-templates', [DocumentTemplatesController::class, 'index']);
+            $group->get('/document-templates/{id:[0-9]+}', [DocumentTemplatesController::class, 'show']);
+            $group->post('/document-templates', [DocumentTemplatesController::class, 'create']);
+            $group->put('/document-templates/{id:[0-9]+}', [DocumentTemplatesController::class, 'update']);
+            $group->delete('/document-templates/{id:[0-9]+}', [DocumentTemplatesController::class, 'delete']);
 
             $group->get('/settings/profile', [SettingsController::class, 'index']);
             $group->put('/settings/profile', [SettingsController::class, 'updateProfile']);

@@ -16,6 +16,7 @@ import Patients from './pages/Patients';
 import Help from './pages/Help';
 import PasswordReset from './pages/PasswordReset';
 import CustomFields from './pages/CustomFields';
+import DocumentTemplates from './pages/DocumentTemplates';
 import NonAuthorized from './pages/NonAuthorized';
 
 const App: React.FC = () => {
@@ -66,6 +67,14 @@ const App: React.FC = () => {
                         element={
                             <RoleRoute roles={[ROLES.PSICOLOGO]}>
                                 <CustomFields />
+                            </RoleRoute>
+                        }
+                    />
+                    <Route
+                        path="/document-templates"
+                        element={
+                            <RoleRoute roles={[ROLES.PSICOLOGO]}>
+                                <DocumentTemplates />
                             </RoleRoute>
                         }
                     />
