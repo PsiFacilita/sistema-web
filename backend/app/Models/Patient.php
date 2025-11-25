@@ -34,6 +34,7 @@ final class Patient extends Model
 
     public function criar(array $dados): int
     {
+        // Validações rigorosas para o sistema web
         if (empty($dados['cpf'])) throw new \Exception('CPF é obrigatório');
         if (empty($dados['rg'])) throw new \Exception('RG é obrigatório');
         if (empty($dados['data_nascimento'])) throw new \Exception('Data de nascimento é obrigatória');
@@ -59,6 +60,35 @@ final class Patient extends Model
 
         if ($this->executeQuery($q, $p)) return (int)$this->lastInsertId();
         throw new \Exception('Erro ao criar paciente');
+    }
+
+    public function criarViaChatBot(array $dados): int
+    {
+        // Validações simplificadas para o Chatbot (apenas CPF obrigatório)
+        if (empty($dados['cpf'])) throw new \Exception('CPF é obrigatório');
+        // RG e Data de Nascimento são opcionais aqui
+
+        $ativo = isset($dados['ativo']) ? ($dados['ativo'] === 'active' ? 1 : 0) : 1;
+
+        $q = "INSERT INTO paciente (nome, email, telefone, cpf, rg, data_nascimento, notas, usuario_id, ativo, criado_em) 
+              VALUES (:nome, :email, :telefone, :cpf, :rg, :data_nascimento, :notas, :usuario_id, :ativo, NOW())";
+
+        $uid = (int)$dados['usuario_id'];
+
+        $p = [
+            'nome' => $this->enc($dados['nome'] ?? '', "nome:$uid"),
+            'email' => $this->enc($dados['email'] ?? '', "email:$uid"),
+            'telefone' => $this->enc($dados['telefone'] ?? '', "telefone:$uid"),
+            'cpf' => $this->enc($dados['cpf'], "cpf:$uid"),
+            'rg' => $this->enc($dados['rg'] ?? '', "rg:$uid"),
+            'data_nascimento' => $this->enc($dados['data_nascimento'] ?? '', "data_nascimento:$uid"),
+            'notas' => $this->enc($dados['notas'] ?? '', "notas:$uid"),
+            'usuario_id' => $uid,
+            'ativo' => $ativo
+        ];
+
+        if ($this->executeQuery($q, $p)) return (int)$this->lastInsertId();
+        throw new \Exception('Erro ao criar paciente via chatbot');
     }
 
     public function atualizar(int $pacienteId, array $dados): bool
@@ -120,7 +150,28 @@ final class Patient extends Model
             $r['nome'] = $this->dec($r['nome'], "nome:$userId") ?? '';
             $r['email'] = $this->dec($r['email'], "email:$userId") ?? '';
             $r['telefone'] = $this->dec($r['telefone'], "telefone:$userId") ?? '';
-            if ($r['telefone'] === $phone) return $r;
+            
+            // Normalize DB phone for comparison
+            $dbPhone = preg_replace('/[^0-9]/', '', $r['telefone']);
+            if ($dbPhone === $phone) return $r;
+        }
+        return null;
+    }
+
+    public function findByPhoneGlobal(string $phone): ?array
+    {
+        $q = "SELECT id, usuario_id, nome, email, telefone, CASE WHEN ativo = 1 THEN 'active' ELSE 'inactive' END as ativo, criado_em
+              FROM paciente ORDER BY criado_em DESC";
+        $rows = $this->fetchAllRows($q) ?? [];
+        foreach ($rows as &$r) {
+            $ownerId = $r['usuario_id'];
+            $r['nome'] = $this->dec($r['nome'], "nome:$ownerId") ?? '';
+            $r['email'] = $this->dec($r['email'], "email:$ownerId") ?? '';
+            $r['telefone'] = $this->dec($r['telefone'], "telefone:$ownerId") ?? '';
+            
+            // Normalize DB phone for comparison
+            $dbPhone = preg_replace('/[^0-9]/', '', $r['telefone']);
+            if ($dbPhone === $phone) return $r;
         }
         return null;
     }

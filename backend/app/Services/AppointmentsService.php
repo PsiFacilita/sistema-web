@@ -67,8 +67,8 @@ final class AppointmentsService
             return [];
         }
 
-        $weekAllowed   = $this->model->getAllowedWeekdays($configId);
-        $defaultTurnos = $this->model->getTurnos($configId);
+        // Busca turnos já estruturados por dia: ['segunda' => [...], 'terça' => [...]]
+        $turnosPorDia = $this->model->getTurnos($configId);
 
         $appts = $this->model->getAppointmentsBetween(
             $ownerId,
@@ -91,29 +91,45 @@ final class AppointmentsService
         $period = new DatePeriod($di, new DateInterval('P1D'), $df->add(new DateInterval('PT1S')));
         $result = [];
 
+        $mapDia = [
+            0 => 'domingo',
+            1 => 'segunda',
+            2 => 'terça',
+            3 => 'quarta',
+            4 => 'quinta',
+            5 => 'sexta',
+            6 => 'sábado',
+        ];
+
         foreach ($period as $day) {
             $date = $day->format('Y-m-d');
-            $weekday = (int)$day->format('w');
+            $wIndex = (int)$day->format('w');
+            $diaPt = $mapDia[$wIndex];
 
             $spec = $this->model->getSpecificDayConfig($configId, $date);
+            
+            // Se estiver fechado pela exceção
             if ($spec && ($spec['tipo'] ?? null) === 'fechado') {
                 $result[] = ['date' => $date, 'slots' => []];
                 continue;
             }
 
             $windows = [];
+
+            // Se for exceção do tipo 'alterado'
             if ($spec && ($spec['tipo'] ?? null) === 'alterado' && ($spec['inicio'] ?? null) && ($spec['fim'] ?? null)) {
                 $windows[] = [$date . ' ' . $spec['inicio'], $date . ' ' . $spec['fim']];
             } else {
-                if (!$this->isWeekdayAllowed($weekday, $weekAllowed)) {
+                // Se não for exceção, usa a configuração normal do dia
+                if (isset($turnosPorDia[$diaPt])) {
+                    foreach ($turnosPorDia[$diaPt] as $t) {
+                        if (!isset($t['inicio'], $t['fim'])) continue;
+                        $windows[] = [$date . ' ' . $t['inicio'], $date . ' ' . $t['fim']];
+                    }
+                } else {
+                    // Dia sem turnos configurados = fechado
                     $result[] = ['date' => $date, 'slots' => []];
                     continue;
-                }
-                foreach ($defaultTurnos as $t) {
-                    if (!isset($t['inicio'], $t['fim'])) {
-                        continue;
-                    }
-                    $windows[] = [$date . ' ' . $t['inicio'], $date . ' ' . $t['fim']];
                 }
             }
 
@@ -123,10 +139,20 @@ final class AppointmentsService
             }
 
             $busy = $busyByDate[$date] ?? [];
-            $available = $this->filterBusy($slots, $busy);
+            $availableObjects = $this->filterBusy($slots, $busy);
+            
+            // Converter objetos de volta para strings completas Y-m-d H:i:s para compatibilidade com frontend
+            $availableStrings = array_map(function($slot) {
+                return (new DateTimeImmutable($slot['inicio']))->format('Y-m-d H:i:s');
+            }, $availableObjects);
+
+            // Remove duplicatas e reindexa
+            $available = array_values(array_unique($availableStrings));
+            sort($available);
+
             $result[] = [
                 'date' => $date,
-                'slots' => array_values($available)
+                'slots' => $available
             ];
         }
 
@@ -155,6 +181,10 @@ final class AppointmentsService
         $status = $this->sanitizeStatus($status);
 
         $this->assertDates($inicio, $fim);
+
+        if (!$this->isTimeSlotValid($userId, $inicio, $fim)) {
+            throw new InvalidArgumentException('Horário inválido (fora do expediente ou em intervalo).');
+        }
 
         if (!$this->model->patientBelongsToOwner($userId, $patientId)) {
             throw new InvalidArgumentException('Paciente inválido para este usuário.');
@@ -241,6 +271,11 @@ final class AppointmentsService
 
         if (isset($payload['horario_inicio']) || isset($payload['horario_fim'])) {
             $this->assertDates((string)$inicio, (string)$fim);
+
+            if (!$this->isTimeSlotValid($userId, (string)$inicio, (string)$fim)) {
+                throw new InvalidArgumentException('Horário inválido (fora do expediente ou em intervalo).');
+            }
+
             if ($this->model->hasOverlap($userId, (string)$inicio, (string)$fim, $id)) {
                 throw new InvalidArgumentException('Conflito de horário com outro agendamento.');
             }
@@ -389,5 +424,78 @@ final class AppointmentsService
             }
         }
         return $out;
+    }
+
+    private function isTimeSlotValid(int $userId, string $inicio, string $fim): bool
+    {
+        $ownerId  = $this->model->resolveOwnerId($userId);
+        $configId = $this->model->getConfigId($ownerId);
+        
+        if ($configId === null) {
+            return false;
+        }
+
+        $startDt = new DateTimeImmutable($inicio);
+        $endDt   = new DateTimeImmutable($fim);
+        $dateYmd = $startDt->format('Y-m-d');
+
+        // Não suporta agendamento cruzando dias (ex: 23:00 as 01:00) na lógica simples
+        if ($endDt->format('Y-m-d') !== $dateYmd) {
+            return false;
+        }
+
+        // 1. Verificar exceções (dias específicos)
+        $spec = $this->model->getSpecificDayConfig($configId, $dateYmd);
+        
+        $validWindows = [];
+
+        if ($spec) {
+            if (($spec['tipo'] ?? null) === 'fechado') {
+                return false; // Dia fechado explicitamente
+            }
+            if (($spec['tipo'] ?? null) === 'alterado' && ($spec['inicio'] ?? null) && ($spec['fim'] ?? null)) {
+                // Dia com horário alterado: considera apenas esse horário
+                $validWindows[] = [
+                    'start' => new DateTimeImmutable($dateYmd . ' ' . $spec['inicio']),
+                    'end'   => new DateTimeImmutable($dateYmd . ' ' . $spec['fim'])
+                ];
+            }
+        }
+
+        // 2. Se não houve exceção que definiu janela (ou seja, não é 'alterado'), pega turnos normais
+        if (empty($validWindows)) {
+            $mapDia = [
+                0 => 'domingo', 1 => 'segunda', 2 => 'terça', 3 => 'quarta',
+                4 => 'quinta', 5 => 'sexta', 6 => 'sábado',
+            ];
+            $diaSemana = $mapDia[(int)$startDt->format('w')];
+            
+            $turnos = $this->model->getTurnos($configId);
+            
+            if (isset($turnos[$diaSemana])) {
+                foreach ($turnos[$diaSemana] as $t) {
+                    if (isset($t['inicio'], $t['fim'])) {
+                        $validWindows[] = [
+                            'start' => new DateTimeImmutable($dateYmd . ' ' . $t['inicio']),
+                            'end'   => new DateTimeImmutable($dateYmd . ' ' . $t['fim'])
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Se não tem janelas válidas (dia fechado ou sem configuração), retorna false
+        if (empty($validWindows)) {
+            return false;
+        }
+
+        // 3. Verifica se o horário solicitado está TOTALMENTE contido em ALGUMA janela válida
+        foreach ($validWindows as $window) {
+            if ($startDt >= $window['start'] && $endDt <= $window['end']) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

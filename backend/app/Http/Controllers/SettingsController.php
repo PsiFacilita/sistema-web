@@ -149,13 +149,12 @@ final class SettingsController extends Controller
         $userId = $this->resolveAuthenticatedUserId($request);
         if (!$userId) return $this->json($response, ['erro' => 'Usuário não autenticado'], 401);
         $data = $request->getParsedBody() ?? [];
-        $days = $data['days'] ?? [];
-        $shifts = $data['shifts'] ?? [];
+        $schedule = $data['schedule'] ?? [];
         $exceptions = $data['exceptions'] ?? [];
         try {
-            $this->config->saveSchedule($userId, $days, $shifts, $exceptions);
-            $schedule = $this->config->getAggregated($userId);
-            return $this->json($response, ['sucesso' => true, 'schedule' => $schedule]);
+            $this->config->saveSchedule($userId, $schedule, $exceptions);
+            $newSchedule = $this->config->getAggregated($userId);
+            return $this->json($response, ['sucesso' => true, 'schedule' => $newSchedule]);
         } catch (\Throwable $e) {
             return $this->json($response, ['erro' => 'Erro ao salvar horários: '.$e->getMessage()], 400);
         }

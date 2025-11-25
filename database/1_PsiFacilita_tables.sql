@@ -111,17 +111,13 @@ CREATE TABLE IF NOT EXISTS configuracao (
 CREATE TABLE IF NOT EXISTS configuracao_turnos (
    id INT AUTO_INCREMENT PRIMARY KEY,
    configuracao_id INT NOT NULL,
+   dia ENUM('domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado') NOT NULL,
    turno_inicio TIME NOT NULL,
    turno_fim TIME NOT NULL,
    FOREIGN KEY (configuracao_id) REFERENCES configuracao(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS configuracao_dias (
-   configuracao_id INT NOT NULL,
-   dia ENUM('domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado') NOT NULL,
-   PRIMARY KEY (configuracao_id, dia),
-   FOREIGN KEY (configuracao_id) REFERENCES configuracao(id) ON DELETE CASCADE
-);
+/* Tabela configuracao_dias removida em favor de configuracao_turnos com coluna dia */
 
 CREATE TABLE IF NOT EXISTS configuracao_dias_especificos (
    id INT AUTO_INCREMENT PRIMARY KEY,

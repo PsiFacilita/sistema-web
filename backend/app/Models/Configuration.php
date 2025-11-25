@@ -17,13 +17,19 @@ final class Configuration extends Model
     public function getAggregated(int $userId): array
     {
         $cid = $this->ensureConfig($userId);
-        $dias = $this->fetchAllRows("SELECT dia FROM configuracao_dias WHERE configuracao_id = :c", ['c' => $cid]);
-        $turnos = $this->fetchAllRows("SELECT id, turno_inicio, turno_fim FROM configuracao_turnos WHERE configuracao_id = :c ORDER BY id ASC", ['c' => $cid]);
+        $turnos = $this->fetchAllRows("SELECT id, dia, turno_inicio, turno_fim FROM configuracao_turnos WHERE configuracao_id = :c ORDER BY dia, turno_inicio ASC", ['c' => $cid]);
         $ex = $this->fetchAllRows("SELECT id, data, horario_inicio, horario_fim, motivo, tipo FROM configuracao_dias_especificos WHERE configuracao_id = :c ORDER BY data ASC", ['c' => $cid]);
+        
+        $schedule = [];
+        foreach ($turnos as $t) {
+            $dia = $t['dia'];
+            if (!isset($schedule[$dia])) $schedule[$dia] = [];
+            $schedule[$dia][] = ['start' => $t['turno_inicio'], 'end' => $t['turno_fim']];
+        }
+
         return [
             'config_id' => $cid,
-            'days' => array_map(fn($r) => $r['dia'], $dias),
-            'shifts' => array_map(fn($r) => ['id' => (int)$r['id'], 'start' => $r['turno_inicio'], 'end' => $r['turno_fim']], $turnos),
+            'schedule' => $schedule,
             'exceptions' => array_map(fn($r) => [
                 'id' => (int)$r['id'],
                 'date' => $r['data'],
@@ -35,31 +41,40 @@ final class Configuration extends Model
         ];
     }
 
-    public function saveSchedule(int $userId, array $days, array $shifts, array $exceptions): void
+    public function saveSchedule(int $userId, array $schedule, array $exceptions): void
     {
         $cid = $this->ensureConfig($userId);
         $validDays = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
-        foreach ($days as $d) if (!in_array($d, $validDays, true)) throw new \Exception('Dia inválido');
-        foreach ($shifts as $s) {
-            if (!isset($s['start'], $s['end'])) throw new \Exception('Turno inválido');
+        
+        // Validação básica
+        foreach ($schedule as $day => $shifts) {
+            if (!in_array($day, $validDays, true)) throw new \Exception("Dia inválido: $day");
+            foreach ($shifts as $s) {
+                if (!isset($s['start'], $s['end'])) throw new \Exception("Turno inválido para $day");
+            }
         }
+
         foreach ($exceptions as $e) {
             if (!isset($e['date'], $e['type'])) throw new \Exception('Exceção inválida');
             if (!in_array($e['type'], ['fechado','alterado'], true)) throw new \Exception('Tipo inválido');
         }
+
         $this->beginTransaction();
         try {
-            $this->executeQuery("DELETE FROM configuracao_dias WHERE configuracao_id = :c", ['c' => $cid]);
-            foreach ($days as $d) {
-                $this->executeQuery("INSERT INTO configuracao_dias (configuracao_id, dia) VALUES (:c, :d)", ['c' => $cid, 'd' => $d]);
-            }
+            // Remove turnos antigos
             $this->executeQuery("DELETE FROM configuracao_turnos WHERE configuracao_id = :c", ['c' => $cid]);
-            foreach ($shifts as $s) {
-                $this->executeQuery(
-                    "INSERT INTO configuracao_turnos (configuracao_id, turno_inicio, turno_fim) VALUES (:c, :i, :f)",
-                    ['c' => $cid, 'i' => $s['start'], 'f' => $s['end']]
-                );
+            
+            // Insere novos turnos
+            foreach ($schedule as $day => $shifts) {
+                foreach ($shifts as $s) {
+                    $this->executeQuery(
+                        "INSERT INTO configuracao_turnos (configuracao_id, dia, turno_inicio, turno_fim) VALUES (:c, :d, :i, :f)",
+                        ['c' => $cid, 'd' => $day, 'i' => $s['start'], 'f' => $s['end']]
+                    );
+                }
             }
+
+            // Atualiza exceções
             $this->executeQuery("DELETE FROM configuracao_dias_especificos WHERE configuracao_id = :c", ['c' => $cid]);
             foreach ($exceptions as $e) {
                 $this->executeQuery(

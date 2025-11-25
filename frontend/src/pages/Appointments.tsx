@@ -6,6 +6,7 @@ import Button from '../components/Button/Button';
 import Modal from '../components/Modal/Modal';
 import Input from '../components/Form/Input/Input';
 import { FiChevronLeft, FiChevronRight, FiSearch, FiUser, FiCalendar, FiClock } from 'react-icons/fi';
+import Swal from 'sweetalert2';
 
 interface CalendarEvent {
     id: string;
@@ -177,8 +178,8 @@ const Appointments: React.FC = () => {
     };
 
     const monthRange = (dt: Date) => {
-        const start = new Date(dt.getFullYear(), dt.getMonth() - 1, 1);
-        const end = new Date(dt.getFullYear(), dt.getMonth() + 2, 0);
+        const start = new Date(dt.getFullYear(), dt.getMonth(), 1);
+        const end = new Date(dt.getFullYear(), dt.getMonth() + 1, 0);
         const from = `${ymdLocal(start)} 00:00:00`;
         const to = `${ymdLocal(end)} 23:59:59`;
         return { from, to };
@@ -276,18 +277,22 @@ const Appointments: React.FC = () => {
                 const items: Array<any> = data?.items || data?.availability || [];
                 items.forEach((it) => {
                     const start: string = String(it.horario_inicio || it.start || it.slot || '');
-                    if (!start.includes(' ')) return;
-                    const dateYmd = start.split(' ')[0];
-                    const timeHm = (start.split(' ')[1] || '').slice(0, 5);
+                    const separator = start.includes('T') ? 'T' : ' ';
+                    if (!start.includes(separator)) return;
+                    
+                    const dateYmd = start.split(separator)[0];
+                    const timePart = start.split(separator)[1] || '';
+                    const timeHm = timePart.slice(0, 5);
+                    
                     if (!grouped[dateYmd]) grouped[dateYmd] = [];
                     grouped[dateYmd].push(timeHm);
                 });
             }
             const next: Record<string, string[]> = { ...availabilityByDate };
             Object.keys(grouped).forEach((date) => {
-                const merged = Array.from(new Set([...(next[date] || []), ...grouped[date]]));
-                merged.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-                next[date] = merged;
+                // Substitui os horários do dia com os dados frescos do backend
+                // Isso garante que horários ocupados desapareçam da lista
+                next[date] = grouped[date];
             });
             setAvailabilityByDate(next);
         } catch (e: any) {
@@ -475,6 +480,66 @@ const Appointments: React.FC = () => {
         setEditValidationErrors({});
     };
 
+    const handleDeleteAppointment = async () => {
+        if (!selectedEvent) return;
+
+        Swal.fire({
+            title: "Tem certeza?",
+            text: "Deseja excluir este agendamento? Essa ação não poderá ser desfeita!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#aaa",
+            confirmButtonText: "Sim, deletar",
+            cancelButtonText: "Cancelar",
+            background: "#fff",
+            color: "#374151"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`${API_URL}/api/appointments/${selectedEvent.id}`, {
+                        method: 'DELETE',
+                        credentials: 'include',
+                        headers: {
+                            Accept: 'application/json',
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        },
+                    });
+
+                    const data = await res.json().catch(() => ({}));
+
+                    if (!res.ok || data?.ok === false) {
+                        throw new Error(data?.message || 'Falha ao excluir agendamento');
+                    }
+
+                    Swal.fire({
+                        title: "Deletado!",
+                        text: "O agendamento foi excluído com sucesso.",
+                        icon: "success",
+                        background: "#fff",
+                        color: "#374151"
+                    });
+
+                    setIsAppointmentModalOpen(false);
+                    setSelectedEvent(null);
+                    setIsModalOpen(false);
+
+                    const { from, to } = monthRange(currentMonth);
+                    fetchAppointments(from, to);
+                    fetchAvailability(from, to);
+                } catch (e: any) {
+                    Swal.fire({
+                        title: "Erro!",
+                        text: e?.message || 'Erro ao excluir agendamento',
+                        icon: "error",
+                        background: "#fff",
+                        color: "#374151"
+                    });
+                }
+            }
+        });
+    };
+
     const handleBackToDayView = () => {
         setIsAppointmentModalOpen(false);
         setIsEditMode(false);
@@ -505,11 +570,73 @@ const Appointments: React.FC = () => {
         }
     };
 
-    const handleSaveEdit = () => {
+    const handleSaveEdit = async () => {
         if (!editedEvent || !selectedDate) return;
         if (editValidationErrors.time) return;
-        setIsEditMode(false);
-        setEditedEvent(null);
+
+        try {
+
+            const [hours, minutes] = editedEvent.time.split(':').map(Number);
+            
+
+            const startDateTimeStr = `${selectedDate}T${editedEvent.time}:00`;
+            const startDate = new Date(startDateTimeStr);
+            
+            const endDate = new Date(startDate.getTime() + SLOT_MINUTES * 60000);
+            
+
+            const formatDateTime = (date: Date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                const h = String(date.getHours()).padStart(2, '0');
+                const min = String(date.getMinutes()).padStart(2, '0');
+                const s = String(date.getSeconds()).padStart(2, '0');
+                return `${y}-${m}-${d} ${h}:${min}:${s}`;
+            };
+
+            const start = `${selectedDate} ${editedEvent.time}:00`;
+            const end = formatDateTime(endDate);
+
+            const res = await fetch(`${API_URL}/api/appointments/${editedEvent.id}`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
+                    horario_inicio: start,
+                    horario_fim: end,
+                    status: editedEvent.status
+                }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || data?.ok === false) {
+                throw new Error(data?.message || 'Falha ao atualizar agendamento');
+            }
+
+            setIsEditMode(false);
+            setEditedEvent(null);
+            setIsAppointmentModalOpen(false);
+            setIsModalOpen(false);
+
+            const { from, to } = monthRange(currentMonth);
+            fetchAppointments(from, to);
+            fetchAvailability(from, to);
+
+        } catch (e: any) {
+            Swal.fire({
+                title: "Erro!",
+                text: e?.message || 'Erro ao atualizar agendamento',
+                icon: "error",
+                background: "#fff",
+                color: "#374151"
+            });
+        }
     };
 
     return (
@@ -632,7 +759,7 @@ const Appointments: React.FC = () => {
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1">
-                                        <div className="flex items中心 gap-2 mb-2">
+                                        <div className="flex items-center gap-2 mb-2">
                                             <FiClock size={16} className="text-sage-600" />
                                             <span className="font-semibold text-lg">{event.time}</span>
                                         </div>
@@ -692,6 +819,20 @@ const Appointments: React.FC = () => {
                         </div>
 
                         <div className="flex justify-end space-x-2 pt-4 border-t border-sage-100">
+                            <Button 
+                                variant="danger" 
+                                onClick={handleDeleteAppointment}
+                                className="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 hover:border-red-300 focus:ring-red-500"
+                            >
+                                Deletar
+                            </Button>
+                            <Button 
+                                variant="primary" 
+                                onClick={handleStartEdit}
+                                className="bg-sage-600 hover:bg-sage-700"
+                            >
+                                Editar
+                            </Button>
                             <Button variant="outline" onClick={handleBackToDayView} className="border-sage-300 text-sage-700 hover:bg-sage-50">
                                 Voltar
                             </Button>
@@ -701,25 +842,42 @@ const Appointments: React.FC = () => {
 
                 {selectedEvent && isEditMode && editedEvent && (
                     <div className="space-y-6">
-                        <div className="flex justify-end space-x-2 pt-4 border-sage-100">
+                        <div>
+                            <label className="block text-sm font-medium text-sage-700 mb-1">Horário</label>
+                            <Input
+                                type="time"
+                                value={editedEvent.time}
+                                onChange={(e) => handleEditFieldChange('time', e.target.value)}
+                                className={`w-full p-3 border border-sage-200 rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400 ${editValidationErrors.time ? 'border-red-500' : ''}`}
+                            />
+                            {editValidationErrors.time && <p className="text-red-500 text-xs mt-1">{editValidationErrors.time}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-sage-700 mb-1">Status</label>
+                            <select
+                                value={editedEvent.status}
+                                onChange={(e) => handleEditFieldChange('status', e.target.value)}
+                                className="w-full p-3 border border-sage-200 rounded-lg focus:border-sage-400 focus:ring-1 focus:ring-sage-400 bg-white"
+                            >
+                                <option value="agendado">Agendado</option>
+                                <option value="confirmado">Confirmado</option>
+                                <option value="cancelado">Cancelado</option>
+                                <option value="reagendado">Reagendado</option>
+                            </select>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-4 border-t border-sage-100">
                             <Button
                                 variant="outline"
-                                onClick={() => {
-                                    setIsEditMode(false);
-                                    setEditedEvent(null);
-                                    setEditValidationErrors({});
-                                }}
+                                onClick={handleCancelEdit}
                                 className="border-sage-300 text-sage-700 hover:bg-sage-50"
                             >
                                 Cancelar
                             </Button>
                             <Button
                                 variant="primary"
-                                onClick={() => {
-                                    if (editValidationErrors.time) return;
-                                    setIsEditMode(false);
-                                    setEditedEvent(null);
-                                }}
+                                onClick={handleSaveEdit}
                                 disabled={!!editValidationErrors.time}
                                 className="bg-sage-600 hover:bg-sage-700"
                             >

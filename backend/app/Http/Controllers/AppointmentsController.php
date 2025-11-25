@@ -81,10 +81,16 @@ final class AppointmentsController extends Controller
                     continue;
                 }
                 foreach ($slots as $hm) {
-                    // Ensure HH:MM:SS
-                    $time = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string)$hm) ? (string)$hm : ((string)$hm . ':00');
                     try {
-                        $startDt = new \DateTimeImmutable($date . ' ' . $time);
+                        // Check if it's already a full datetime (contains space)
+                        if (str_contains((string)$hm, ' ')) {
+                            $startDt = new \DateTimeImmutable((string)$hm);
+                        } else {
+                            // Ensure HH:MM:SS
+                            $time = preg_match('/^\d{2}:\d{2}:\d{2}$/', (string)$hm) ? (string)$hm : ((string)$hm . ':00');
+                            $startDt = new \DateTimeImmutable($date . ' ' . $time);
+                        }
+
                         $endDt   = $startDt->add(new \DateInterval('PT' . (int)$slot . 'M'));
                         // ISO8601 with offset (Python fromisoformat accepts offsets)
                         $availableSlots[] = [
