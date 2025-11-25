@@ -182,6 +182,10 @@ final class AppointmentsService
 
         $this->assertDates($inicio, $fim);
 
+        if (!$this->isTimeSlotValid($userId, $inicio, $fim)) {
+            throw new InvalidArgumentException('Horário inválido (fora do expediente ou em intervalo).');
+        }
+
         if (!$this->model->patientBelongsToOwner($userId, $patientId)) {
             throw new InvalidArgumentException('Paciente inválido para este usuário.');
         }
@@ -267,6 +271,11 @@ final class AppointmentsService
 
         if (isset($payload['horario_inicio']) || isset($payload['horario_fim'])) {
             $this->assertDates((string)$inicio, (string)$fim);
+
+            if (!$this->isTimeSlotValid($userId, (string)$inicio, (string)$fim)) {
+                throw new InvalidArgumentException('Horário inválido (fora do expediente ou em intervalo).');
+            }
+
             if ($this->model->hasOverlap($userId, (string)$inicio, (string)$fim, $id)) {
                 throw new InvalidArgumentException('Conflito de horário com outro agendamento.');
             }
@@ -415,5 +424,78 @@ final class AppointmentsService
             }
         }
         return $out;
+    }
+
+    private function isTimeSlotValid(int $userId, string $inicio, string $fim): bool
+    {
+        $ownerId  = $this->model->resolveOwnerId($userId);
+        $configId = $this->model->getConfigId($ownerId);
+        
+        if ($configId === null) {
+            return false;
+        }
+
+        $startDt = new DateTimeImmutable($inicio);
+        $endDt   = new DateTimeImmutable($fim);
+        $dateYmd = $startDt->format('Y-m-d');
+
+        // Não suporta agendamento cruzando dias (ex: 23:00 as 01:00) na lógica simples
+        if ($endDt->format('Y-m-d') !== $dateYmd) {
+            return false;
+        }
+
+        // 1. Verificar exceções (dias específicos)
+        $spec = $this->model->getSpecificDayConfig($configId, $dateYmd);
+        
+        $validWindows = [];
+
+        if ($spec) {
+            if (($spec['tipo'] ?? null) === 'fechado') {
+                return false; // Dia fechado explicitamente
+            }
+            if (($spec['tipo'] ?? null) === 'alterado' && ($spec['inicio'] ?? null) && ($spec['fim'] ?? null)) {
+                // Dia com horário alterado: considera apenas esse horário
+                $validWindows[] = [
+                    'start' => new DateTimeImmutable($dateYmd . ' ' . $spec['inicio']),
+                    'end'   => new DateTimeImmutable($dateYmd . ' ' . $spec['fim'])
+                ];
+            }
+        }
+
+        // 2. Se não houve exceção que definiu janela (ou seja, não é 'alterado'), pega turnos normais
+        if (empty($validWindows)) {
+            $mapDia = [
+                0 => 'domingo', 1 => 'segunda', 2 => 'terça', 3 => 'quarta',
+                4 => 'quinta', 5 => 'sexta', 6 => 'sábado',
+            ];
+            $diaSemana = $mapDia[(int)$startDt->format('w')];
+            
+            $turnos = $this->model->getTurnos($configId);
+            
+            if (isset($turnos[$diaSemana])) {
+                foreach ($turnos[$diaSemana] as $t) {
+                    if (isset($t['inicio'], $t['fim'])) {
+                        $validWindows[] = [
+                            'start' => new DateTimeImmutable($dateYmd . ' ' . $t['inicio']),
+                            'end'   => new DateTimeImmutable($dateYmd . ' ' . $t['fim'])
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Se não tem janelas válidas (dia fechado ou sem configuração), retorna false
+        if (empty($validWindows)) {
+            return false;
+        }
+
+        // 3. Verifica se o horário solicitado está TOTALMENTE contido em ALGUMA janela válida
+        foreach ($validWindows as $window) {
+            if ($startDt >= $window['start'] && $endDt <= $window['end']) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
