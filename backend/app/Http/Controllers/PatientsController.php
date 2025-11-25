@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Config\Controller;
+use App\Helpers\BaseLogger;
 use App\Models\Patient;
+use App\Models\User;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Throwable;
@@ -88,7 +90,11 @@ final class PatientsController extends Controller
             return $this->json($response, ['erro' => 'Nome e email são obrigatórios'], 400);
         }
 
-        $novoPacienteId = $this->patient->criar([
+        $userModel = new User();
+        $user = $userModel->findById($userId);
+        $isChatbot = $user && $user->cargo === 'chatbot';
+
+        $payload = [
             'nome' => $dados['nome'],
             'email' => $dados['email'],
             'telefone' => $dados['telefone'] ?? '',
@@ -96,8 +102,15 @@ final class PatientsController extends Controller
             'rg' => $dados['rg'] ?? null,
             'data_nascimento' => $dados['data_nascimento'] ?? null,
             'notas' => $dados['notas'] ?? null,
-            'usuario_id' => $userId
-        ]);
+            'usuario_id' => $userId,
+            'ativo' => $dados['ativo'] ?? 'active'
+        ];
+
+        if ($isChatbot) {
+            $novoPacienteId = $this->patient->criarViaChatBot($payload);
+        } else {
+            $novoPacienteId = $this->patient->criar($payload);
+        }
 
         if (!empty($dados['customFields']) && is_array($dados['customFields'])) {
             $this->patient->saveCustomFieldValues($novoPacienteId, $dados['customFields']);
@@ -200,7 +213,15 @@ final class PatientsController extends Controller
                 'normalized_phone' => $normalizedPhone
             ]);
 
-            $patient = $this->patient->findByPhone($userId, $normalizedPhone);
+            $userModel = new User();
+            $user = $userModel->findById($userId);
+            $isChatbot = $user && $user->cargo === 'chatbot';
+
+            if ($isChatbot) {
+                $patient = $this->patient->findByPhoneGlobal($normalizedPhone);
+            } else {
+                $patient = $this->patient->findByPhone($userId, $normalizedPhone);
+            }
 
             if (!$patient) {
                 $logger->info('Patient not found by phone', ['phone' => $normalizedPhone]);

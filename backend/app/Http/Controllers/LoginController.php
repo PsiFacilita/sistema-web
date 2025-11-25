@@ -45,7 +45,7 @@ final class LoginController extends Controller
             }
 
             // Se for chatbot, pula 2FA completamente
-            if ($user->role === 'chatbot') {
+            if ($user->cargo === 'chatbot') {
                 $_SESSION['user'] = ['id' => $user->id];
                 $token = $auth->generateToken($user);
                 
@@ -68,9 +68,9 @@ final class LoginController extends Controller
                     'expires_in' => $auth->getTtlSeconds(),
                     'user'       => [
                         'id' => $user->id, 
-                        'name' => $user->name, 
+                        'name' => $user->nome, 
                         'email' => $user->email, 
-                        'role' => $user->role
+                        'role' => $user->cargo
                     ],
                 ], 200);
             }

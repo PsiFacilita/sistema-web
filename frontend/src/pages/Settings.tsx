@@ -36,33 +36,49 @@ const keyToPt: Record<keyof WeeklyScheduleConfig, string> = {
 function toClientSchedule(api: any): WeeklyScheduleConfig {
     const base = createDefaultWeeklySchedule();
     if (!api || typeof api !== 'object') return base;
-    const openDays: Set<string> = new Set(Array.isArray(api.days) ? api.days : []);
-    let shiftStart = '08:00';
-    let shiftEnd = '17:00';
-    if (Array.isArray(api.shifts) && api.shifts.length > 0) {
-        shiftStart = api.shifts[0].start ?? shiftStart;
-        shiftEnd = api.shifts[0].end ?? shiftEnd;
-    }
+
+    const scheduleMap = api.schedule || {};
+    
     (Object.keys(ptToKey) as (keyof typeof ptToKey)[]).forEach(pt => {
         const k = ptToKey[pt];
-        const isOpen = openDays.has(pt);
-        (base as any)[k].isOpen = isOpen;
-        (base as any)[k].openTime = shiftStart;
-        (base as any)[k].closeTime = shiftEnd;
-        if (!isOpen) {
+        const shifts = scheduleMap[pt];
+        
+        if (Array.isArray(shifts) && shifts.length > 0) {
+            (base as any)[k].isOpen = true;
+            
+            // Ordenar turnos por horário de início
+            shifts.sort((a: any, b: any) => a.start.localeCompare(b.start));
+            
+            const first = shifts[0];
+            const last = shifts[shifts.length - 1];
+            
+            (base as any)[k].openTime = first.start.substring(0, 5);
+            (base as any)[k].closeTime = last.end.substring(0, 5);
+            
+            if (shifts.length > 1) {
+                (base as any)[k].hasBreak = true;
+                (base as any)[k].breakStart = first.end.substring(0, 5);
+                (base as any)[k].breakEnd = last.start.substring(0, 5);
+            } else {
+                (base as any)[k].hasBreak = false;
+            }
+        } else {
+            (base as any)[k].isOpen = false;
             (base as any)[k].hasBreak = false;
         }
     });
+
     const exceptions = Array.isArray(api.exceptions) ? api.exceptions : [];
     base.exceptions = exceptions.map((e: any) => ({
         id: String(e.id ?? Date.now()),
         date: e.date,
         isOpen: e.type === 'alterado',
-        openTime: e.start ?? '08:00',
-        closeTime: e.end ?? '17:00',
+        openTime: e.start ? e.start.substring(0, 5) : '08:00',
+        closeTime: e.end ? e.end.substring(0, 5) : '17:00',
         hasBreak: false,
         breakStart: '12:00',
-        breakEnd: '13:00'
+        breakEnd: '13:00',
+        reason: e.reason
     }));
     return JSON.parse(JSON.stringify(base));
 }
@@ -71,27 +87,36 @@ function toServerPayload(cfg: WeeklyScheduleConfig) {
     const dayKeys: (keyof Omit<WeeklyScheduleConfig, 'exceptions'>)[] = [
         'sunday','monday','tuesday','wednesday','thursday','friday','saturday'
     ];
-    const days = dayKeys.filter(k => (cfg as any)[k]?.isOpen).map(k => keyToPt[k]);
-    const pairs = new Set<string>();
+    
+    const schedule: Record<string, {start: string, end: string}[]> = {};
+
     dayKeys.forEach(k => {
         const d = (cfg as any)[k];
-        if (d?.isOpen && d?.openTime && d?.closeTime) {
-            pairs.add(`${d.openTime}-${d.closeTime}`);
+        const ptDay = keyToPt[k];
+        
+        if (d?.isOpen) {
+            const shifts = [];
+            if (d.hasBreak && d.breakStart && d.breakEnd) {
+                // Dois turnos
+                shifts.push({ start: d.openTime, end: d.breakStart });
+                shifts.push({ start: d.breakEnd, end: d.closeTime });
+            } else {
+                // Um turno
+                shifts.push({ start: d.openTime, end: d.closeTime });
+            }
+            schedule[ptDay] = shifts;
         }
     });
-    const shifts = Array.from(pairs).map(s => {
-        const [start, end] = s.split('-');
-        return { start, end };
-    });
-    if (shifts.length === 0) shifts.push({ start: '08:00', end: '17:00' });
+
     const exceptions = Array.isArray(cfg.exceptions) ? cfg.exceptions.map(e => ({
         date: e.date,
         type: e.isOpen ? 'alterado' : 'fechado',
         start: e.isOpen ? e.openTime : null,
         end: e.isOpen ? e.closeTime : null,
-        reason: null
+        reason: e.reason || null
     })) : [];
-    return { days, shifts, exceptions };
+    
+    return { schedule, exceptions };
 }
 
 const Settings: React.FC = () => {

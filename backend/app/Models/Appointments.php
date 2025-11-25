@@ -18,10 +18,18 @@ final class Appointments extends Model
         int $page = 1,
         int $perPage = 20
     ): array {
-        $owner = $this->ownerSql();
+        // Check if user is chatbot
+        $user = $this->fetchRow("SELECT cargo FROM usuario WHERE id = :uid_check", [':uid_check' => $userId]);
+        $isChatbot = $user && $user['cargo'] === 'chatbot';
 
-        $where = ["a.usuario_id = {$owner}"];
-        $params = [':uid' => $userId];
+        $where = [];
+        $params = [];
+
+        if (!$isChatbot) {
+            $owner = $this->ownerSql();
+            $where[] = "a.usuario_id = {$owner}";
+            $params[':uid'] = $userId;
+        }
 
         if ($from !== null) {
             $where[] = "a.horario_inicio >= :from";
@@ -36,7 +44,7 @@ final class Appointments extends Model
             $params[':pid'] = $patientId;
         }
 
-        $whereSql = 'WHERE ' . implode(' AND ', $where);
+        $whereSql = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
 
         $total = (int)($this->fetchColumn(
             "SELECT COUNT(*) FROM agenda a {$whereSql}",
@@ -97,7 +105,25 @@ final class Appointments extends Model
 
     public function patientBelongsToOwner(int $userId, int $patientId): bool
     {
+        // Se for chatbot, permite agendar para qualquer paciente que ele tenha criado/acessado
+        // A validação de segurança real deve ser feita no Controller/Service garantindo que o chatbot
+        // só acesse pacientes vinculados ao psicólogo dono da agenda.
+        // Por enquanto, vamos simplificar para permitir que o chatbot agende.
+        
+        // TODO: Melhorar essa validação para verificar se o paciente pertence ao psicólogo
+        // para quem o chatbot está agendando.
+        
         $owner = $this->ownerSql();
+        
+        // Verifica se o usuário atual é um chatbot
+        $user = $this->fetchRow("SELECT cargo FROM usuario WHERE id = :uid", [':uid' => $userId]);
+        if ($user && $user['cargo'] === 'chatbot') {
+             // Para chatbot, verificamos se o paciente existe, independente do dono (por enquanto)
+             // O ideal seria vincular o chatbot a um psicólogo específico.
+             $res = $this->fetchColumn("SELECT 1 FROM paciente WHERE id = :pid LIMIT 1", [':pid' => $patientId]);
+             return (bool)$res;
+        }
+
         $sql = "SELECT 1 FROM paciente WHERE id = :pid AND usuario_id = {$owner} LIMIT 1";
         $res = $this->fetchColumn($sql, [':pid' => $patientId, ':uid' => $userId]);
         return (bool)$res;
@@ -197,24 +223,19 @@ final class Appointments extends Model
         return $row ? (int)$row['id'] : null;
     }
 
-    public function getAllowedWeekdays(int $configId): array
-    {
-        $rows = $this->fetchAllRows(
-            "SELECT dia FROM configuracao_dias WHERE configuracao_id = :cid",
-            [':cid' => $configId]
-        );
-        return array_values(array_map(fn($r) => (string)$r['dia'], $rows));
-    }
-
     public function getTurnos(int $configId): array
     {
         $rows = $this->fetchAllRows(
-            "SELECT turno_inicio, turno_fim FROM configuracao_turnos WHERE configuracao_id = :cid ORDER BY turno_inicio",
+            "SELECT dia, turno_inicio, turno_fim FROM configuracao_turnos WHERE configuracao_id = :cid ORDER BY dia, turno_inicio",
             [':cid' => $configId]
         );
         $out = [];
         foreach ($rows as $r) {
-            $out[] = [
+            $dia = (string)$r['dia'];
+            if (!isset($out[$dia])) {
+                $out[$dia] = [];
+            }
+            $out[$dia][] = [
                 'inicio' => substr((string)$r['turno_inicio'], 0, 8),
                 'fim'    => substr((string)$r['turno_fim'], 0, 8),
             ];
@@ -255,6 +276,9 @@ final class Appointments extends Model
 
     public function availability(int $userId, string $from, string $to, int $slotMinutes = 60): array
     {
+        // Este método no Model parece estar duplicado ou obsoleto, pois a lógica principal está no Service.
+        // Mas para manter a compatibilidade caso seja usado diretamente:
+        
         $ownerId  = $this->resolveOwnerId($userId);
         $configId = $this->getConfigId($ownerId);
 
@@ -262,10 +286,8 @@ final class Appointments extends Model
             return [];
         }
 
-        // Turnos padrão
-        $turnos = $this->getTurnos($configId);
-        // Dias permitidos
-        $diasPermitidos = $this->getAllowedWeekdays($configId);
+        // Turnos agrupados por dia
+        $turnosPorDia = $this->getTurnos($configId);
 
         // Agendamentos já existentes no período
         $agendados = $this->getAppointmentsBetween($ownerId, $from, $to);
@@ -300,25 +322,50 @@ final class Appointments extends Model
             ];
 
             $dowPt = $map[$dow] ?? null;
-            if (!$dowPt || !in_array($dowPt, $diasPermitidos, true)) {
-                continue; // dia não permitido
+            
+            // Se não tem turnos para este dia, pula
+            if (!$dowPt || !isset($turnosPorDia[$dowPt])) {
+                continue;
+            }
+
+            $turnosDoDia = $turnosPorDia[$dowPt];
+
+            // Verificar exceções
+            $spec = $this->getSpecificDayConfig($configId, $d->format('Y-m-d'));
+            if ($spec) {
+                if ($spec['tipo'] === 'fechado') {
+                    continue;
+                }
+                if ($spec['tipo'] === 'alterado' && $spec['inicio'] && $spec['fim']) {
+                    // Sobrescreve os turnos do dia com o horário da exceção
+                    // Assumindo que exceção 'alterado' define um único turno contínuo por enquanto
+                    $turnosDoDia = [[
+                        'inicio' => $spec['inicio'],
+                        'fim'    => $spec['fim']
+                    ]];
+                }
             }
 
             // turnos do dia
-            foreach ($turnos as $turno) {
+            foreach ($turnosDoDia as $turno) {
                 $start = new \DateTimeImmutable($d->format('Y-m-d') . ' ' . $turno['inicio']);
                 $end   = new \DateTimeImmutable($d->format('Y-m-d') . ' ' . $turno['fim']);
 
                 $slots = [];
-                for ($s = $start; $s < $end; $s = $s->modify("+{$slotMinutes} minutes")) {
-                    $slotInicio = $s;
-                    $slotFim    = $s->modify("+{$slotMinutes} minutes");
+                // Loop de slots
+                $curr = $start;
+                while ($curr < $end) {
+                    $slotInicio = $curr;
+                    $slotFim    = $curr->modify("+{$slotMinutes} minutes");
+                    
+                    if ($slotFim > $end) break;
 
                     // verificar se bate com algum ocupado
                     $temConflito = false;
                     foreach ($ocupados as $oc) {
                         $ocInicio = new \DateTimeImmutable($oc['inicio']);
                         $ocFim    = new \DateTimeImmutable($oc['fim']);
+                        // Interseção de intervalos: (StartA < EndB) and (EndA > StartB)
                         if ($slotInicio < $ocFim && $slotFim > $ocInicio) {
                             $temConflito = true;
                             break;
@@ -328,13 +375,26 @@ final class Appointments extends Model
                     if (!$temConflito) {
                         $slots[] = $slotInicio->format('H:i');
                     }
+                    
+                    $curr = $slotFim;
                 }
 
                 if ($slots) {
-                    $result[] = [
-                        'date'  => $d->format('Y-m-d'),
-                        'slots' => $slots,
-                    ];
+                    // Adiciona ao resultado, agrupando por data se já existir
+                    $found = false;
+                    foreach ($result as &$r) {
+                        if ($r['date'] === $d->format('Y-m-d')) {
+                            $r['slots'] = array_merge($r['slots'], $slots);
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        $result[] = [
+                            'date'  => $d->format('Y-m-d'),
+                            'slots' => $slots,
+                        ];
+                    }
                 }
             }
         }

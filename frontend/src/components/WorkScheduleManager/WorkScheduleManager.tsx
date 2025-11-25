@@ -27,6 +27,7 @@ interface ScheduleException {
   hasBreak?: boolean;
   breakStart?: string;
   breakEnd?: string;
+  reason?: string;
 }
 
 // Interface principal para configuração de horários
@@ -81,7 +82,10 @@ const createDefaultWeeklySchedule = (): WeeklyScheduleConfig => ({
 
 // Função para formatar a data mostrando o dia da semana
 const formatDateWithWeekday = (dateString: string): string => {
-  const date = new Date(dateString);
+  // Cria a data usando o construtor com string "YYYY-MM-DD" e ajusta o fuso horário
+  // para evitar problemas de exibição (dia anterior)
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   const weekday = weekdayNames[date.getDay()];
   return `${weekday}, ${date.toLocaleDateString('pt-BR')}`;
 };
@@ -156,6 +160,7 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
       hasBreak: false,
       breakStart: '12:00',
       breakEnd: '13:00',
+      reason: '',
     };
     
     setCurrentException(newException);
@@ -404,7 +409,12 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
               {config.exceptions.map((exception) => (
                 <div key={exception.id} className="border border-sage-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-3">
-                    <h5 className="font-medium text-sage-800">{formatDateWithWeekday(exception.date)}</h5>
+                    <div>
+                      <h5 className="font-medium text-sage-800">{formatDateWithWeekday(exception.date)}</h5>
+                      {exception.reason && (
+                        <p className="text-xs text-sage-500 mt-1 italic">{exception.reason}</p>
+                      )}
+                    </div>
                     <div className="flex space-x-2">
                       <button 
                         onClick={() => handleEditException(exception.id)}
@@ -475,6 +485,20 @@ const WorkScheduleManager: React.FC<WorkScheduleManagerProps> = ({
                     value={currentException.date}
                     onChange={(e) => updateExceptionField('date', e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
+                    className="border-sage-200 focus:border-sage-400"
+                  />
+                </div>
+
+                <div>
+                  <Label className="block text-sm font-medium text-sage-700 mb-2" htmlFor="exception-reason">
+                    Motivo (Opcional)
+                  </Label>
+                  <Input
+                    id="exception-reason"
+                    type="text"
+                    value={currentException.reason || ''}
+                    onChange={(e) => updateExceptionField('reason', e.target.value)}
+                    placeholder="Ex: Feriado, Consulta Médica, etc."
                     className="border-sage-200 focus:border-sage-400"
                   />
                 </div>

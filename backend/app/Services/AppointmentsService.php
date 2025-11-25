@@ -63,8 +63,8 @@ final class AppointmentsService
             return [];
         }
 
-        $weekAllowed   = $this->model->getAllowedWeekdays($configId);
-        $defaultTurnos = $this->model->getTurnos($configId);
+        // Busca turnos já estruturados por dia: ['segunda' => [...], 'terça' => [...]]
+        $turnosPorDia = $this->model->getTurnos($configId);
 
         $appts = $this->model->getAppointmentsBetween(
             $ownerId,
@@ -87,29 +87,45 @@ final class AppointmentsService
         $period = new DatePeriod($di, new DateInterval('P1D'), $df->add(new DateInterval('PT1S')));
         $result = [];
 
+        $mapDia = [
+            0 => 'domingo',
+            1 => 'segunda',
+            2 => 'terça',
+            3 => 'quarta',
+            4 => 'quinta',
+            5 => 'sexta',
+            6 => 'sábado',
+        ];
+
         foreach ($period as $day) {
             $date = $day->format('Y-m-d');
-            $weekday = (int)$day->format('w');
+            $wIndex = (int)$day->format('w');
+            $diaPt = $mapDia[$wIndex];
 
             $spec = $this->model->getSpecificDayConfig($configId, $date);
+            
+            // Se estiver fechado pela exceção
             if ($spec && ($spec['tipo'] ?? null) === 'fechado') {
                 $result[] = ['date' => $date, 'slots' => []];
                 continue;
             }
 
             $windows = [];
+
+            // Se for exceção do tipo 'alterado'
             if ($spec && ($spec['tipo'] ?? null) === 'alterado' && ($spec['inicio'] ?? null) && ($spec['fim'] ?? null)) {
                 $windows[] = [$date . ' ' . $spec['inicio'], $date . ' ' . $spec['fim']];
             } else {
-                if (!$this->isWeekdayAllowed($weekday, $weekAllowed)) {
+                // Se não for exceção, usa a configuração normal do dia
+                if (isset($turnosPorDia[$diaPt])) {
+                    foreach ($turnosPorDia[$diaPt] as $t) {
+                        if (!isset($t['inicio'], $t['fim'])) continue;
+                        $windows[] = [$date . ' ' . $t['inicio'], $date . ' ' . $t['fim']];
+                    }
+                } else {
+                    // Dia sem turnos configurados = fechado
                     $result[] = ['date' => $date, 'slots' => []];
                     continue;
-                }
-                foreach ($defaultTurnos as $t) {
-                    if (!isset($t['inicio'], $t['fim'])) {
-                        continue;
-                    }
-                    $windows[] = [$date . ' ' . $t['inicio'], $date . ' ' . $t['fim']];
                 }
             }
 
@@ -119,10 +135,20 @@ final class AppointmentsService
             }
 
             $busy = $busyByDate[$date] ?? [];
-            $available = $this->filterBusy($slots, $busy);
+            $availableObjects = $this->filterBusy($slots, $busy);
+            
+            // Converter objetos de volta para strings completas Y-m-d H:i:s para compatibilidade com frontend
+            $availableStrings = array_map(function($slot) {
+                return (new DateTimeImmutable($slot['inicio']))->format('Y-m-d H:i:s');
+            }, $availableObjects);
+
+            // Remove duplicatas e reindexa
+            $available = array_values(array_unique($availableStrings));
+            sort($available);
+
             $result[] = [
                 'date' => $date,
-                'slots' => array_values($available)
+                'slots' => $available
             ];
         }
 

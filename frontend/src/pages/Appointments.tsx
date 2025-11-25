@@ -177,8 +177,8 @@ const Appointments: React.FC = () => {
     };
 
     const monthRange = (dt: Date) => {
-        const start = new Date(dt.getFullYear(), dt.getMonth() - 1, 1);
-        const end = new Date(dt.getFullYear(), dt.getMonth() + 2, 0);
+        const start = new Date(dt.getFullYear(), dt.getMonth(), 1);
+        const end = new Date(dt.getFullYear(), dt.getMonth() + 1, 0);
         const from = `${ymdLocal(start)} 00:00:00`;
         const to = `${ymdLocal(end)} 23:59:59`;
         return { from, to };
@@ -276,18 +276,22 @@ const Appointments: React.FC = () => {
                 const items: Array<any> = data?.items || data?.availability || [];
                 items.forEach((it) => {
                     const start: string = String(it.horario_inicio || it.start || it.slot || '');
-                    if (!start.includes(' ')) return;
-                    const dateYmd = start.split(' ')[0];
-                    const timeHm = (start.split(' ')[1] || '').slice(0, 5);
+                    const separator = start.includes('T') ? 'T' : ' ';
+                    if (!start.includes(separator)) return;
+                    
+                    const dateYmd = start.split(separator)[0];
+                    const timePart = start.split(separator)[1] || '';
+                    const timeHm = timePart.slice(0, 5);
+                    
                     if (!grouped[dateYmd]) grouped[dateYmd] = [];
                     grouped[dateYmd].push(timeHm);
                 });
             }
             const next: Record<string, string[]> = { ...availabilityByDate };
             Object.keys(grouped).forEach((date) => {
-                const merged = Array.from(new Set([...(next[date] || []), ...grouped[date]]));
-                merged.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-                next[date] = merged;
+                // Substitui os horários do dia com os dados frescos do backend
+                // Isso garante que horários ocupados desapareçam da lista
+                next[date] = grouped[date];
             });
             setAvailabilityByDate(next);
         } catch (e: any) {
