@@ -27,7 +27,7 @@ ChartJS.register(
 
 interface ChartProps {
   type?: 'line' | 'bar';
-    data: {
+  data: {
     labels: string[];
     datasets: {
       label: string;
