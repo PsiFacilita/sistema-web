@@ -1,11 +1,12 @@
 import React from 'react';
-import { Line } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -17,6 +18,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -24,14 +26,14 @@ ChartJS.register(
 );
 
 interface ChartProps {
-  type?: 'line';
+  type?: 'line' | 'bar';
   data: {
     labels: string[];
     datasets: {
       label: string;
-      data: number[];
-      borderColor: string;
-      backgroundColor?: string;
+      data: (number | null)[];
+      borderColor: string | string[];
+      backgroundColor?: string | string[];
       tension?: number;
       fill?: boolean;
       borderWidth?: number;
@@ -44,81 +46,105 @@ interface ChartProps {
     }[];
   };
   onLegendClick?: (datasetLabel: string) => void;
+  onElementClick?: (datasetLabel: string, index: number) => void;
   highlightState?: 'ativos' | 'inativos' | 'none';
 }
 
-const Chart: React.FC<ChartProps> = ({ data, onLegendClick, highlightState }) => {
-  const options = {
+const Chart: React.FC<ChartProps> = ({ type = 'line', data, onLegendClick, onElementClick, highlightState }) => {
+  const options: any = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 8,
+        bottom: 8,
+        left: 6,
+        right: 6
+      }
+    },
+    animation: {
+      duration: 800,
+      easing: 'easeOutCubic'
+    },
     plugins: {
       legend: {
         position: 'top' as const,
         labels: {
-          color: '#6B7280',
+          color: '#374151',
           usePointStyle: true,
-          padding: 20,
+          padding: 16,
+          boxWidth: 12,
           font: {
-            size: 12,
-            family: 'system-ui'
+            size: 13,
+            family: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial',
+            weight: '600' as any
           },
-          // Tornar a legenda clicável
           generateLabels: (chart: any) => {
-            const original = ChartJS.defaults.plugins.legend.labels.generateLabels;
-            const labels = original.call(this, chart);
-            
-            return labels.map(label => {
-              // Adicionar estilo de destaque baseado no highlightState
-              const isHighlighted = 
-                (highlightState === 'ativos' && label.text === 'Pacientes Ativos') ||
-                (highlightState === 'inativos' && label.text === 'Pacientes Inativos');
-              
+            const original = (ChartJS.defaults.plugins && ChartJS.defaults.plugins.legend && ChartJS.defaults.plugins.legend.labels && ChartJS.defaults.plugins.legend.labels.generateLabels) as any;
+            const labels = typeof original === 'function' ? original(chart) : [];
+
+            return labels.map((label: any) => {
+              const plainText = String(label.text || '');
+              const isHighlighted =
+                (highlightState === 'ativos' && plainText.includes('Ativos')) ||
+                (highlightState === 'inativos' && plainText.includes('Inativos'));
+
               return {
                 ...label,
                 // Estilo para legenda destacada
-                font: {
-                  ...label.font,
-                  weight: isHighlighted ? 'bold' : 'normal'
-                },
                 // Adicionar indicador visual para legenda destacada
-                text: isHighlighted ? `★ ${label.text}` : label.text,
                 // Tornar clicável
-                onClick: (e: any) => {
-                  if (onLegendClick) {
-                    const type = label.text === 'Pacientes Ativos' ? 'ativos' : 
-                                label.text === 'Pacientes Inativos' ? 'inativos' : 'none';
-                    onLegendClick(type);
-                  }
+                text: isHighlighted ? `★ ${plainText}` : plainText,
+                onClick: (ev: any) => {
+                  if (onLegendClick) onLegendClick(plainText);
                 }
               };
             });
           }
-        },
-        onClick: (e: any, legendItem: any, legend: any) => {
           // Prevenir o comportamento padrão de mostrar/esconder dataset
-          e.stopPropagation();
         }
       },
       tooltip: {
-        backgroundColor: '#4B5563',
-        titleFont: { size: 12 },
-        bodyFont: { size: 12 },
+        backgroundColor: '#111827',
+        titleColor: '#F9FAFB',
+        bodyColor: '#E6E7E9',
+        titleFont: { size: 13, family: 'Inter, system-ui' },
+        bodyFont: { size: 12, family: 'Inter, system-ui' },
         padding: 10,
-        cornerRadius: 8
+        cornerRadius: 8,
+        displayColors: true,
+        callbacks: {
+          label: function (context: any) {
+            const value = context.formattedValue;
+            return `${value} paciente${Number(value) === 1 ? '' : 's'}`;
+          }
+        }
       }
     },
     scales: {
       x: {
-        grid: { color: 'rgba(0,0,0,0.05)' },
-        ticks: { color: '#6B7280' }
+        grid: { color: 'rgba(15,23,42,0.03)', display: false },
+        ticks: { color: '#6B7280', padding: 8, maxRotation: 0 }
       },
       y: {
-        grid: { color: 'rgba(0,0,0,0.05)' },
-        ticks: { color: '#6B7280' },
+        grid: { color: 'rgba(15,23,42,0.04)' },
+        ticks: {
+          color: '#6B7280',
+          stepSize: 1,
+          padding: 8,
+          callback: (val: any) => String(val)
+        },
         beginAtZero: true
-      },
+      }
     },
     elements: {
+      bar: {
+       borderRadius: 12,
+        borderSkipped: false,
+        maxBarThickness: 36,
+        barPercentage: 0.72,
+        categoryPercentage: 0.8
+      },
       point: {
         radius: 4,
         hoverRadius: 6,
@@ -128,7 +154,7 @@ const Chart: React.FC<ChartProps> = ({ data, onLegendClick, highlightState }) =>
     },
     interaction: {
       mode: 'index' as const,
-      intersect: false,
+      intersect: false
     },
     hover: {
       mode: 'nearest' as const,
@@ -137,9 +163,45 @@ const Chart: React.FC<ChartProps> = ({ data, onLegendClick, highlightState }) =>
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-white rounded-lg shadow-sm p-4">
       <div className="h-80">
-        <Line options={options} data={data} />
+        {type === 'bar' ? (
+          <Bar
+            options={options}
+            data={data}
+            onClick={(event, elements) => {
+              try {
+                if (elements && (elements as any).length > 0) {
+                  const el = (elements as any)[0];
+                  const datasetIndex = el.datasetIndex as number;
+                  const dataIndex = el.index as number;
+                  const label = data.datasets?.[datasetIndex]?.label;
+                  if (label && typeof onElementClick === 'function') onElementClick(String(label), dataIndex);
+                }
+              } catch (e) {
+              
+              }
+            }}
+          />
+        ) : (
+          <Line
+            options={options}
+            data={data}
+            onClick={(event, elements) => {
+              try {
+                if (elements && (elements as any).length > 0) {
+                  const el = (elements as any)[0];
+                  const datasetIndex = el.datasetIndex as number;
+                  const dataIndex = el.index as number;
+                  const label = data.datasets?.[datasetIndex]?.label;
+                  if (label && typeof onElementClick === 'function') onElementClick(String(label), dataIndex);
+                }
+              } catch (e) {
+                // ignore
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );
