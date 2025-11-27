@@ -94,13 +94,13 @@ const Modal: React.FC<ModalProps> = ({
 
   const sizeClasses = {
     small: 'max-w-sm',
-    medium: 'max-w-lg',
-    large: 'max-w-3xl',
+    medium: 'max-w-lg sm:max-w-xl',
+    large: 'max-w-full sm:max-w-3xl lg:max-w-4xl',
   };
 
   const contentClasses = [
-    'bg-white rounded-lg shadow-xl transform transition-all relative',
-    fullScreen ? 'w-full h-full' : `${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto`,
+    'bg-white rounded-lg shadow-xl transform transition-all relative mx-2 sm:mx-4',
+    fullScreen ? 'w-full h-full' : `${sizeClasses[size]} w-full max-h-[90vh] sm:max-h-[85vh] overflow-y-auto`,
   ].join(' ');
 
   return (

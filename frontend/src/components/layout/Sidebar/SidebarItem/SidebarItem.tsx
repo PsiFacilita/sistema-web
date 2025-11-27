@@ -9,7 +9,7 @@ interface ExtendedSidebarItemProps extends SidebarItemProps {
 
 const SidebarItem: React.FC<ExtendedSidebarItemProps> = ({ name, icon, path, onClick }) => {
     const baseClass =
-        'flex items-center p-3 rounded-lg text-sage-100 hover:bg-sage-600 transition-all duration-300 group';
+        'flex items-center px-3 py-2.5 rounded-lg text-sage-100 hover:bg-sage-600 transition-all duration-300 group';
 
     if (onClick) {
         return (
@@ -21,9 +21,9 @@ const SidebarItem: React.FC<ExtendedSidebarItemProps> = ({ name, icon, path, onC
                 >
                     <Icon
                         type={icon}
-                        className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform"
+                        className="mr-2.5 w-5 h-5 group-hover:scale-110 transition-transform"
                     />
-                    <span className="font-medium group-hover:text-white">{name}</span>
+                    <span className="font-medium text-base group-hover:text-white">{name}</span>
                 </button>
             </li>
         );
@@ -34,9 +34,9 @@ const SidebarItem: React.FC<ExtendedSidebarItemProps> = ({ name, icon, path, onC
             <Link to={path} className={baseClass}>
                 <Icon
                     type={icon}
-                    className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform"
+                    className="mr-2.5 w-5 h-5 group-hover:scale-110 transition-transform"
                 />
-                <span className="font-medium group-hover:text-white">{name}</span>
+                <span className="font-medium text-base group-hover:text-white">{name}</span>
             </Link>
         </li>
     );

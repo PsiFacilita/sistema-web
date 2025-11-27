@@ -25,8 +25,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     };
 
     return (
-        <div className="w-full h-full bg-sage-700 text-sage-50 p-6">
-            <div className="flex items-center justify-between mb-10">
+        <div className="w-full h-full bg-sage-700 text-sage-50 p-4">
+            <div className="flex items-center justify-between mb-7">
                 <h1 className="text-2xl font-light tracking-wide">PsiFacilita</h1>
                 {onClose && (
                     <button onClick={onClose} className="md:hidden text-sage-200 hover:text-white">
@@ -35,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
                 )}
             </div>
             <nav>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                     {sidebarItems.map((item) =>
                         item.name === 'Sair' ? (
                             <SidebarItem

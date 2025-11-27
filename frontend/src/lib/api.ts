@@ -10,6 +10,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('auth.token');
+    
     if (token) {
         config.headers = config.headers ?? {};
         (config.headers as any).Authorization = `Bearer ${token}`;
@@ -18,13 +19,21 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-    (res) => res,
+    (res) => {
+        return res;
+    },
     (err) => {
+        console.error("API Error:", {
+            url: err.config?.url,
+            status: err.response?.status,
+            message: err.message,
+            data: err.response?.data
+        });
+        
         if (err?.response?.status === 401) {
-            // zera o estado local do cliente
+            console.warn("Erro 401 detectado, limpando dados de autenticação");
             localStorage.removeItem('auth.token');
             localStorage.removeItem('auth.user');
-            // volta para a tela de login (no seu app é "/")
             window.location.href = '/';
             return;
         }

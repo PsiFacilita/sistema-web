@@ -92,13 +92,21 @@ final class Dashboard extends Model
 
         $rows = $this->fetchAllRows($sql, [':uid' => $userId]);
 
-        foreach ($rows as &$r) {
-            $r['mes']      = (int) ($r['mes'] ?? 0);
-            $r['ativos']   = (int) ($r['ativos'] ?? 0);
-            $r['inativos'] = (int) ($r['inativos'] ?? 0);
+        // Normalizar e preencher meses ausentes (1..12) com zeros.
+        $full = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $full[$m] = ['mes' => $m, 'ativos' => 0, 'inativos' => 0];
         }
-        unset($r);
 
-        return $rows;
+        foreach ($rows as $r) {
+            $mes = (int) ($r['mes'] ?? 0);
+            if ($mes >= 1 && $mes <= 12) {
+                $full[$mes]['ativos'] = (int) ($r['ativos'] ?? 0);
+                $full[$mes]['inativos'] = (int) ($r['inativos'] ?? 0);
+            }
+        }
+
+        // Garantir que a saída seja um array indexado em 0..11, ordenado por mês.
+        return array_values($full);
     }
 }

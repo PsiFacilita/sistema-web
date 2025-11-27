@@ -7,7 +7,7 @@ import Button from "../components/Button/Button";
 import Input from "../components/Form/Input/Input";
 import Table from "../components/Table/Table";
 import Icon from "../components/Icon/Icon";
-import { FiChevronLeft, FiChevronRight, FiEye, FiSearch, FiUserPlus } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiSearch, FiUserPlus } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import PatientModal from "../components/PatientModal/PatientModal";
 
@@ -30,37 +30,43 @@ const formatStatus = (status: Patient["ativo"]) => {
     return statusMap[status] ?? status;
 };
 
-const StatusCell: React.FC<{ value: Patient["ativo"] }> = ({ value }) => {
+const StatusCell: React.FC<{ value: string }> = ({ value }) => {
+    const status = value as Patient["ativo"];
     const statusClasses: Record<Patient["ativo"], string> = {
         active: "bg-green-100 text-green-800 border border-green-200",
         inactive: "bg-red-100 text-red-800 border border-red-200",
     };
     return (
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusClasses[value]}`}>
-            {formatStatus(value)}
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusClasses[status]}`}>
+            {formatStatus(status)}
         </span>
     );
 };
 
-const ActionsCell: React.FC<{ value: string }> = ({ value }) => {
+const ActionsCell: React.FC<{ value: string; onEdit: (id: string) => void }> = ({ value, onEdit }) => {
     const navigate = useNavigate();
     return (
         <div className="flex space-x-2">
-            <button
+            <Button
+                variant="outline"
+                size="sm"
+                icon={<Icon type="eye" size={16} />}
                 onClick={() => navigate(`/patients/${value}`)}
                 className="flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-sage-700 hover:bg-sage-200 hover:text-sage-800 transition-all duration-300"
             >
-                <FiEye size={16} />
                 Visualizar
-            </button>
+            </Button>
 
-            <button
-                onClick={() => console.log("Editar paciente", value)}
+            <Button
+                variant="outline"
+                size="sm"
+                icon={<Icon type="edit" size={16} />}
+                aria-label="Editar"
+                onClick={() => onEdit(value)}
                 className="flex items-center gap-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-sage-600 hover:bg-sage-100 hover:text-sage-700 transition-all duration-300 border border-sage-200"
             >
-                <Icon type="edit" size={16} />
                 Editar
-            </button>
+            </Button>
         </div>
     );
 };
@@ -89,47 +95,82 @@ const Patients: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+    const [currentPatient, setCurrentPatient] = useState<{
+        id?: string;
+        name?: string;
+        birthDate?: string;
+        cpf?: string;
+        rg?: string;
+        phone?: string;
+        email?: string;
+        notes?: string;
+        status?: "active" | "inactive";
+    } | null>(null);
     const patientsPerPage = 10;
 
-    useEffect(() => {
-        const fetchPatients = async () => {
-            try {
-                const token = localStorage.getItem("auth.token");
-                const res = await axios.get(`${API_URL}/api/patients`, {
-                    withCredentials: true,
-                    headers: {
-                        Accept: "application/json",
-                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    },
+    const fetchPatients = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("auth.token");
+            const res = await axios.get(`${API_URL}/api/patients`, {
+                withCredentials: true,
+                headers: {
+                    Accept: "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            const data = res.data;
+            const list = Array.isArray(data?.patients) ? data.patients : [];
+            setPatients(list as Patient[]);
+        } catch (err: any) {
+            if (axios.isAxiosError(err)) {
+                console.error("Erro na requisição:", {
+                    status: err.response?.status,
+                    data: err.response?.data,
+                    headers: err.response?.headers,
+                    message: err.message
                 });
-                const data = res.data;
-                const list = Array.isArray(data?.patients) ? data.patients : [];
-                setPatients(list as Patient[]);
-            } catch (err: any) {
-                if (axios.isAxiosError(err) && err.response?.status === 401) {
-                    console.warn("Não autenticado — redirecionando para login.");
+                if (err.response?.status === 401) {
                     window.location.href = "/login";
                     return;
                 }
-                console.error("Erro ao buscar pacientes:", err);
-            } finally {
-                setLoading(false);
+            } else {
+                console.error("Erro desconhecido ao buscar pacientes:", err);
             }
-        };
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchPatients();
     }, []);
 
-    const handleAddPatient = async (newPatient: Omit<Patient, "id" | "criado_em">) => {
+    const handleAddPatient = async (modalData: {
+        name: string;
+        birthDate: string;
+        cpf: string;
+        rg?: string;
+        phone: string;
+        email?: string;
+        notes?: string;
+        status: "active" | "inactive";
+        customFields?: { id: number; value: string }[];
+    }) => {
         try {
             const token = localStorage.getItem("auth.token");
             const res = await axios.post(
                 `${API_URL}/api/patients`,
                 {
-                    nome: newPatient.nome,
-                    telefone: newPatient.telefone,
-                    email: newPatient.email,
-                    ativo: newPatient.ativo ?? "active",
+                    nome: modalData.name,
+                    telefone: modalData.phone,
+                    email: modalData.email,
+                    cpf: modalData.cpf,
+                    rg: modalData.rg,
+                    data_nascimento: modalData.birthDate,
+                    notas: modalData.notes,
+                    ativo: modalData.status === "active" ? "active" : "inactive",
+                    customFields: modalData.customFields ?? [],
                 },
                 {
                     withCredentials: true,
@@ -145,13 +186,17 @@ const Patients: React.FC = () => {
                 throw new Error("Erro ao criar paciente");
             }
 
-            const created: Patient = res.data;
-            const createdWithDate: Patient = {
-                ...created,
-                criado_em: created.criado_em || new Date().toISOString(),
+            const backendResponse = res.data;
+            const newPatient: Patient = {
+                id: backendResponse.id?.toString() || "",
+                nome: backendResponse.nome || modalData.name,
+                telefone: backendResponse.telefone || modalData.phone,
+                email: backendResponse.email || modalData.email || "",
+                ativo: backendResponse.ativo || modalData.status,
+                criado_em: backendResponse.criado_em || new Date().toISOString(),
             };
 
-            setPatients((prev) => [createdWithDate, ...prev]);
+            setPatients((prev: Patient[]) => [newPatient, ...prev]);
         } catch (error) {
             console.error("Erro ao adicionar paciente:", error);
             alert("Erro ao adicionar paciente");
@@ -174,6 +219,116 @@ const Patients: React.FC = () => {
     const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
     const currentPatients = filteredPatients.slice(indexOfFirstPatient, indexOfLastPatient);
 
+    const handleEditPatient = async (patientId: string) => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("auth.token");
+            const res = await axios.get(`${API_URL}/api/patients/${patientId}`, {
+                withCredentials: true,
+                headers: {
+                    Accept: "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+
+            const apiData = res.data as any;
+            const patientData = apiData.patient || apiData;
+
+            const mappedPatient = {
+                id: patientData.id?.toString() ?? patientId,
+                name: patientData.name || patientData.nome || "",
+                phone: patientData.phone || patientData.telefone || "",
+                email: patientData.email || "",
+                cpf: patientData.cpf || "",
+                rg: patientData.rg || "",
+                birthDate: patientData.birthDate || patientData.data_nascimento || "",
+                notes: patientData.notes || patientData.notas || "",
+                status: ((patientData.status || patientData.ativo) === "active" ? "active" : "inactive") as "active" | "inactive",
+            };
+
+            setCurrentPatient(mappedPatient);
+            setIsPatientModalOpen(true);
+        } catch (error) {
+            console.error("Erro ao carregar dados do paciente:", error);
+            alert("Erro ao carregar dados do paciente");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpdatePatient = async (modalData: {
+        name: string;
+        birthDate: string;
+        cpf: string;
+        rg?: string;
+        phone: string;
+        email?: string;
+        notes?: string;
+        status: "active" | "inactive";
+        customFields?: { id: number; value: string }[];
+    }) => {
+        try {
+            if (!currentPatient?.id) {
+                console.error("Tentativa de atualizar sem ID de paciente");
+                return;
+            }
+
+            const token = localStorage.getItem("auth.token");
+            const res = await axios.put(
+                `${API_URL}/api/patients/${currentPatient.id}`,
+                {
+                    nome: modalData.name,
+                    telefone: modalData.phone,
+                    email: modalData.email,
+                    cpf: modalData.cpf,
+                    rg: modalData.rg,
+                    data_nascimento: modalData.birthDate,
+                    notas: modalData.notes,
+                    ativo: modalData.status === "active" ? "active" : "inactive",
+                    customFields: modalData.customFields ?? [],
+                },
+                {
+                    withCredentials: true,
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                }
+            );
+
+            if (res.status < 200 || res.status >= 300) {
+                throw new Error("Erro ao atualizar paciente");
+            }
+
+            const updatedPatients = patients.map((p: Patient) =>
+                p.id === currentPatient.id
+                    ? {
+                        ...p,
+                        nome: modalData.name,
+                        telefone: modalData.phone,
+                        email: modalData.email || "",
+                        ativo: modalData.status
+                    }
+                    : p
+            );
+
+            setPatients(updatedPatients);
+            setCurrentPatient(null);
+            setIsPatientModalOpen(false);
+            fetchPatients();
+            // Notificar que houve atualização/alteração de pacientes
+            try {
+                window.dispatchEvent(new CustomEvent('patients:updated'));
+            } catch (err) {
+                // noop
+            }
+        } catch (error) {
+            console.error("Erro ao atualizar paciente:", error);
+            alert("Erro ao atualizar paciente");
+        }
+    };
+
     const columns = [
         { header: "Nome", accessor: "nome" as keyof Patient },
         { header: "Telefone", accessor: "telefone" as keyof Patient },
@@ -184,7 +339,13 @@ const Patients: React.FC = () => {
             Cell: DateCell,
         },
         { header: "Status", accessor: "ativo" as keyof Patient, Cell: StatusCell },
-        { header: "Ações", accessor: "id" as keyof Patient, Cell: ActionsCell },
+        {
+            header: "Ações",
+            accessor: "id" as keyof Patient,
+            Cell: ({ value }: { value: string }) => (
+                <ActionsCell value={value} onEdit={handleEditPatient} />
+            )
+        },
     ];
 
     const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
@@ -196,16 +357,15 @@ const Patients: React.FC = () => {
                 <Title level={1} className="text-sage-700">Pacientes</Title>
             </div>
 
-            {/* Header com busca e ações */}
             <Card variant="elevated" className="mb-6">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                    <div className="relative w-full lg:w-1/3">
+                <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between lg:items-center">
+                    <div className="relative w-full lg:w-1/2 xl:w-1/3">
                         <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400" size={20} />
                         <Input
                             id="search"
                             placeholder="Buscar pacientes por nome, telefone ou email..."
                             value={searchTerm}
-                            onChange={(e) => {
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 setSearchTerm(e.target.value);
                                 setCurrentPage(1);
                             }}
@@ -213,28 +373,32 @@ const Patients: React.FC = () => {
                         />
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                         <Button
                             variant="outline"
                             onClick={() => navigate("/custom-fields")}
-                            className="border-sage-300 text-sage-700 hover:bg-sage-50"
+                            className="border-sage-300 text-sage-700 hover:bg-sage-50 w-full sm:w-auto"
                         >
-                            Campos Personalizados
+                            <span className="hidden sm:inline">Campos Personalizados</span>
+                            <span className="sm:hidden">Campos</span>
                         </Button>
                         <Button
                             variant="primary"
                             icon={<FiUserPlus size={18} />}
-                            onClick={() => setIsPatientModalOpen(true)}
-                            className="bg-sage-600 hover:bg-sage-700 border-sage-600"
+                            onClick={() => {
+                                setCurrentPatient(null);
+                                setIsPatientModalOpen(true);
+                            }}
+                            className="bg-sage-600 hover:bg-sage-700 border-sage-600 w-full sm:w-auto"
                         >
-                            Novo Paciente
+                            <span className="hidden sm:inline">Novo Paciente</span>
+                            <span className="sm:hidden">Novo</span>
                         </Button>
                     </div>
                 </div>
             </Card>
 
-            {/* Tabela de pacientes */}
-            <Card variant="elevated" className="p-0 overflow-hidden">
+            <Card variant="elevated" className="p-0 overflow-x-auto">
                 {loading ? (
                     <div className="text-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage-600 mx-auto mb-4"></div>
@@ -250,24 +414,28 @@ const Patients: React.FC = () => {
                                 </span>
                             </h3>
                         </div>
-                        
+
                         <Table data={currentPatients} columns={columns} />
-                        
+
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between border-t border-sage-100 bg-sage-50 px-6 py-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
-                                    <div>
+                            <div className="border-t border-sage-100 bg-sage-50 px-4 py-4 sm:px-6">
+                                <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="text-center sm:text-left">
                                         <p className="text-sm text-sage-700">
-                                            Mostrando{" "}
-                                            <span className="font-semibold">{indexOfFirstPatient + 1}</span> a{" "}
-                                            <span className="font-semibold">
-                                                {Math.min(indexOfLastPatient, filteredPatients.length)}
-                                            </span>{" "}
-                                            de <span className="font-semibold">{filteredPatients.length}</span> pacientes
+                                            <span className="hidden sm:inline">
+                                                Mostrando{" "}
+                                                <span className="font-semibold">{indexOfFirstPatient + 1}</span> a{" "}
+                                                <span className="font-semibold">
+                                                    {Math.min(indexOfLastPatient, filteredPatients.length)}
+                                                </span>{" "}
+                                                de{" "}
+                                            </span>
+                                            <span className="font-semibold">{filteredPatients.length}</span> pacientes
                                         </p>
                                     </div>
-                                    <div>
-                                        <nav className="flex items-center gap-2">
+
+                                    <div className="flex justify-center sm:justify-end">
+                                        <nav className="flex items-center gap-1 sm:gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -276,26 +444,37 @@ const Patients: React.FC = () => {
                                                 className="rounded-lg border-sage-300 text-sage-700 hover:bg-sage-50 disabled:opacity-50"
                                             >
                                                 <FiChevronLeft size={16} />
+                                                <span className="hidden sm:inline ml-1">Anterior</span>
                                             </Button>
-                                            
+
                                             <div className="flex gap-1">
-                                                {Array.from({ length: totalPages }, (_, i) => (
-                                                    <Button
-                                                        key={i + 1}
-                                                        variant={i + 1 === currentPage ? "primary" : "outline"}
-                                                        size="sm"
-                                                        onClick={() => paginate(i + 1)}
-                                                        className={`rounded-lg ${
-                                                            i + 1 === currentPage 
-                                                                ? 'bg-sage-600 border-sage-600' 
-                                                                : 'border-sage-300 text-sage-700 hover:bg-sage-50'
-                                                        }`}
-                                                    >
-                                                        {i + 1}
-                                                    </Button>
-                                                ))}
+                                                {(() => {
+                                                    const maxVisible = window.innerWidth < 640 ? 3 : 5;
+                                                    const startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                                                    const endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+                                                    const pages = [];
+                                                    for (let i = startPage; i <= endPage; i++) {
+                                                        pages.push(
+                                                            <Button
+                                                                key={i}
+                                                                variant={i === currentPage ? "primary" : "outline"}
+                                                                size="sm"
+                                                                onClick={() => paginate(i)}
+                                                                className={`rounded-lg ${
+                                                                    i === currentPage
+                                                                        ? "bg-sage-600 border-sage-600"
+                                                                        : "border-sage-300 text-sage-700 hover:bg-sage-50"
+                                                                }`}
+                                                            >
+                                                                {i}
+                                                            </Button>
+                                                        );
+                                                    }
+                                                    return pages;
+                                                })()}
                                             </div>
-                                            
+
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -303,6 +482,7 @@ const Patients: React.FC = () => {
                                                 disabled={currentPage === totalPages}
                                                 className="rounded-lg border-sage-300 text-sage-700 hover:bg-sage-50 disabled:opacity-50"
                                             >
+                                                <span className="hidden sm:inline mr-1">Próximo</span>
                                                 <FiChevronRight size={16} />
                                             </Button>
                                         </nav>
@@ -324,7 +504,10 @@ const Patients: React.FC = () => {
                             <Button
                                 variant="primary"
                                 icon={<FiUserPlus size={16} />}
-                                onClick={() => setIsPatientModalOpen(true)}
+                                onClick={() => {
+                                    setCurrentPatient(null);
+                                    setIsPatientModalOpen(true);
+                                }}
                                 className="bg-sage-600 hover:bg-sage-700"
                             >
                                 Adicionar Primeiro Paciente
@@ -336,8 +519,31 @@ const Patients: React.FC = () => {
 
             <PatientModal
                 isOpen={isPatientModalOpen}
-                onClose={() => setIsPatientModalOpen(false)}
-                onSubmit={handleAddPatient}
+                onClose={() => {
+                    setIsPatientModalOpen(false);
+                    setCurrentPatient(null);
+                }}
+                onSubmit={data => {
+                    if (currentPatient?.id) {
+                        handleUpdatePatient(data);
+                    } else {
+                        handleAddPatient(data);
+                    }
+                }}
+                key={currentPatient?.id || "new"}
+                initialData={currentPatient ? {
+                    id: currentPatient.id,
+                    name: currentPatient.name || "",
+                    birthDate: currentPatient.birthDate || "",
+                    cpf: currentPatient.cpf || "",
+                    rg: currentPatient.rg || "",
+                    phone: currentPatient.phone || "",
+                    email: currentPatient.email || "",
+                    notes: currentPatient.notes || "",
+                    status: currentPatient.status || "active"
+                } : undefined}
+                title={currentPatient ? `Editar Paciente: ${currentPatient.name || ""}` : "Adicionar Novo Paciente"}
+                submitLabel={currentPatient ? "Atualizar Paciente" : "Salvar Paciente"}
             />
         </MainLayout>
     );
