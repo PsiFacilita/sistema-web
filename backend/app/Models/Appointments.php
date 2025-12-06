@@ -60,7 +60,8 @@ final class Appointments extends Model
                 a.id, a.usuario_id, a.paciente_id,
                 a.horario_inicio, a.horario_fim,
                 a.status, a.criado_em, a.atualizado_em,
-                p.nome AS paciente_nome
+                p.nome AS paciente_nome,
+                p.usuario_id AS paciente_owner_id
             FROM agenda a
             JOIN paciente p ON p.id = a.paciente_id
             {$whereSql}
@@ -76,6 +77,12 @@ final class Appointments extends Model
         $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
         $stmt->execute();
         $items = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        foreach ($items as &$item) {
+            $ownerId = $item['paciente_owner_id'];
+            $item['paciente_nome'] = $this->dec($item['paciente_nome'], "nome:$ownerId") ?? '';
+            unset($item['paciente_owner_id']); // Optional: remove helper field
+        }
 
         return [
             'items' => $items,
@@ -93,14 +100,21 @@ final class Appointments extends Model
                 a.id, a.usuario_id, a.paciente_id,
                 a.horario_inicio, a.horario_fim,
                 a.status, a.criado_em, a.atualizado_em,
-                p.nome AS paciente_nome
+                p.nome AS paciente_nome,
+                p.usuario_id AS paciente_owner_id
             FROM agenda a
             JOIN paciente p ON p.id = a.paciente_id
             WHERE a.id = :id AND a.usuario_id = {$owner}
             LIMIT 1
         ";
 
-        return $this->fetchRow($sql, [':id' => $id, ':uid' => $userId]);
+        $row = $this->fetchRow($sql, [':id' => $id, ':uid' => $userId]);
+        if ($row) {
+            $ownerId = $row['paciente_owner_id'];
+            $row['paciente_nome'] = $this->dec($row['paciente_nome'], "nome:$ownerId") ?? '';
+            unset($row['paciente_owner_id']);
+        }
+        return $row;
     }
 
     public function patientBelongsToOwner(int $userId, int $patientId): bool

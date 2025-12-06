@@ -154,6 +154,17 @@ final class Patient extends Model
             // Normalize DB phone for comparison
             $dbPhone = preg_replace('/[^0-9]/', '', $r['telefone']);
             if ($dbPhone === $phone) return $r;
+
+            // Lida com o codigo do país
+            // Caso 1: O telefone no banco tem 55, o telefone buscado não
+            if (strlen($dbPhone) === strlen($phone) + 2 && str_starts_with($dbPhone, '55') && substr($dbPhone, 2) === $phone) {
+                return $r;
+            }
+
+            // Caso 2: O telefone buscado tem 55, o telefone no banco não
+            if (strlen($phone) === strlen($dbPhone) + 2 && str_starts_with($phone, '55') && substr($phone, 2) === $dbPhone) {
+                return $r;
+            }
         }
         return null;
     }
@@ -172,6 +183,16 @@ final class Patient extends Model
             // Normalize DB phone for comparison
             $dbPhone = preg_replace('/[^0-9]/', '', $r['telefone']);
             if ($dbPhone === $phone) return $r;
+
+            // Lida com o codigo do país
+            // Caso 1: O telefone no banco tem 55, o telefone buscado não
+            if (strlen($dbPhone) === strlen($phone) + 2 && str_starts_with($dbPhone, '55') && substr($dbPhone, 2) === $phone) {
+                return $r;
+            }
+            // Caso 2: O telefone buscado tem 55, o telefone no banco não
+            if (strlen($phone) === strlen($dbPhone) + 2 && str_starts_with($phone, '55') && substr($phone, 2) === $dbPhone) {
+                return $r;
+            }
         }
         return null;
     }
