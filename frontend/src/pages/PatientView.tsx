@@ -155,6 +155,12 @@ const handleUpdate = async (formData: {
         if (res.status < 200 || res.status >= 300) {
             throw new Error("Falha ao atualizar paciente");
         }
+        // Notificar outras partes da aplicação que pacientes foram atualizados
+        try {
+          window.dispatchEvent(new CustomEvent('patients:updated'));
+        } catch (err) {
+          // noop
+        }
     };
 
     const handleModalSubmit = async (updated: {

@@ -317,6 +317,12 @@ const Patients: React.FC = () => {
             setCurrentPatient(null);
             setIsPatientModalOpen(false);
             fetchPatients();
+            // Notificar que houve atualização/alteração de pacientes
+            try {
+                window.dispatchEvent(new CustomEvent('patients:updated'));
+            } catch (err) {
+                // noop
+            }
         } catch (error) {
             console.error("Erro ao atualizar paciente:", error);
             alert("Erro ao atualizar paciente");
