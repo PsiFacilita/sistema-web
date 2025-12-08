@@ -7,7 +7,7 @@ import Button from "../components/Button/Button";
 import Table from "../components/Table/Table";
 import { useNavigate } from "react-router-dom";
 import Modal from "../components/Modal/Modal";
-import { Select } from "../components/Form/Select/Select";
+import Input from "../components/Form/Input/Input";
 import { Editor } from "@tinymce/tinymce-react";
 import { FiPlus, FiEdit, FiTrash2 } from "react-icons/fi";
 
@@ -15,27 +15,20 @@ const API_URL = (import.meta as any).env?.BACKEND_URL || "http://localhost:5000"
 
 interface DocumentTemplate {
     id: number;
-    tipo_documento_id: number;
-    tipo_documento_nome: string;
+    name: string;
     conteudo: string;
     criado_em: string;
     atualizado_em: string;
 }
 
-interface DocumentType {
-    id: number;
-    name: string;
-}
-
 const DocumentTemplates: React.FC = () => {
     const navigate = useNavigate();
     const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
-    const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<DocumentTemplate | null>(null);
     const [formData, setFormData] = useState({
-        tipo_documento_id: "",
+        name: "",
         conteudo: "",
     });
 
@@ -53,9 +46,16 @@ const DocumentTemplates: React.FC = () => {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
             });
+            
+            if (res.status === 401) {
+                // Sessão expirada, redirecionar para login
+                localStorage.removeItem("auth.token");
+                navigate("/login");
+                return;
+            }
+            
             const data = await res.json();
             if (data.templates) setTemplates(data.templates);
-            if (data.documentTypes) setDocumentTypes(data.documentTypes);
         } catch (err) {
             console.error("Erro ao buscar modelos:", err);
             Swal.fire("Erro", "Não foi possível carregar os modelos.", "error");
@@ -65,7 +65,7 @@ const DocumentTemplates: React.FC = () => {
     };
 
     const handleSave = async () => {
-        if (!formData.tipo_documento_id || !formData.conteudo) {
+        if (!formData.name || !formData.conteudo) {
             Swal.fire("Atenção", "Preencha todos os campos.", "warning");
             return;
         }
@@ -84,21 +84,30 @@ const DocumentTemplates: React.FC = () => {
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify({
-                    tipo_documento_id: Number(formData.tipo_documento_id),
+                    name: formData.name,
                     conteudo: formData.conteudo,
                 }),
             });
 
-            if (!res.ok) throw new Error("Erro ao salvar modelo");
+            if (res.status === 401) {
+                localStorage.removeItem("auth.token");
+                navigate("/login");
+                return;
+            }
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || "Erro ao salvar modelo");
+            }
 
             Swal.fire("Sucesso", "Modelo salvo com sucesso!", "success");
             setIsModalOpen(false);
             setEditingTemplate(null);
-            setFormData({ tipo_documento_id: "", conteudo: "" });
+            setFormData({ name: "", conteudo: "" });
             fetchTemplates();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            Swal.fire("Erro", "Não foi possível salvar o modelo.", "error");
+            Swal.fire("Erro", err.message || "Não foi possível salvar o modelo.", "error");
         }
     };
 
@@ -137,20 +146,20 @@ const DocumentTemplates: React.FC = () => {
         if (template) {
             setEditingTemplate(template);
             setFormData({
-                tipo_documento_id: String(template.tipo_documento_id),
+                name: template.name,
                 conteudo: template.conteudo,
             });
         } else {
             setEditingTemplate(null);
-            setFormData({ tipo_documento_id: "", conteudo: "" });
+            setFormData({ name: "", conteudo: "" });
         }
         setIsModalOpen(true);
     };
 
     const columns = [
         {
-            header: "Tipo de Documento",
-            accessor: "tipo_documento_nome" as keyof DocumentTemplate,
+            header: "Nome do Modelo",
+            accessor: "name" as keyof DocumentTemplate,
         },
         {
             header: "Criado em",
@@ -215,18 +224,14 @@ const DocumentTemplates: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Tipo de Documento
+                            Nome do Modelo
                         </label>
-                        <Select
-                            value={formData.tipo_documento_id}
+                        <Input
+                            value={formData.name}
                             onChange={(e: any) =>
-                                setFormData({ ...formData, tipo_documento_id: e.target.value })
+                                setFormData({ ...formData, name: e.target.value })
                             }
-                            options={documentTypes.map((dt: DocumentType) => ({
-                                value: String(dt.id),
-                                label: dt.name,
-                            }))}
-                            placeholder="Selecione o tipo..."
+                            placeholder="Ex: Atestado Médico Padrão"
                         />
                     </div>
 

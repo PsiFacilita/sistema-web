@@ -41,8 +41,7 @@ interface DocumentType {
 
 interface Template {
     id: number;
-    tipo_documento_id: number;
-    tipo_documento_nome: string;
+    name: string;
     conteudo: string;
     criado_em: string;
 }
@@ -91,6 +90,7 @@ const Documents: React.FC = () => {
         tipo_documento_id: "",
         conteudo: "",
         status: "rascunho" as Document["status"],
+        template_id: "",
     });
     const documentsPerPage = 11;
 
@@ -214,6 +214,7 @@ const Documents: React.FC = () => {
                 tipo_documento_id: "",
                 conteudo: "",
                 status: "rascunho",
+                template_id: "",
             });
             fetchDocuments();
         } catch (error: any) {
@@ -374,7 +375,7 @@ const Documents: React.FC = () => {
             setNewDocument((prev: any) => ({
                 ...prev,
                 conteudo: content,
-                tipo_documento_id: String(template.tipo_documento_id),
+                template_id: templateId,
             }));
         }
     };
@@ -701,11 +702,11 @@ const Documents: React.FC = () => {
                                     Carregar Modelo (Opcional)
                                 </label>
                                 <Select
-                                    value=""
+                                    value={newDocument.template_id}
                                     onChange={(e: any) => handleTemplateChange(e.target.value)}
                                     options={templates.map((t: Template) => ({
                                         value: String(t.id),
-                                        label: t.tipo_documento_nome + " - " + new Date(t.criado_em).toLocaleDateString(),
+                                        label: t.name,
                                     }))}
                                     placeholder="Selecione um modelo para carregar..."
                                     className="border-sage-200 focus:border-sage-400"

@@ -7,10 +7,8 @@ final class DocumentTemplate extends Model
 {
     public function findAll(int $userId): array
     {
-        $query = "SELECT t.id, t.tipo_documento_id, t.usuario_id, t.conteudo, t.criado_em, t.atualizado_em,
-                  td.name as tipo_documento_nome
+        $query = "SELECT t.id, t.name, t.usuario_id, t.conteudo, t.criado_em, t.atualizado_em
                   FROM template t
-                  INNER JOIN tipo_documento td ON t.tipo_documento_id = td.id
                   WHERE t.usuario_id = :uid
                   ORDER BY t.atualizado_em DESC";
         
@@ -26,10 +24,8 @@ final class DocumentTemplate extends Model
 
     public function findById(int $id, int $userId): ?array
     {
-        $query = "SELECT t.id, t.tipo_documento_id, t.usuario_id, t.conteudo, t.criado_em, t.atualizado_em,
-                  td.name as tipo_documento_nome
+        $query = "SELECT t.id, t.name, t.usuario_id, t.conteudo, t.criado_em, t.atualizado_em
                   FROM template t
-                  INNER JOIN tipo_documento td ON t.tipo_documento_id = td.id
                   WHERE t.id = :id AND t.usuario_id = :uid";
         
         $row = $this->fetchRow($query, ['id' => $id, 'uid' => $userId]);
@@ -44,13 +40,13 @@ final class DocumentTemplate extends Model
 
     public function create(array $data): string
     {
-        $query = "INSERT INTO template (tipo_documento_id, usuario_id, conteudo)
-                  VALUES (:tipo_documento_id, :usuario_id, :conteudo)";
+        $query = "INSERT INTO template (name, usuario_id, conteudo)
+                  VALUES (:name, :usuario_id, :conteudo)";
         
         $encConteudo = $this->enc($data['conteudo'], 'template.conteudo');
 
         $this->executeQuery($query, [
-            'tipo_documento_id' => $data['tipo_documento_id'],
+            'name' => $data['name'],
             'usuario_id' => $data['usuario_id'],
             'conteudo' => $encConteudo
         ]);
@@ -60,13 +56,13 @@ final class DocumentTemplate extends Model
 
     public function update(int $id, int $userId, array $data): bool
     {
-        $query = "UPDATE template SET tipo_documento_id = :tipo_documento_id, conteudo = :conteudo
+        $query = "UPDATE template SET name = :name, conteudo = :conteudo
                   WHERE id = :id AND usuario_id = :uid";
         
         $encConteudo = $this->enc($data['conteudo'], 'template.conteudo');
 
         return $this->executeQuery($query, [
-            'tipo_documento_id' => $data['tipo_documento_id'],
+            'name' => $data['name'],
             'conteudo' => $encConteudo,
             'id' => $id,
             'uid' => $userId
@@ -77,11 +73,5 @@ final class DocumentTemplate extends Model
     {
         $query = "DELETE FROM template WHERE id = :id AND usuario_id = :uid";
         return $this->executeQuery($query, ['id' => $id, 'uid' => $userId]);
-    }
-
-    public function getDocumentTypes(): array
-    {
-        $query = "SELECT id, name FROM tipo_documento ORDER BY name ASC";
-        return $this->fetchAllRows($query);
     }
 }

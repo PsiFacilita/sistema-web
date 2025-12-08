@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Config\Controller;
 use App\Models\DocumentTemplate;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-final class DocumentTemplatesController
+final class DocumentTemplatesController extends Controller
 {
     private DocumentTemplate $model;
 
@@ -18,21 +19,29 @@ final class DocumentTemplatesController
 
     public function index(Request $request, Response $response): Response
     {
-        $userId = $request->getAttribute('user_id');
-        $templates = $this->model->findAll((int)$userId);
-        $types = $this->model->getDocumentTypes();
+        $userId = $this->resolveAuthenticatedUserId($request);
+        if ($userId === null) {
+            $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
+        $templates = $this->model->findAll($userId);
         $response->getBody()->write(json_encode([
-            'templates' => $templates,
-            'documentTypes' => $types
+            'templates' => $templates
         ]));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
     public function show(Request $request, Response $response, array $args): Response
     {
-        $userId = $request->getAttribute('user_id');
+        $userId = $this->resolveAuthenticatedUserId($request);
+        if ($userId === null) {
+            $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
         $id = (int)$args['id'];
-        $template = $this->model->findById($id, (int)$userId);
+        $template = $this->model->findById($id, $userId);
 
         if (!$template) {
             $response->getBody()->write(json_encode(['error' => 'Modelo não encontrado']));
@@ -45,19 +54,29 @@ final class DocumentTemplatesController
 
     public function create(Request $request, Response $response): Response
     {
-        $userId = $request->getAttribute('user_id');
+        $userId = $this->resolveAuthenticatedUserId($request);
+        if ($userId === null) {
+            $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
         $data = json_decode($request->getBody()->getContents(), true);
 
-        if (!isset($data['tipo_documento_id']) || !isset($data['conteudo'])) {
+        if (!isset($data['name']) || !isset($data['conteudo'])) {
             $response->getBody()->write(json_encode(['error' => 'Dados inválidos']));
             return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
         }
 
-        $id = $this->model->create([
-            'tipo_documento_id' => $data['tipo_documento_id'],
-            'usuario_id' => $userId,
-            'conteudo' => $data['conteudo']
-        ]);
+        try {
+            $id = $this->model->create([
+                'name' => $data['name'],
+                'usuario_id' => $userId,
+                'conteudo' => $data['conteudo']
+            ]);
+        } catch (\Exception $e) {
+            $response->getBody()->write(json_encode(['error' => 'Erro ao criar modelo']));
+            return $response->withStatus(500)->withHeader('Content-Type', 'application/json');
+        }
 
         $response->getBody()->write(json_encode(['id' => $id, 'message' => 'Modelo criado com sucesso']));
         return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
@@ -65,17 +84,22 @@ final class DocumentTemplatesController
 
     public function update(Request $request, Response $response, array $args): Response
     {
-        $userId = $request->getAttribute('user_id');
+        $userId = $this->resolveAuthenticatedUserId($request);
+        if ($userId === null) {
+            $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
         $id = (int)$args['id'];
         $data = json_decode($request->getBody()->getContents(), true);
 
-        if (!isset($data['tipo_documento_id']) || !isset($data['conteudo'])) {
+        if (!isset($data['name']) || !isset($data['conteudo'])) {
             $response->getBody()->write(json_encode(['error' => 'Dados inválidos']));
             return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
         }
 
-        $success = $this->model->update($id, (int)$userId, [
-            'tipo_documento_id' => $data['tipo_documento_id'],
+        $success = $this->model->update($id, $userId, [
+            'name' => $data['name'],
             'conteudo' => $data['conteudo']
         ]);
 
@@ -90,10 +114,15 @@ final class DocumentTemplatesController
 
     public function delete(Request $request, Response $response, array $args): Response
     {
-        $userId = $request->getAttribute('user_id');
+        $userId = $this->resolveAuthenticatedUserId($request);
+        if ($userId === null) {
+            $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
+            return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
+        }
+
         $id = (int)$args['id'];
 
-        $success = $this->model->delete($id, (int)$userId);
+        $success = $this->model->delete($id, $userId);
 
         if (!$success) {
             $response->getBody()->write(json_encode(['error' => 'Erro ao excluir modelo']));
