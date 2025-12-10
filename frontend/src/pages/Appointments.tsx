@@ -131,6 +131,13 @@ const Appointments: React.FC = () => {
         return days;
     };
 
+    const hasAvailabilityForDay = (day: Date | null): boolean => {
+        if (!day) return false;
+        const dateString = ymdLocal(day);
+        const times = availabilityByDate[dateString] || [];
+        return times.length > 0;
+    };
+
     const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
     const changeMonth = (delta: number) => {
@@ -693,54 +700,86 @@ const Appointments: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-7 gap-px bg-sage-100">
-                    {daysInMonth.map((day, index) => {
-                        const events = getDayEvents(day);
-                        const isToday = day && new Date().toDateString() === day.toDateString();
-                        return (
-                            <div
-                                key={index}
-                                className={`bg-white relative min-h-[120px] p-3 transition-all duration-200
-                  ${isToday ? 'bg-sage-50 ring-2 ring-sage-400' : ''} 
-                  ${day ? 'cursor-pointer hover:bg-sage-50' : 'bg-sage-50'}`}
-                                onClick={() => day && handleDayClick(day)}
-                            >
-                                {day && (
-                                    <>
-                                        <div
-                                            className={`text-right text-sm font-medium mb-2
-                      ${isToday ? 'text-sage-700' : 'text-sage-600'}
-                      ${day.getDate() === 1 ? 'text-sage-800 font-bold' : ''}`}
+    {daysInMonth.map((day, index) => {
+        const events = getDayEvents(day);
+        const isToday = day && new Date().toDateString() === day.toDateString();
+        const isDisabled = !day || !hasAvailabilityForDay(day);
+
+        return (
+            <div
+                key={index}
+                className={`bg-white relative min-h-[120px] p-3 transition-all duration-200
+                    ${isToday ? 'bg-sage-50 ring-2 ring-sage-400' : ''} 
+                    ${
+                        day
+                            ? isDisabled
+                                ? 'cursor-not-allowed bg-sage-50 opacity-60'
+                                : 'cursor-pointer hover:bg-sage-50'
+                            : 'bg-sage-50'
+                    }`}
+                onClick={() => {
+                    if (!isDisabled && day) {
+                        handleDayClick(day);
+                    }
+                }}
+            >
+                {day && (
+                    <>
+                        <div
+                            className={`text-right text-sm font-medium mb-2
+                                ${isToday ? 'text-sage-700' : 'text-sage-600'}
+                                ${day.getDate() === 1 ? 'text-sage-800 font-bold' : ''}`}
+                        >
+                            {day.getDate()}
+                        </div>
+
+                        <div className="space-y-1 max-h-[80px] overflow-hidden">
+                            {events.slice(0, 3).map((event, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`text-xs px-2 py-1 rounded border transition-all ${
+                                        isDisabled ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-105'
+                                    } ${getEventTypeClass(event.type)}`}
+                                    onClick={(e) => {
+                                        if (isDisabled) return;
+                                        handleAppointmentClick(event, e);
+                                    }}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium">{event.time}</span>
+                                        <span
+                                            className={`text-[10px] px-2 py-0.5 rounded-full ${getStatusBadgeClass(
+                                                event.status,
+                                            )}`}
                                         >
-                                            {day.getDate()}
-                                        </div>
+                                            {event.status}
+                                        </span>
+                                    </div>
+                                    <div className="truncate text-[10px]">{event.title}</div>
+                                </div>
+                            ))}
 
-                                        <div className="space-y-1 max-h-[80px] overflow-hidden">
-                                            {events.slice(0, 3).map((event, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className={`text-xs px-2 py-1 rounded border cursor-pointer transition-all hover:scale-105 ${getEventTypeClass(
-                                                        event.type,
-                                                    )}`}
-                                                    onClick={(e) => handleAppointmentClick(event, e)}
-                                                >
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="font-medium">{event.time}</span>
-                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${getStatusBadgeClass(event.status)}`}>{event.status}</span>
-                                                    </div>
-                                                    <div className="truncate text-[10px]">{event.title}</div>
-                                                </div>
-                                            ))}
+                            {events.length > 3 && (
+                                <div className="text-xs text-center text-sage-500 bg-sage-100 rounded px-2 py-1">
+                                    +{events.length - 3} mais
+                                </div>
+                            )}
+                        </div>
 
-                                            {events.length > 3 && (
-                                                <div className="text-xs text-center text-sage-500 bg-sage-100 rounded px-2 py-1">+{events.length - 3} mais</div>
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+                        {!isDisabled && events.length === 0 && (
+                            <div className="mt-1 text-[10px] text-sage-400">Sem agendamentos</div>
+                        )}
+
+                        {isDisabled && (
+                            <div className="mt-1 text-[10px] text-amber-600">Sem horários disponíveis</div>
+                        )}
+                    </>
+                )}
+            </div>
+        );
+    })}
+</div>
+
             </Card>
 
             <Modal

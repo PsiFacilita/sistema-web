@@ -23,7 +23,7 @@ final class Document extends Model
         $rows = $this->fetchAllRows($query, ['uid' => $userId]);
         foreach ($rows as &$r) {
             if (isset($r['paciente_nome']) && $r['paciente_nome'] !== '') {
-                $dec = $this->dec((string)$r['paciente_nome'], 'paciente.nome');
+                $dec = $this->dec((string)$r['paciente_nome'], "nome:$userId");
                 if ($dec !== null) $r['paciente_nome'] = $dec;
             }
         }
@@ -52,7 +52,7 @@ final class Document extends Model
             if ($dec !== null) $row['conteudo'] = $dec;
         }
         if (isset($row['paciente_nome']) && $row['paciente_nome'] !== '') {
-            $dec = $this->dec((string)$row['paciente_nome'], 'paciente.nome');
+            $dec = $this->dec((string)$row['paciente_nome'], "nome:$userId");
             if ($dec !== null) $row['paciente_nome'] = $dec;
         }
 
@@ -179,7 +179,7 @@ final class Document extends Model
 
         foreach ($rows as &$r) {
             if (isset($r['paciente_nome']) && $r['paciente_nome'] !== '') {
-                $dec = $this->dec((string)$r['paciente_nome'], 'paciente.nome');
+                $dec = $this->dec((string)$r['paciente_nome'], "nome:$userId");
                 if ($dec !== null) $r['paciente_nome'] = $dec;
             }
             if (isset($r['conteudo']) && $r['conteudo'] !== '') {
