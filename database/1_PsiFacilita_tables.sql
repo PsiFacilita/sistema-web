@@ -78,8 +78,9 @@ CREATE TABLE IF NOT EXISTS documentos (
 
 CREATE TABLE IF NOT EXISTS template (
     id               INT AUTO_INCREMENT PRIMARY KEY,
-    tipo_documento_id INT NOT NULL,
+    tipo_documento_id INT NULL,
     usuario_id           INT NOT NULL,
+    name            VARCHAR(255) NOT NULL DEFAULT 'Sem Nome',
     conteudo        LONGTEXT NOT NULL,                   -- Criptografado
     criado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
